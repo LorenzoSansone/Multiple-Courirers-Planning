@@ -33,7 +33,7 @@ def solve_mcp(custom_model, file_path, origin_location):
     return result
 
 if __name__ == "__main__":
-    file_path = "instances/base_instance.txt"
+    file_path = "instances/instance_4.txt"
     model = "custom_mip_model.mzn"
     origin_location = 1
     start_time = time.time()

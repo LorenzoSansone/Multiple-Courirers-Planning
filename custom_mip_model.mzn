@@ -1,3 +1,27 @@
+% Constants
+% - Couriers m
+% - Items n
+% - Load capacity: l_i
+% - Size of each item: s_j
+% - origin is n+1
+
+% Decision Variables
+% - x[i,j] = 1 if courier i delivers item j
+% - tour_distance[i] = the total distance traveled by courier i
+% - max_dist = maximum tour distance among all couriers
+% - route[i] = path followed by courier i, consisting of a sequence of items, meaning that the courier follows that path
+% - y[i,j1,j2] = 1 if courier i travels directly from item j1 to item j2, 0 otherwise
+
+% Constraints
+% - Each item is delivered by exactly one courier
+% - Load capacity for each courier
+% - Tour distance calculation
+% - Path continuity and flow conservation
+% - max_dist is the maximum of the tour distances
+
+% Objective
+% - Minimize the total path distance
+% Constants
 int: m;  % Number of couriers
 int: n;  % Number of items
 
@@ -10,47 +34,50 @@ set of int: Locations = 1..n;  % Locations of items
 set of int: Couriers = 1..m;    % Couriers
 
 % Decision variables
-% x[i,j] = 1 if courier i delivers item j, 0 otherwise
-array[Couriers, Locations] of var 0..1: x;  
+array[Couriers, Locations] of var 0..1: x;  % x[i,j] = 1 if courier i delivers item j
 
-% Variable for the maximum distance traveled by any courier
-var int: max_dist;
+array[Couriers, 1..n+1, 1..n+1] of var 0..1: y;  % y[i,j1,j2] = 1 if courier i travels directly from item j1 to j2
 
-% Tour distance for each courier
-array[Couriers] of var int: tour_distance;
+array[Couriers] of var int: tour_distance;  % Total distance traveled by each courier
 
-% Distance matrix between locations and origin 
-% (index of the origin point, since there are n items there are n locations, so the origin is the location n+1)
+var int: max_dist;  % Maximum tour distance among all couriers
+
+% Index of the origin point (location n+1)
 var int: origin = n + 1;
 
-% Constraint: Each item must be delivered by exactly one courier
+% Constraints
+
+% Each item must be delivered by exactly one courier
 constraint forall(j in Locations) (
     sum(i in Couriers)(x[i, j]) = 1
 );
 
-% Constraint: Load capacity for each courier
-% "location" and "item" are essentially different terms for the same concept 
+% Load capacity for each courier
 constraint forall(i in Couriers) (
     sum(j in Locations)(s[j] * x[i, j]) <= l[i]
 );
 
 % Tour distance calculation for each courier
-constraint forall(i in Couriers) ( % for each courier
-    let {   
-        % Distance from origin to the first item
-        var int: dist_from_origin = sum(j in Locations where x[i, j] == 1)(D[origin, j]),
-        % Distance from the last item to the origin
-        var int: dist_to_origin = sum(j in Locations where x[i, j] == 1)(D[j, origin]),
-        % Sum of distances between items
-        var int: item_to_item_dist = sum(j1, j2 in Locations where j1 < j2)(
-            D[j1, j2] * x[i, j1] * x[i, j2]
-        )
-    } in
-    tour_distance[i] = dist_from_origin + dist_to_origin + item_to_item_dist
+constraint forall(i in Couriers) (
+    tour_distance[i] = sum(j1 in 1..n+1, j2 in 1..n+1)(D[j1, j2] * y[i, j1, j2])
+);
+
+% Flow conservation: Each courier starts and ends at the origin
+constraint forall(i in Couriers) (
+    % Start at the origin
+    sum(j in Locations)(y[i, origin, j]) = 1 /\
+    % Return to the origin
+    sum(j in Locations)(y[i, j, origin]) = 1
+);
+
+% Ensure that each courier's route is continuous and valid
+constraint forall(i in Couriers, j in Locations) (
+    sum(j1 in 1..n+1)(y[i, j1, j]) = x[i, j] /\
+    sum(j2 in 1..n+1)(y[i, j, j2]) = x[i, j]
 );
 
 % Constraint: Max distance is the maximum of the tour distances
 constraint max_dist = max(tour_distance);
 
-% Objective: Minimize the maximum distance
+% Objective: Minimize the maximum tour distance
 solve minimize max_dist;
