@@ -1,6 +1,6 @@
 #
 #
-# Generate new txt files to test the model
+# Generate new .dat files to test the model
 #
 #
 
@@ -35,11 +35,10 @@ def generate_instance(file_path):
             file.write(" ".join(map(str, row)) + "\n")
 # generate new instances
 def generate_multiple_instances(num_instances):
-    for i in range(1, num_instances + 1):
-        file_name = f"instance_{i}.txt"
+    for i in range(22, 22+num_instances):
+        file_name = f"instance_{i}.dat"
         file_path = os.path.join("instances", file_name)
         generate_instance(file_path)
         print(f"Generated {file_path}")
-# ask for number of instances to generate
 num_instances = int(input("Enter the number of instances to generate: "))
 generate_multiple_instances(num_instances)
