@@ -75,7 +75,8 @@ if __name__ == "__main__":
             y = result['y']
             #print(result)
             elapsed_time = end_time - start_time
-            print(f"Elapsed time: {round(elapsed_time, 3)} seconds")            
+            print(f"Elapsed time: {round(elapsed_time, 3)} seconds")      
+            print(result['y'])      
             save_solution(result, elapsed_time, file_path, instance_number, approach_name)
             #plotter.plot_courier_routes(y)
         else:
