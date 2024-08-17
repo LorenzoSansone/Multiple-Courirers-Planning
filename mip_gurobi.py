@@ -5,16 +5,11 @@ def read_input(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
     m = int(lines[0].strip())  # number of couriers
-    print(f"m={m}")
     n = int(lines[1].strip())  # number of items
-    print(f"n={n}")
     l = list(map(int, lines[2].strip().split()))  # max load size for each courier
-    print(f"l={l}")
     s = list(map(int, lines[3].strip().split()))  # sizes of the items
-    print(f"s={s}")
     D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
     locations = n+1
-    print(f"locations={locations} ({n} + the origin)")
     return m, n, l, s, D, locations
 
 def create_mcp_model(m, n, l, s, D, locations):
@@ -56,19 +51,15 @@ def create_mcp_model(m, n, l, s, D, locations):
 
 def extract_solution(model, m, n, x, y, distance, max_dist):
     model.optimize()
-    
     if model.status != GRB.OPTIMAL:
         raise Exception("No optimal solution found")
-    
     # Extract the solution
     x_sol = model.getAttr('x', x)
     # Format x into a binary matrix
     x_matrix = [[int(x_sol[i, j]) for j in range(n)] for i in range(m)]
-    print(x_matrix)
     y_sol = model.getAttr('x', y)
     # Format y into a binary matrix
     y_matrix = [[[int(y_sol[i, j1, j2]) for j2 in range(len(D))] for j1 in range(len(D))] for i in range(m)]
-    print(y_matrix)
     max_dist_val = max_dist.x
     tour_distance = [sum(D[j1][j2] * y_sol[i, j1, j2] for j1 in range(len(D)) for j2 in range(len(D))) for i in range(m)]
 
@@ -86,4 +77,9 @@ if __name__ == "__main__":
     m, n, l, s, D, origin = read_input(file_path)
     model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
     solution = extract_solution(model, m, n, x, y, distance, max_dist)
-    print(solution)
+    print(f"Objective = {solution['objective']}")
+    print(f"x = {solution['x']}")
+    print(f"y = {solution['y']}")
+    print(f"tour_distance = {solution['tour_distance']}")
+    print(f"max_dist = {solution['max_dist']}")
+
