@@ -35,13 +35,47 @@ def create_mcp_model(m, n, l, s, D, locations):
         model.addConstr(quicksum(y[courier, n, j] for j in range(n)) == 1)
         model.addConstr(quicksum(y[courier, j, n] for j in range(n)) == 1)
 
+    # Ensure that couriers visit locations where they pick up items
+    for i in range(m):
+        for j in range(n):
+            model.addConstr(quicksum(y[i, k, j] for k in range(locations)) 
+                                     == x[i, j])
+    # Prevent couriers from traveling from a point to itself
+    for i in range(m):
+        for j in range(locations):
+            model.addConstr(y[i, j, j] == 0)
+    # if a courier picks up an item, they must visit the item's location and leave it
+    for i in range(m):
+        for j in range(n):
+            model.addConstr(quicksum(y[i,j,k] for k in range(n+1)) <= x[i,j])
+            model.addConstr(quicksum(y[i,k,j] for k in range(1+n)) <= x[i,j])
+    
+    
+    
+    # Ensure that if a courier picks up an item, they must visit the item's location and leave it
+    for i in range(m):
+        for j in range(n):
+            # If courier i delivers item j, they must travel to location j from some other location
+            model.addConstr(quicksum(y[i, k, j] for k in range(locations)) >= x[i, j])
+            # If courier i delivers item j, they must leave location j to go to some other location
+            model.addConstr(quicksum(y[i, j, k] for k in range(locations)) >= x[i, j])
+    # Ensure that if a courier does not pick up an item, they cannot visit that item's location
+    for i in range(m):
+        for j in range(n):
+            # If courier i does not deliver item j, they should not travel to location j from any other location
+            model.addConstr(quicksum(y[i, k, j] for k in range(n)) <= x[i, j] * n)
+            # If courier i does not deliver item j, they should not leave location j to any other location
+            model.addConstr(quicksum(y[i, j, k] for k in range(n)) <= x[i, j] * n)
+        
+        
+    
     # Distance constraints
     for i in range(m):
         model.addConstr(Distance[i] == quicksum(D[j1][j2] * y[i, j1, j2] for j1 in range(locations) for j2 in range(locations)))
 
-    # Max distance constraint
-    model.addConstr(max_distance == quicksum(Distance[i] for i in range(m)) / m)
-
+    # Max distance constraint: take the maximum value in Distance
+    for i in Distance:
+        model.addConstr(max_distance >= Distance[i])
     # Objective
     model.setObjective(max_distance, GRB.MINIMIZE)
     return model, x, y, Distance, max_distance
@@ -100,60 +134,59 @@ def picked_up_objects(x, m, n):
                 loaded_objects.append(item)
         print(loaded_objects)
 def print_routes(y_matrices, m, n):
-
+    origin = n  # Define origin index
+    
     for courier in range(m):
         print(f"Courier {courier}'s route:")
         route = []
         locations = len(y_matrices[courier])
-        current_location = None
+        current_location = origin
         
-        # Find the starting location (origin)
-        for j1 in range(locations):
-            if y_matrices[courier][j1].count(1) > 0:  # if there's any outgoing edge from j1
-                current_location = j1
-                break
-
-        if current_location is None:
-            print("  No starting location found.")
+        # Ensure the route starts from the origin
+        if all(y_matrices[courier][origin][j] == 0 for j in range(locations)):
+            print("  No valid route found starting from the origin.")
             continue
-
+        
         # Traverse the route
         visited_locations = set()
         visited_locations.add(current_location)
         while True:
             next_location = None
-
+            
             # Find the next location to travel to
             for j2 in range(locations):
                 if y_matrices[courier][current_location][j2] == 1 and j2 not in visited_locations:
                     next_location = j2
                     break
 
-            # If no next location is found, or we return to origin and we're not in the loop yet, end the route
-            if next_location is None or (next_location == 7 and current_location == 7):
+            # If no next location is found or we return to origin, end the route
+            if next_location is None or (next_location == origin and current_location == origin):
+                if current_location != origin:
+                    route.append((current_location, origin))
                 break
 
             # Add the path to the route and update current_location
             route.append((current_location, next_location))
             visited_locations.add(next_location)
             current_location = next_location
-
-        # Print the route
+        
+        # Print the route with (origin) for the origin location
         if route:
             for (from_loc, to_loc) in route:
-                print(f"  From location {from_loc} to location {to_loc}")
+                from_str = "(origin)" if from_loc == origin else f"{from_loc}"
+                to_str = "(origin)" if to_loc == origin else f"{to_loc}"
+                print(f"  From location {from_str} to location {to_str}")
         else:
             print("  No valid route found.")
 
-# Example usage
 if __name__ == "__main__":
-    file_path = 'instances/inst03.dat'
+    file_path = 'instances/inst05.dat'
     m, n, l, s, D, origin = read_input(file_path)
     model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
     solution = extract_solution(model, m, n, x, y, distance, max_dist)
     print(f"Objective = {solution['objective']}")
-    print(f"x = {solution['x']}")
-    print(f"y = {solution['y']}")
+   #print(f"x = {solution['x']}")
+    #print(f"y = {solution['y']}")
     print(f"tour_distance = {solution['tour_distance']}")
     print(f"max_dist = {solution['max_dist']}")
 
