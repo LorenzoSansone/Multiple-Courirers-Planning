@@ -52,7 +52,7 @@ def create_mcp_model(m, n, l, s, D, locations):
     
     
     
-    # Ensure that if a courier picks up an item, they must visit the item's location and leave it
+    # Ensure that if a courier picks up an item, they must visit the item's location and leave it (maybe this is too much?)
     for i in range(m):
         for j in range(n):
             # If courier i delivers item j, they must travel to location j from some other location
@@ -180,11 +180,10 @@ def print_routes(y_matrices, m, n):
             print("  No valid route found.")
 
 if __name__ == "__main__":
-    file_path = 'instances/inst05.dat'
+    file_path = 'instances/inst00.dat'
     m, n, l, s, D, origin = read_input(file_path)
     model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
     solution = extract_solution(model, m, n, x, y, distance, max_dist)
-    print(f"Objective = {solution['objective']}")
    #print(f"x = {solution['x']}")
     #print(f"y = {solution['y']}")
     print(f"tour_distance = {solution['tour_distance']}")
