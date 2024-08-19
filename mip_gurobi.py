@@ -40,10 +40,11 @@ def create_mcp_model(m, n, l, s, D, locations):
         model.addConstr(quicksum(y[courier, j, n] for j in range(n)) == 1)
 
     # Ensure that couriers visit locations where they pick up items
-    for i in range(m):
-        for j in range(n):
-            model.addConstr(quicksum(y[i, k, j] for k in range(locations)) 
-                                     == x[i, j])
+    #for i in range(m):
+    #    for j in range(n):
+    #        model.addConstr(quicksum(y[i, k, j] for k in range(locations)) 
+    #                                 == x[i, j])
+            #model.addConstr(quicksum(y[i,j,k] for k in range(locations)) == x[i,j])
     # Prevent couriers from traveling from a point to itself
     for i in range(m):
         for j in range(locations):
@@ -53,8 +54,6 @@ def create_mcp_model(m, n, l, s, D, locations):
         for j in range(n):
             model.addConstr(quicksum(y[i,j,k] for k in range(n+1)) <= x[i,j])
             model.addConstr(quicksum(y[i,k,j] for k in range(1+n)) <= x[i,j])
-    
-    
     
     # Ensure that if a courier picks up an item, they must visit the item's location and leave it (maybe this is too much?)
     for i in range(m):
@@ -70,8 +69,28 @@ def create_mcp_model(m, n, l, s, D, locations):
             model.addConstr(quicksum(y[i, k, j] for k in range(n)) <= x[i, j] * n)
             # If courier i does not deliver item j, they should not leave location j to any other location
             model.addConstr(quicksum(y[i, j, k] for k in range(n)) <= x[i, j] * n)
-        
-        
+    # Flow conservation constraints
+    for i in range(m):  # for each courier
+        for j in range(1, n):  # for each location, excluding the origin
+            # If the courier arrives at location j
+            model.addConstr(quicksum(y[i, k, j] for k in range(locations)) ==
+                            quicksum(y[i, j, k] for k in range(locations)))
+    # Add variables for subtour elimination
+    u = model.addVars(m, n, vtype=GRB.CONTINUOUS, name="u")
+
+    # Subtour elimination constraints
+    for i in range(m):  # for each courier
+        for j in range(1, n):  # for each location, excluding the origin
+            for k in range(1, n):
+                if j != k:
+                    model.addConstr(u[i, j] - u[i, k] + (n - 1) * y[i, j, k] <= n - 2)
+
+    # Set bounds for u variables
+    for i in range(m):
+        for j in range(1, n):
+            model.addConstr(u[i, j] >= 1)
+            model.addConstr(u[i, j] <= n - 1)
+
     
     # Distance constraints
     for i in range(m):
@@ -137,17 +156,15 @@ def picked_up_objects(x, m, n):
             if x[courier][item] == 1:
                 loaded_objects.append(item)
         print(loaded_objects)
-def print_routes(y_matrices, m, n):
-    origin = n  # Define origin index
-    
+def print_routes(y_matrices, m, n):    
     for courier in range(m):
         print(f"Courier {courier}'s route:")
         route = []
         locations = len(y_matrices[courier])
-        current_location = origin
+        current_location = n
         
         # Ensure the route starts from the origin
-        if all(y_matrices[courier][origin][j] == 0 for j in range(locations)):
+        if all(y_matrices[courier][n][j] == 0 for j in range(locations)):
             print("  No valid route found starting from the origin.")
             continue
         
@@ -218,27 +235,27 @@ def save_solution(solution, input_file):
 
 
 if __name__ == "__main__":
-    file_path = 'instances/inst08.dat'
-    m, n, l, s, D, origin = read_input(file_path)
-    model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
-    solution = extract_solution(model, m, n, x, y, distance, max_dist)
-   #print(f"x = {solution['x']}")
-    #print(f"y = {solution['y']}")
-    print(f"tour_distance = {solution['tour_distance']}")
-    print(f"max_dist = {solution['max_dist']}")
+    for i in range(10):
+        file_path = f'instances/inst0{i}.dat'
+        m, n, l, s, D, origin = read_input(file_path)
+        model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
+        solution = extract_solution(model, m, n, x, y, distance, max_dist)
 
-    # Print picked up objects
-    picked_objects = picked_up_objects(solution['x'], m, n)
+        print(f"tour_distance = {solution['tour_distance']}")
+        print(f"max_dist = {solution['max_dist']}")
 
-    # Check load sizes
-    calculated_load_sizes = check_load_sizes(solution['x'], s, m, n, l)
-    
-    # Check if every courier starts and ends at the origin
-    all_start_at_origin = check_if_every_courier_starts_at_origin(solution['y'], n, m)
-    all_end_at_origin = check_if_every_courier_ends_at_origin(solution['y'], n, m)
-    print(f"All couriers start at the origin: {all_start_at_origin}")
-    print(f"All couriers end at the origin: {all_end_at_origin}")
-    instance_number = file_path.split('/')[-1].split('.')[0].replace('inst', '')
-    save_solution(solution, f"inst{instance_number}.dat")
-    #Print routes
-    print_routes(solution['y'], m, n)
+        # Print picked up objects
+        picked_objects = picked_up_objects(solution['x'], m, n)
+
+        # Check load sizes
+        calculated_load_sizes = check_load_sizes(solution['x'], s, m, n, l)
+        
+        # Check if every courier starts and ends at the origin
+        all_start_at_origin = check_if_every_courier_starts_at_origin(solution['y'], n, m)
+        all_end_at_origin = check_if_every_courier_ends_at_origin(solution['y'], n, m)
+        print(f"All couriers start at the origin: {all_start_at_origin}")
+        print(f"All couriers end at the origin: {all_end_at_origin}")
+        instance_number = file_path.split('/')[-1].split('.')[0].replace('inst', '')
+        save_solution(solution, f"inst{instance_number}.dat")
+        #Print routes
+        print_routes(solution['y'], m, n)
