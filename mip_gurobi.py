@@ -1,5 +1,9 @@
 import gurobipy as gp
 from gurobipy import GRB, quicksum
+import json
+import os
+import time, math
+
 
 def read_input(file_path):
     with open(file_path, 'r') as file:
@@ -179,8 +183,42 @@ def print_routes(y_matrices, m, n):
         else:
             print("  No valid route found.")
 
+def save_solution(solution, input_file):
+    # Extract the instance number from the input file name
+    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
+
+    # Prepare the solution dictionary in the required format
+    solution_dict = {
+        "gurobi": {
+            "time": math.floor(model.Runtime),  # Time taken by the optimization
+            "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
+            "obj": solution['max_dist'],  # The objective value (max distance)
+            "sol": []  # List of lists representing the solution (picked-up items)
+        }
+    }
+
+    # Populate the "sol" field with the items picked up by each courier
+    for courier in range(m):
+        items_picked = [item for item, delivered in enumerate(solution['x'][courier]) if delivered == 1]
+        solution_dict["gurobi"]["sol"].append(items_picked)
+
+    # Create the directory if it doesn't exist
+    output_dir = "res/MIP"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Define the output file path
+    output_file = os.path.join(output_dir, f"{instance_number}.json")
+
+    # Save the solution to a JSON file
+    with open(output_file, 'w') as outfile:
+        json.dump(solution_dict, outfile, indent=4)
+
+    print(f"Solution saved to {output_file}")
+
+
 if __name__ == "__main__":
-    file_path = 'instances/inst00.dat'
+    file_path = 'instances/inst08.dat'
     m, n, l, s, D, origin = read_input(file_path)
     model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
     solution = extract_solution(model, m, n, x, y, distance, max_dist)
@@ -200,5 +238,7 @@ if __name__ == "__main__":
     all_end_at_origin = check_if_every_courier_ends_at_origin(solution['y'], n, m)
     print(f"All couriers start at the origin: {all_start_at_origin}")
     print(f"All couriers end at the origin: {all_end_at_origin}")
+    instance_number = file_path.split('/')[-1].split('.')[0].replace('inst', '')
+    save_solution(solution, f"inst{instance_number}.dat")
     #Print routes
     print_routes(solution['y'], m, n)
