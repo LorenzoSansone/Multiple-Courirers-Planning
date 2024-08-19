@@ -1,45 +1,109 @@
-# TODO: FIX THIS adding routes of couriers
-
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
+import json
+import os
+from sklearn.manifold import MDS
 
-# Input data as a string (for demonstration purposes)
-data = """
-3
-7
-15 10 7
-3 2 6 8 5 4 4
-0 3 3 6 5 6 6 2
-3 0 4 3 4 7 7 3
-3 4 0 7 6 3 5 3
-6 3 7 0 3 6 6 4
-5 4 6 3 0 3 3 3
-6 7 3 6 3 0 2 4
-6 7 5 6 3 2 0 4
-2 3 3 4 3 4 4 0
-"""
+def ensure_symmetric(matrix):
+    matrix = np.array(matrix)
+    symmetric_matrix = (matrix + matrix.T) / 2
+    return symmetric_matrix
 
-# Parse the input data
-lines = data.strip().split('\n')
-m = int(lines[0])
-n = int(lines[1])
-l = list(map(int, lines[2].split()))
-s = list(map(int, lines[3].split()))
-D = np.array([list(map(int, line.split())) for line in lines[4:]])
-num_nodes = n + 1  # Total nodes including the origin
-G = nx.Graph()
-for i in range(num_nodes):  # 0-based indexing for nodes
-    G.add_node(i)
-for i in range(num_nodes):
-    for j in range(i, num_nodes):
-        if i != j:  # Avoid self-loops
-            G.add_edge(i, j, weight=D[i][j])
-pos = nx.spring_layout(G, weight='weight', scale=2.5)  # Increase scale for better spacing
-plt.figure(figsize=(15, 12))  # Increase figure size for better visibility
-nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=700, font_size=12, font_weight='bold', edge_color='gray')
-labels = nx.get_edge_attributes(G, 'weight')
-nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_color='red')
+def plot_couriers_routes(instance_file):
+    # Extract the base name and instance number from the input file name
+    base_name = os.path.basename(instance_file)
+    instance_number = base_name.replace('.dat', '')  # Remove the .dat suffix
 
-plt.title('Graphical Representation of Distance Matrix')
-plt.show()
+    # Extract only the numeric part of the instance number
+    instance_number = ''.join(filter(str.isdigit, instance_number))
+    
+    # Format the instance number for JSON file naming
+    if int(instance_number) < 10:
+        json_file_name = f'{instance_number.zfill(2)}.json'
+    else:
+        json_file_name = f'{instance_number}.json'
+    
+    # Define paths for the JSON file
+    json_file_path = f'res/MIP/{json_file_name}'
+    
+    # Step 1: Read the input instance data
+    with open(instance_file, 'r') as file:
+        lines = file.readlines()
+    m = int(lines[0].strip())  # number of couriers
+    n = int(lines[1].strip())  # number of items
+    l = list(map(int, lines[2].strip().split()))  # max load size for each courier
+    s = list(map(int, lines[3].strip().split()))  # sizes of the items
+    D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
+
+    # Convert distance matrix to numpy array
+    D = np.array(D)
+    
+    # Ensure the matrix is symmetric
+    D = ensure_symmetric(D)
+
+    # Step 2: Read the solution from the JSON file
+    try:
+        with open(json_file_path, 'r') as file:
+            solution = json.load(file)["gurobi"]
+    except FileNotFoundError:
+        print(f"JSON file {json_file_path} not found.")
+        return
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON file {json_file_path}.")
+        return
+
+    # Step 3: Apply Multidimensional Scaling (MDS) to get 2D coordinates
+    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
+    coordinates = mds.fit_transform(D)
+
+    # The depot is at index n (the last index in coordinates)
+    origin_coord = coordinates[-1]
+    coordinates = np.vstack([coordinates[:-1], origin_coord])  # Add origin back to the coordinates
+
+    # Step 4: Create the plot
+    plt.figure(figsize=(12, 12))
+
+    # Plot the depot
+    plt.scatter(*origin_coord, color='red', label='Depot (Origin)', s=100, edgecolor='black')
+    plt.text(*origin_coord, 'Origin', fontsize=12, ha='right')
+
+    # Plot the locations of items
+    for i in range(n):
+        plt.scatter(*coordinates[i], color='blue', s=100, edgecolor='black')
+        plt.text(coordinates[i][0], coordinates[i][1], f'{i}', fontsize=12, ha='right')
+
+    # Plot the routes for each courier
+    colors = plt.cm.get_cmap('tab10', m)  # Colormap for different couriers
+    for courier_id, items_picked in enumerate(solution['sol']):
+        if not items_picked:
+            continue
+
+        color = colors(courier_id)
+        route = [origin_coord] + [coordinates[item] for item in items_picked] + [origin_coord]
+        route = np.array(route)
+
+        # Plot the route with arrows
+        for start, end in zip(route[:-1], route[1:]):
+            plt.annotate(
+                '', 
+                xy=end, 
+                xytext=start, 
+                arrowprops=dict(facecolor=color, edgecolor=color, arrowstyle='->', lw=2),
+                fontsize=10
+            )
+        
+        # Plot the route line
+        plt.plot(route[:, 0], route[:, 1], color=color, linestyle='-', linewidth=2, marker='o',
+                 label=f'Courier {courier_id}')
+        
+    # Step 5: Add labels and legends
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.title(f'Couriers Routes Visualization\nObjective (Max Distance): {solution["obj"]}')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# Example usage:
+instance_file = 'instances/inst11.dat'
+plot_couriers_routes(instance_file)

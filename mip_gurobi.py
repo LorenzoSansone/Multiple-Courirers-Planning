@@ -19,6 +19,8 @@ def read_input(file_path):
 
 def create_mcp_model(m, n, l, s, D, locations):
     model = gp.Model("MCP")
+    model.setParam('TimeLimit', 300)
+
 
     # Variables
     x = model.addVars(m, n, vtype=GRB.BINARY, name='x')  # x[i, j] = 1 if courier i delivers item j
@@ -105,22 +107,49 @@ def create_mcp_model(m, n, l, s, D, locations):
 
 def extract_solution(model, m, n, x, y, distance, max_dist):
     model.optimize()
-    if model.status != GRB.OPTIMAL:
-        raise Exception("No optimal solution found")
-    x_sol = model.getAttr('x', x)
-    x_matrix = [[int(x_sol[i, j]) for j in range(n)] for i in range(m)]
-    y_sol = model.getAttr('x', y)
-    y_matrix = [[[int(y_sol[i, j1, j2]) for j2 in range(len(D))] for j1 in range(len(D))] for i in range(m)]
-    max_dist_val = max_dist.x
-    tour_distance = [sum(D[j1][j2] * y_sol[i, j1, j2] for j1 in range(len(D)) for j2 in range(len(D))) for i in range(m)]
-    return {
-        "objective": max_dist_val,
-        "x": x_matrix,
-        "y": y_matrix,
-        "tour_distance": tour_distance,
-        "max_dist": max_dist_val
-    }
+    
+    # Check if the model was stopped due to time limit or other reasons
+    if model.status == GRB.OPTIMAL:
+        print("Optimal solution found.")
+    elif model.status == GRB.TIME_LIMIT:
+        print("Time limit reached. Best feasible solution obtained.")
+    elif model.status == GRB.INFEASIBLE:
+        print("Model is infeasible; no solution found.")
+        return {
+            "objective": None,
+            "x": [[0 for _ in range(n)] for _ in range(m)],
+            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
+            "tour_distance": [0 for _ in range(m)],
+            "max_dist": None
+        }
+    else:
+        print(f"Optimization was stopped with status {model.status}")
+        return {
+            "objective": None,
+            "x": [[0 for _ in range(n)] for _ in range(m)],
+            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
+            "tour_distance": [0 for _ in range(m)],
+            "max_dist": None
+        }
 
+    # Extract the solution
+    try:
+        x_sol = model.getAttr('x', x)
+        x_matrix = [[int(x_sol[i, j]) for j in range(n)] for i in range(m)]
+        y_sol = model.getAttr('x', y)
+        y_matrix = [[[int(y_sol[i, j1, j2]) for j2 in range(len(D))] for j1 in range(len(D))] for i in range(m)]
+        max_dist_val = max_dist.x
+        tour_distance = [sum(D[j1][j2] * y_sol[i, j1, j2] for j1 in range(len(D)) for j2 in range(len(D))) for i in range(m)]
+        return {
+            "objective": max_dist_val,
+            "x": x_matrix,
+            "y": y_matrix,
+            "tour_distance": tour_distance,
+            "max_dist": max_dist_val
+        }
+    except gp.GurobiError as e:
+        print(f"Error retrieving solution: {e}")
+        return None
 def check_load_sizes(x, s, m, n, l):
     load_sizes = [0] * m
     for courier in range(m):
@@ -204,20 +233,31 @@ def save_solution(solution, input_file):
     # Extract the instance number from the input file name
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
 
-    # Prepare the solution dictionary in the required format
-    solution_dict = {
-        "gurobi": {
-            "time": math.floor(model.Runtime),  # Time taken by the optimization
-            "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
-            "obj": solution['max_dist'],  # The objective value (max distance)
-            "sol": []  # List of lists representing the solution (picked-up items)
+    # Check if a solution was found
+    if solution['objective'] is None:
+        solution_dict = {
+            "gurobi": {
+                "time": math.floor(model.Runtime),  # Time taken by the optimization
+                "optimal": False,  # Indicate that no optimal solution was found
+                "obj": None,  # No objective value
+                "sol": []  # Empty solution
+            }
         }
-    }
+    else:
+        # Prepare the solution dictionary in the required format
+        solution_dict = {
+            "gurobi": {
+                "time": math.floor(model.Runtime),  # Time taken by the optimization
+                "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
+                "obj": solution['max_dist'],  # The objective value (max distance)
+                "sol": []  # List of lists representing the solution (picked-up items)
+            }
+        }
 
-    # Populate the "sol" field with the items picked up by each courier
-    for courier in range(m):
-        items_picked = [item for item, delivered in enumerate(solution['x'][courier]) if delivered == 1]
-        solution_dict["gurobi"]["sol"].append(items_picked)
+        # Populate the "sol" field with the items picked up by each courier
+        for courier in range(m):
+            items_picked = [item for item, delivered in enumerate(solution['x'][courier]) if delivered == 1]
+            solution_dict["gurobi"]["sol"].append(items_picked)
 
     # Create the directory if it doesn't exist
     output_dir = "res/MIP"
@@ -235,8 +275,8 @@ def save_solution(solution, input_file):
 
 
 if __name__ == "__main__":
-    for i in range(3,6):
-        file_path = f'instances/inst0{i}.dat'
+    for i in range(11,12):
+        file_path = f'instances/inst{i}.dat'
         m, n, l, s, D, origin = read_input(file_path)
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
         solution = extract_solution(model, m, n, x, y, distance, max_dist)
