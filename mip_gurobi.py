@@ -235,7 +235,7 @@ def save_solution(solution, input_file):
 
 
 if __name__ == "__main__":
-    for i in range(10):
+    for i in range(3,6):
         file_path = f'instances/inst0{i}.dat'
         m, n, l, s, D, origin = read_input(file_path)
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
