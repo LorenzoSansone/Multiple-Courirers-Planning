@@ -29,7 +29,7 @@ s = list(map(int, lines[3].split()))
 D = np.array([list(map(int, line.split())) for line in lines[4:]])
 num_nodes = n + 1  # Total nodes including the origin
 G = nx.Graph()
-for i in range(num_nodes + 1):  # 0-based indexing for nodes
+for i in range(num_nodes):  # 0-based indexing for nodes
     G.add_node(i)
 for i in range(num_nodes):
     for j in range(i, num_nodes):
