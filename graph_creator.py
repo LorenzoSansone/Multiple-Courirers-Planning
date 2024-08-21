@@ -73,7 +73,7 @@ def plot_couriers_routes(instance_file):
     # Plot the locations of items
     for i in range(n):
         plt.scatter(*coordinates[i], color='blue', s=100, edgecolor='black')
-        plt.text(coordinates[i][0], coordinates[i][1], f'{i}', fontsize=12, ha='right')
+        plt.text(coordinates[i][0], coordinates[i][1], f'{i + 1}', fontsize=12, ha='right')
 
     # Plot the routes for each courier
     colors = plt.cm.get_cmap('tab10', m)  # Colormap for different couriers
@@ -82,7 +82,7 @@ def plot_couriers_routes(instance_file):
             continue
 
         color = colors(courier_id)
-        route = [origin_coord] + [coordinates[item] for item in items_picked] + [origin_coord]
+        route = [origin_coord] + [coordinates[item - 1] for item in items_picked] + [origin_coord]
         route = np.array(route)
 
         # Plot the route with arrows
@@ -108,5 +108,5 @@ def plot_couriers_routes(instance_file):
     plt.show()
 
 # Example usage:
-instance_file = 'instances/inst11.dat'
+instance_file = 'instances/inst01.dat'
 plot_couriers_routes(instance_file)
