@@ -209,8 +209,15 @@ def create_mcp_model(m, n, l, s, D, locations):
             model.addConstr(u[i, j] <= n - 1)
     # Distance calculation constraint
     for i in range(m):
-        model.addConstr(Distance[i] == quicksum(D[j1][j2] * y[i, j1, j2] for j1 in range(locations) for j2 in range(locations)))
-
+        model.addConstr(
+            Distance[i] ==
+            quicksum(
+                D[j1][j2] * y[i, j1, j2]
+                for j1 in range(locations)
+                for j2 in range(locations)
+            )
+        )
+        print(f"Distance constraint {i}: Distance[{i}] = quicksum(D[j1][j2] * y[{i}, j1, j2])")
     # Max distance objective
     for i in Distance:
         model.addConstr(max_distance >= Distance[i])
@@ -242,12 +249,12 @@ def extract_solution(model, m, n, x, y, distance, max_dist):
         y_sol = model.getAttr('x', y)
         y_matrix = [[[int(y_sol[i, j1, j2]) for j2 in range(len(D))] for j1 in range(len(D))] for i in range(m)]
         max_dist_val = max_dist.x
-        tour_distance = [sum(D[j1][j2] * y_sol[i, j1, j2] for j1 in range(len(D)) for j2 in range(len(D))) for i in range(m)]
+        distance_values = [distance[i].x for i in range(m)]
         return {
             "objective": max_dist_val,
             "x": x_matrix,
             "y": y_matrix,
-            "tour_distance": tour_distance,
+            "tour_distance": distance_values,
             "max_dist": max_dist_val
         }
     except gp.GurobiError as e:
@@ -256,7 +263,7 @@ def extract_solution(model, m, n, x, y, distance, max_dist):
 
 
 if __name__ == "__main__":
-    for i in range(1,11):
+    for i in range(3,4):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"Instance: {file_path}")
         m, n, l, s, D, origin = read_input(file_path)
