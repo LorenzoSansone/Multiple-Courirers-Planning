@@ -58,7 +58,10 @@ def plot_couriers_routes(instance_file):
 
     # The depot is at index n (the last index in coordinates)
     origin_coord = coordinates[-1]
-    coordinates = np.vstack([coordinates[:-1], origin_coord])  # Add origin back to the coordinates
+    
+    # Translate all coordinates so the origin is at (0,0)
+    coordinates -= origin_coord
+    origin_coord = np.array([0, 0])  # Set the origin to (0,0)
 
     # Step 4: Create the plot
     plt.figure(figsize=(12, 12))
