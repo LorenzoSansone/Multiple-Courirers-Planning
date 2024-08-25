@@ -2,7 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB, quicksum
 import json
 import os
-import time, math
+import math
 
 
 def read_input(file_path):
@@ -51,55 +51,9 @@ def picked_up_objects(x, m, n):
             if x[courier][item] == 1:
                 loaded_objects.append(item)
         print(loaded_objects)
-def print_routes(y_matrices, m, n):    
-    for courier in range(m):
-        print(f"Courier {courier}'s route:")
-        route = []
-        locations = len(y_matrices[courier])
-        current_location = n
-        
-        # Ensure the route starts from the origin
-        if all(y_matrices[courier][n][j] == 0 for j in range(locations)):
-            print("  No valid route found starting from the origin.")
-            continue
-        
-        # Traverse the route
-        visited_locations = set()
-        visited_locations.add(current_location)
-        while True:
-            next_location = None
-            
-            # Find the next location to travel to
-            for j2 in range(locations):
-                if y_matrices[courier][current_location][j2] == 1 and j2 not in visited_locations:
-                    next_location = j2
-                    break
 
-            # If no next location is found or we return to origin, end the route
-            if next_location is None or (next_location == origin and current_location == origin):
-                if current_location != origin:
-                    route.append((current_location, origin))
-                break
-
-            # Add the path to the route and update current_location
-            route.append((current_location, next_location))
-            visited_locations.add(next_location)
-            current_location = next_location
-        
-        # Print the route with (origin) for the origin location
-        if route:
-            for (from_loc, to_loc) in route:
-                from_str = "(origin)" if from_loc == origin else f"{from_loc}"
-                to_str = "(origin)" if to_loc == origin else f"{to_loc}"
-                print(f"  From location {from_str} to location {to_str}")
-        else:
-            print("  No valid route found.")
-
-def save_solution(solution, input_file):
-    # Extract the instance number from the input file name
+def save_solution(solution, input_file, m, n):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
-
-    # Check if a solution was found
     if solution['objective'] is None:
         solution_dict = {
             "gurobi": {
@@ -116,31 +70,38 @@ def save_solution(solution, input_file):
                 "time": math.floor(model.Runtime),  # Time taken by the optimization
                 "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
                 "obj": solution['max_dist'],  # The objective value (max distance)
-                "sol": []  # List of lists representing the solution (picked-up items)
+                "sol": []  # List of lists representing the solution (routes)
             }
         }
 
-        # Populate the "sol" field with the items picked up by each courier
         for courier in range(m):
-            items_picked = [item + 1 for item in range(n) if solution['x'][courier][item] == 1]
-            solution_dict["gurobi"]["sol"].append(items_picked)
+            route = []
+            current_location = n  # Start at the origin (assuming last location is the origin)
+            
+            while True:
+                next_location = None
+                for j2 in range(n+1):
+                    if solution['y'][courier][current_location][j2] == 1:
+                        next_location = j2
+                        break
 
-    # Create the directory if it doesn't exist
+                if next_location is None or next_location == n:
+                    break  # No further movement or return to origin
+
+                route.append(next_location + 1) 
+                current_location = next_location
+            
+            solution_dict["gurobi"]["sol"].append(route)
+
     output_dir = "res/MIP"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-
-    # Define the output file path
     output_file = os.path.join(output_dir, f"{instance_number}.json")
-
-    # Save the solution to a JSON file
     with open(output_file, 'w') as outfile:
         json.dump(solution_dict, outfile, indent=4)
 
     print(f"Solution saved to {output_file}")
-
-
-
+    return output_file
 def create_mcp_model(m, n, l, s, D, locations):
     model = gp.Model("MCP")
     # Variables
@@ -150,7 +111,6 @@ def create_mcp_model(m, n, l, s, D, locations):
     max_distance = model.addVar(vtype=GRB.INTEGER, name="max_distance")  # Maximum distance among couriers
     # Add variables for subtour elimination
     u = model.addVars(m, n, vtype=GRB.CONTINUOUS, name="u")
- 
     # Load constraints
     for i in range(m):
         model.addConstr(quicksum(x[i, j] * s[j] for j in range(n))  <= l[i])
@@ -190,17 +150,17 @@ def create_mcp_model(m, n, l, s, D, locations):
      #       model.addConstr(quicksum(y[i, j, k] for k in range(n)) <= x[i, j] * n)
     # Flow conservation constraints
     for i in range(m):  # for each courier
-        for j in range(1, n):  # for each location, excluding the origin
+        for j in range(1, ):  # for each location, excluding the origin
             # If the courier arrives at location j
             model.addConstr(quicksum(y[i, k, j] for k in range(locations)) ==
                             quicksum(y[i, j, k] for k in range(locations)))
 
     # Subtour elimination constraints
     for i in range(m):  # for each courier
-        for j in range(1, n):  # for each location, excluding the origin
-            for k in range(1, n):
-                if j != k:
-                    model.addConstr(u[i, j] - u[i, k] + (n - 1) * y[i, j, k] <= n - 2)
+        for j in range(0, n):  # for each location, excluding the origin
+            for k in range(0, n):
+               if j != k:
+                   model.addConstr(u[i, j] - u[i, k] + (n - 1) * y[i, j, k] <= n - 2)
 
     # Set bounds for u variables
     for i in range(m):
@@ -212,18 +172,16 @@ def create_mcp_model(m, n, l, s, D, locations):
         model.addConstr(
             Distance[i] ==
             quicksum(
-                D[j1][j2] * y[i, j1, j2]
+                y[i, j1, j2] * D[j1][j2]
                 for j1 in range(locations)
                 for j2 in range(locations)
             )
         )
-        print(f"Distance constraint {i}: Distance[{i}] = quicksum(D[j1][j2] * y[{i}, j1, j2])")
     # Max distance objective
     for i in Distance:
         model.addConstr(max_distance >= Distance[i])
     model.setObjective(max_distance, GRB.MINIMIZE)
     return model, x, y, Distance, max_distance
-
 
 def extract_solution(model, m, n, x, y, distance, max_dist):
     model.Params.MIPGap = 0.05    # 5% gap on time limit
@@ -232,7 +190,7 @@ def extract_solution(model, m, n, x, y, distance, max_dist):
     
     # Check if the model was stopped due to time limit or other reasons
     if model.status == GRB.OPTIMAL:
-        print("Optimal solution found.")
+        print("Optimal solution found.") 
     elif model.status == GRB.TIME_LIMIT:
         print("Time limit reached. Best feasible solution obtained.")
     elif model.status == GRB.INFEASIBLE:
@@ -261,15 +219,74 @@ def extract_solution(model, m, n, x, y, distance, max_dist):
         print(f"Error retrieving solution: {e}")
         return None
 
+def distances_check(D, y_matrix):
+    for courier_index in range(len(y_matrix)):
+        route_distances = []
+        total_distance = 0
+        current_location = len(D) - 1  # Start from origin, assuming it's the last index
+
+        while True:
+            next_location = None
+            for j2 in range(len(y_matrix[courier_index][current_location])):
+                if y_matrix[courier_index][current_location][j2] == 1:
+                    next_location = j2
+                    break
+            
+            if next_location is None or next_location == len(D) - 1:
+                break  # No further movement or return to origin
+
+            # Calculate the distance between the current location and the next location
+            distance = D[current_location][next_location]
+            route_distances.append(distance)
+            total_distance += distance
+
+            # Move to the next location
+            current_location = next_location
+
+        # Add the distance back to the origin
+        if current_location != len(D) - 1:
+            distance_back_to_origin = D[current_location][len(D) - 1]
+            route_distances.append(distance_back_to_origin)
+            total_distance += distance_back_to_origin
+
+        # Prepare the distance string
+        distance_str = " + ".join(map(str, route_distances)) + f" = {total_distance}"
+        output_str = f"Courier {courier_index}: {distance_str}"
+        
+        # Print to the console
+        print(output_str)
+
+def print_routes_from_solution(solution):
+    y = solution['y']
+    n = len(y[0]) - 1
+    for courier_index in range(len(y)):
+        route = []
+        current_location = n  # Start from origin (assuming the origin is at index 'n')
+        
+        while True:
+            route.append(current_location + 1) #correct indexing
+            next_location = None
+            for j2 in range(len(y[courier_index][current_location])):
+                if y[courier_index][current_location][j2] == 1:
+                    next_location = j2
+                    break
+            
+            if next_location == n or next_location is None:
+                break  
+            else:
+                current_location = next_location
+        
+        route.append(n + 1)
+        
+        print(f"Courier {courier_index}: {' -> '.join(map(str, route))}")
 
 if __name__ == "__main__":
-    for i in range(3,4):
+    for i in range(14,15):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"Instance: {file_path}")
         m, n, l, s, D, origin = read_input(file_path)
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
         solution = extract_solution(model, m, n, x, y, distance, max_dist)
-
         if solution is None:
             # No solution found, save a default solution structure
             solution = {
@@ -280,20 +297,23 @@ if __name__ == "__main__":
                 "max_dist": None
             }
 
-        # Print picked up objects
-        picked_objects = picked_up_objects(solution['x'], m, n)
-
-        # Check load sizes
-        calculated_load_sizes = check_load_sizes(solution['x'], s, m, n, l)
-        
-        # Check if every courier starts and ends at the origin
-        all_start_at_origin = check_if_every_courier_starts_at_origin(solution['y'], n, m)
-        all_end_at_origin = check_if_every_courier_ends_at_origin(solution['y'], n, m)
-        print(f"All couriers start at the origin: {all_start_at_origin}")
-        print(f"All couriers end at the origin: {all_end_at_origin}")
         instance_number = file_path.split('/')[-1].split('.')[0].replace('inst', '')
-        save_solution(solution, f"inst{instance_number}.dat")
+        output_file = save_solution(solution, f"inst{instance_number}.dat", m, n)
 
+        # Other useful debugging stuff below
+        #
+        #
+        # print (f"x = {solution['x']}")
+        # print(f"y = {solution['y']}")
+        # Print picked up objects
+        # picked_objects = picked_up_objects(solution['x'], m, n)
+        # Check load sizes
+        # calculated_load_sizes = check_load_sizes(solution['x'], s, m, n, l)
+        # all_start_at_origin = check_if_every_courier_starts_at_origin(solution['y'], n, m)
+        # all_end_at_origin = check_if_every_courier_ends_at_origin(solution['y'], n, m)
+        # print(f"All couriers start at the origin: {all_start_at_origin}")
+        # print(f"All couriers end at the origin: {all_end_at_origin}")
         # Print routes
-        print_routes(solution['y'], m, n)
-
+        print_routes_from_solution(solution)
+        #Print distances
+        distances_check(D, solution['y'])

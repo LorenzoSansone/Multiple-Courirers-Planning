@@ -10,11 +10,11 @@ def generate_instance(file_path):
     # read couriers and items
     num_couriers = random.randint(2, 10)  
     num_items = random.randint(num_couriers, num_couriers + 5)  # At least as many items as couriers
-    # read l_i
+    #  l_i
     capacities = [random.randint(5, 20) for i in range(num_couriers)]
-    # read sizes
+    #  sizes
     sizes = [random.randint(1, 10) for i in range(num_items)]
-    # read distance matrix (between 0 and 20)
+    # distance matrix 
     distance_matrix = []
     for i in range(num_items + 1):  # n+1 rows (including the origin)
         row = []
