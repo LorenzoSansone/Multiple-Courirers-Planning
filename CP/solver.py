@@ -119,7 +119,7 @@ def read_instance(file_path):
         s = parse_value(lines[3].split('=')[1])
         for line in lines[4:]:
             row = []
-            print(line.split(','))
+            #print(line.split(','))
             for el in line.split(','):
                 r =re.findall(r'\b\d+\b', el)
                 for c in r: 
@@ -127,6 +127,13 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
+for i in range(10):
+    m, n, l, s, distances = read_instance("../instances_dnz/inst0" + str(i) + ".dzn")
+    print(l)
+    print(min(l),min(s))
+for i in range(10,22):
+    m, n, l, s, distances = read_instance("../instances_dnz/inst" + str(i) + ".dzn")
+    print(min(l)>min(s))
 
-res = solve_mcp("./CP.mzn","./Formatted_Instances/inst01.dzn")
-print(res)
+    #res = solve_mcp("./CP.mzn","../instances_dnz/ins" + i + ".dzn")
+    #print(res)
