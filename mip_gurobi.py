@@ -5,6 +5,9 @@ import os
 import math
 
 
+
+
+
 def read_input(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -133,21 +136,7 @@ def create_mcp_model(m, n, l, s, D, locations):
         for j in range(n):
             model.addConstr(quicksum(y[i,j,k] for k in range(locations)) == x[i,j])
             model.addConstr(quicksum(y[i,k,j] for k in range(locations)) == x[i,j])
-    
-    # Ensure that if a courier picks up an item, they must visit the item's location and leave it (maybe this is too much?)
-    #for i in range(m):
-    #    for j in range(n):
-            # If courier i delivers item j, they must travel to location j from some other location
-     #       model.addConstr(quicksum(y[i, k, j] for k in range(locations)) >= x[i, j])
-            # If courier i delivers item j, they must leave location j to go to some other location
-     #       model.addConstr(quicksum(y[i, j, k] for k in range(locations)) >= x[i, j])
-    # Ensure that if a courier does not pick up an item, they cannot visit that item's location
-    #for i in range(m):
-    #    for j in range(n):
-            # If courier i does not deliver item j, they should not travel to location j from any other location
-     #       model.addConstr(quicksum(y[i, k, j] for k in range(n)) <= x[i, j] * n)
-            # If courier i does not deliver item j, they should not leave location j to any other location
-     #       model.addConstr(quicksum(y[i, j, k] for k in range(n)) <= x[i, j] * n)
+
     # Flow conservation constraints
     for i in range(m):  # for each courier
         for j in range(1, ):  # for each location, excluding the origin
@@ -281,13 +270,14 @@ def print_routes_from_solution(solution):
         print(f"Courier {courier_index}: {' -> '.join(map(str, route))}")
 
 if __name__ == "__main__":
-    for i in range(14,15):
+    OBJ_THRESHOLD = 8000.0
+    for i in range(1,22):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"Instance: {file_path}")
         m, n, l, s, D, origin = read_input(file_path)
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
         solution = extract_solution(model, m, n, x, y, distance, max_dist)
-        if solution is None:
+        if solution is None or solution['objective'] > OBJ_THRESHOLD:
             # No solution found, save a default solution structure
             solution = {
                 "objective": None,
@@ -314,6 +304,6 @@ if __name__ == "__main__":
         # print(f"All couriers start at the origin: {all_start_at_origin}")
         # print(f"All couriers end at the origin: {all_end_at_origin}")
         # Print routes
-        print_routes_from_solution(solution)
+        #print_routes_from_solution(solution)
         #Print distances
-        distances_check(D, solution['y'])
+        #distances_check(D, solution['y'])

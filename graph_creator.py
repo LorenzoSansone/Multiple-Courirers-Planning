@@ -108,5 +108,5 @@ def plot_couriers_routes(instance_file):
     plt.show()
 
 # Example usage:
-instance_file = 'instances/inst04.dat'
+instance_file = 'instances/inst23.dat'
 plot_couriers_routes(instance_file)
