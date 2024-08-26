@@ -1,0 +1,7 @@
+1)Disuguaglianza triangolare
+2)La capacità del corriere con minore capacità è sempre maggiore dell'item con il peso minore: quindi tutti hanno la potenzialità di prendere almeno un item. Tutti devono prendere qualcosa?
+3)Lower bound objective function: l'oggetto più vicino
+4)Upper bound objective function: il caso in cui un corriere porta tutti gli items consegnandoli in ordine da 1 a n
+
+PREPROCESSING
+Sort in descending order s (symmetry breaking constraint)
