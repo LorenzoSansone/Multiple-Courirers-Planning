@@ -8,9 +8,6 @@ from minizinc import Instance, Model, Solver
 import minizinc
 import re
 
-import nest_asyncio
-
-
 
 
 # Function to parse the value after the equal sign
@@ -128,11 +125,10 @@ def solve_mcp(custom_model, file_path):
   #instance["o"] = origin_location
   # Solve the problem
   
-
   result = instance.solve()
 
   return result
 
-nest_asyncio.apply()
+
 res = solve_mcp("./CP.mzn","../instances_dnz/inst01.dnz")
 print(res)
