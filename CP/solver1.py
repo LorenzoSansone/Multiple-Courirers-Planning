@@ -5,34 +5,114 @@ Created on Tue Aug 20 19:41:55 2024
 @author: 32057
 """
 
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Aug 17 22:39:52 2024
+
+@author: 32057
+"""
 from minizinc import Instance, Model, Solver
-
-# Load n-Queens model from file
-model = Model("./CP.mzn")
-# Find the MiniZinc solver configuration for Gecode
-gecode = Solver.lookup("gecode")
-# Create an Instance of the n-Queens model for Gecode
-instance = Instance(gecode, model)
+import minizinc
+import re
+import os
 
 
-m = "3;"
-n = "7;"
-l = "[15, 10, 7];"
-s = "[3, 2, 6, 8, 5, 4, 4];"
-D ="[|0, 3, 3, 6, 5, 6, 6, 2 | 3, 0, 4, 3, 4, 7, 7, 3 | 3, 4, 0, 7, 6, 3, 5, 3 | 6, 3, 7, 0, 3, 6, 6, 4 | 5, 4, 6, 3, 0, 3, 3, 3 | 6, 7, 3, 6, 3, 0, 2, 4 | 6, 7, 5, 6, 3, 2, 0, 4 | 2, 3, 3, 4, 3, 4, 4, 0 |];"
-LB = "0;"
-UB = "50;"
 
-instance["m"] = m
-instance["n"] = n
-instance["l"] = l
-instance["s"] = s
-instance["D"] = D
-instance["LB"] = LB
-instance["UB"] = UB
 
-# Assign 4 to n
+# Function to parse the value after the equal sign
+def parse_value(value):
+    return value.strip().strip(';')
+    
+#read the instances ".dnz"
+def read_instance(file_path):
+    # Initialize data structures
+    m = None
+    n = None
+    l = []
+    s = []
+    distances = []
+    data = []
+    # Read the data file
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        m = int(parse_value(lines[0].split('=')[1]))
+        n = int(parse_value(lines[1].split('=')[1]))
+        
+        for c in re.findall(r'\b\d+\b', parse_value(lines[2].split('=')[1])):
+            l.append(int(c))
+        
+        for c in re.findall(r'\b\d+\b', parse_value(lines[3].split('=')[1])):
+            s.append(int(c))
+    
+        for line in lines[4:]:
+            row = []
+            #print(line.split(','))
+            for el in line.split(','):
+                r =re.findall(r'\b\d+\b', el)
+                for c in r: 
+                    row.append(int(c))
+            distances.append(row)
+    return m, n, l, s, distances
 
-result = instance.solve()
-# Output the array q
-print(result["x"])
+def solve_mcp(custom_model, file_path):
+  m, n, l, s, D = read_instance(file_path)
+  """
+  m = "3;"
+  n = "7;"
+  l = "[15, 10, 7];"
+  s = "[3, 2, 6, 8, 5, 4, 4];"
+  D ="[|0, 3, 3, 6, 5, 6, 6, 2 | 3, 0, 4, 3, 4, 7, 7, 3 | 3, 4, 0, 7, 6, 3, 5, 3 | 6, 3, 7, 0, 3, 6, 6, 4 | 5, 4, 6, 3, 0, 3, 3, 3 | 6, 7, 3, 6, 3, 0, 2, 4 | 6, 7, 5, 6, 3, 2, 0, 4 | 2, 3, 3, 4, 3, 4, 4, 0 |];"
+  LB = "0;"
+  UB = "50;"
+  """
+  LB = 0
+  UB = 50
+  # Load model
+  model = minizinc.Model(custom_model)
+
+  gecode = minizinc.Solver.lookup("gecode")
+  # Create minizinc instance
+  instance = minizinc.Instance(gecode, model)
+  instance["m"] = m
+  instance["n"] = n
+  instance["l"] = l
+  instance["s"] = s
+  instance["D"] = D
+  instance["LB"] = LB
+  instance["UB"] = UB
+  #instance["o"] = origin_location
+  # Solve the problem
+  
+  result = instance.solve()
+
+  return result
+
+if __name__ == "__main__":    
+    model_name = "CP.mzn"
+    data_name = "inst01.dzn"
+    
+    model_path = "./" + model_name
+    data_path = "../instances_dnz/" + data_name
+    
+    #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
+    #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
+    
+    res = solve_mcp(model_path, data_path)
+    print(res)
+
+"""
+m = 3
+n = 7
+l = [15, 10, 7]
+s = [3, 2, 6, 8, 5, 4, 4]
+D =[[0, 3, 3, 6, 5, 6, 6, 2 ],
+    [ 3, 0, 4, 3, 4, 7, 7, 3 ],
+    [ 3, 4, 0, 7, 6, 3, 5, 3 ],
+    [ 6, 3, 7, 0, 3, 6, 6, 4 ],
+    [ 5, 4, 6, 3, 0, 3, 3, 3 ],
+    [ 6, 7, 3, 6, 3, 0, 2, 4 ],
+    [ 6, 7, 5, 6, 3, 2, 0, 4 ],
+    [ 2, 3, 3, 4, 3, 4, 4, 0 ]]
+LB = 0
+UB = 50
+"""
