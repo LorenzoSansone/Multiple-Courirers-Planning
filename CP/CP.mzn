@@ -12,12 +12,13 @@ array[1..n+1, 1..n+1] of int: D; % distance matrix
 
 int: LB; %lower bound
 int: UB; %upper bound
-
+int: min_dist;
+int: max_dist;
 var LB..UB: cost;
 
 % DECISION VARIABLES
 % y[i] is the total distance travelled by courier i
-array[1..m] of var int: y;
+array[1..m] of var min_dist..max_dist: y;
 
 % x[i] contains the index j of the courier assigned to item i. 
 array[1..n] of var 1..m: x; 
@@ -25,10 +26,26 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 0..n+1: path;
 
-%array[1..m] of var 0..15: numpacks;
+
+% load[i] is the total load of courier i
+array[1..m] of var 0..80: load;
+
+% numpacks[i] is the number of packages delivered by courier i
+array[1..m] of var 0..10: numpacks;
+
+
 
 %CONSTRAINTS
-
+%constraint
+%    forall(i in 1..m)(
+%        load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 1..n+2]) /\
+%        load[i] <= l[i] 
+%    );
+% constraint on bins
+%constraint
+%    forall(i in 1..m)(
+%        count_eq(x, i, numpacks[i])
+%    );
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
 
@@ -40,7 +57,8 @@ constraint forall(i in 1..m)(
 );
 
 %C3: A package (is carried by only one courier only one time) and is delivered one time
-constraint all_different(i in 1..m, j in 2..n+1 where path[i,j] != n+1)(path[i,j]); 
+%constraint all_different(i in 1..m, j in 2..n+1 where path[i,j] != n+1)(path[i,j]); 
+constraint alldifferent_except(path, {n+1});
 
 %C4 - Couriers Start and End at the Deposit
 constraint forall(i in 1..m) (
@@ -52,11 +70,13 @@ constraint forall(j in 1..n)(
             path[x[j], i] == j
         )
     );
+
+
    
 %C6 - Couriers can't go back to the base to take other packages
-constraint forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);
+%constraint forall(i in 1..m)(
+%    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
+%);
 
 %%%%%%%% Objective function
 constraint
