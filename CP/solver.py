@@ -7,71 +7,13 @@ Created on Sat Aug 17 22:39:52 2024
 from minizinc import Instance, Model, Solver
 import minizinc
 import re
-
-import nest_asyncio
-
-
-
+import os
 
 # Function to parse the value after the equal sign
 def parse_value(value):
     return value.strip().strip(';')
     
-"""
-def read_instance1(file_path):
-    # Initialize data structures
-    m = None
-    n = None
-    l = []
-    s = []
-    distances = []
-    data = []
-    # Read the data file
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-        for line in lines:
-            line = line.strip()
-            data.append(line)
-            if line.startswith('m'):
-                m = int(parse_value(line.split('=')[1]))
-            elif line.startswith('n'):
-                n = int(parse_value(line.split('=')[1]))
-            elif line.startswith('l'):
-                l = parse_value(line.split('=')[1])
-            elif line.startswith('s'):
-                s = parse_value(line.split('=')[1])
-            elif line.startswith('D') or line.startswith('|'):
-                # Start reading the distances array
-
-                #distance_lines = distance_lines.strip(" ")[1:]
-                distance_lines = line.split('=')[1]
-                row = []
-                for c in distance_lines:
-                    if c.isnumeric():
-                        row.append(int(c))
-
-                distances.append(row)
-                for line in lines:
-                    print("line")
-                    
-                    #row = parse_value(line.split('=')[1])
-                    #print(f"row:{row}{type(row)}")
-                
-                for i in range(n+1):
-                    if not distance_lines:
-                        distance_lines = next(file).strip()
-                    row = parse_value(distance_lines.split('],')[0] + ']')
-                    distances.append(row)
-                    distance_lines = next(file).strip()
-    
-    # Display parsed data
-    print("m =", m)
-    print("n =", n)
-    print("l =", l)
-    print("s =", s)
-    print("distances =", distances)
-    return m, n, l, s, distances
-"""
+#read the instances ".dnz"
 def read_instance(file_path):
     # Initialize data structures
     m = None
@@ -112,6 +54,25 @@ def solve_mcp(custom_model, file_path):
   D ="[|0, 3, 3, 6, 5, 6, 6, 2 | 3, 0, 4, 3, 4, 7, 7, 3 | 3, 4, 0, 7, 6, 3, 5, 3 | 6, 3, 7, 0, 3, 6, 6, 4 | 5, 4, 6, 3, 0, 3, 3, 3 | 6, 7, 3, 6, 3, 0, 2, 4 | 6, 7, 5, 6, 3, 2, 0, 4 | 2, 3, 3, 4, 3, 4, 4, 0 |];"
   LB = "0;"
   UB = "50;"
+
+  
+  """
+  m = 3
+    n = 7
+    l = [15, 10, 7]
+    s = [3, 2, 6, 8, 5, 4, 4]
+    D =[[0, 3, 3, 6, 5, 6, 6, 2 ],
+        [ 3, 0, 4, 3, 4, 7, 7, 3 ],
+        [ 3, 4, 0, 7, 6, 3, 5, 3 ],
+        [ 6, 3, 7, 0, 3, 6, 6, 4 ],
+        [ 5, 4, 6, 3, 0, 3, 3, 3 ],
+        [ 6, 7, 3, 6, 3, 0, 2, 4 ],
+        [ 6, 7, 5, 6, 3, 2, 0, 4 ],
+        [ 2, 3, 3, 4, 3, 4, 4, 0 ]]
+    LB = 0
+    UB = 50
+  """
+
   # Load model
   model = minizinc.Model(custom_model)
 
@@ -128,11 +89,19 @@ def solve_mcp(custom_model, file_path):
   #instance["o"] = origin_location
   # Solve the problem
   
-
   result = instance.solve()
 
   return result
 
-nest_asyncio.apply()
-res = solve_mcp("./CP.mzn","../instances_dnz/inst01.dnz")
-print(res)
+if __name__ == "__main__":    
+    model_name = "CP.mzn"
+    data_name = "inst01.dzn"
+    
+    model_path = "./" + model_name
+    data_path = "../instances_dnz/" + data_name
+    
+    #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
+    #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
+    
+    res = solve_mcp(model_path, data_path)
+    print(res)
