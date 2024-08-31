@@ -1,5 +1,5 @@
 {
-    "gurobi": {
+    "glucose3": {
         "time": null,
         "optimal": true,
         "obj": null,

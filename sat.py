@@ -5,7 +5,7 @@ import os
 import utils
 def save_solution(sat_model, m, n, output_file):
     solution = {
-        "gurobi": {
+        "glucose3": {
             "time": None,  # SAT does not have a time metric like Gurobi's runtime
             "optimal": True,  # Assuming a solution was found
             "obj": None,  # SAT does not directly optimize an objective
@@ -18,7 +18,7 @@ def save_solution(sat_model, m, n, output_file):
         for j in range(n):
             if sat_model[i * n + j] > 0:  # If the literal is positive, it's part of the solution
                 route.append(j + 1)  # Convert 0-based index to 1-based index
-        solution["gurobi"]["sol"].append(route)
+        solution["glucose3"]["sol"].append(route)
 
     output_dir = "res/SAT"
     if not os.path.exists(output_dir):
@@ -77,7 +77,6 @@ if __name__ == "__main__":
         file_path = f'instances/inst{i:02d}.dat'
         print(f"################\nInstance: {file_path}")
 
-        # Here, you would read the problem instance using your existing function
         m, n, l, s, D, locations = utils.read_input(file_path)
 
         formula = create_sat_problem(m, n, l, s, D, locations)
