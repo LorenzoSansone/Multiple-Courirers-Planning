@@ -8,6 +8,9 @@ from minizinc import Instance, Model, Solver
 import minizinc
 import re
 import os
+import asyncio
+import nest_asyncio
+
 
 # Function to parse the value after the equal sign
 def parse_value(value):
@@ -44,7 +47,7 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
-def solve_mcp(custom_model, file_path):
+async def solve_mcp(custom_model, file_path):
   #m, n, l, s, D = read_instance(file_path)
   
   m = "3;"
@@ -89,7 +92,7 @@ def solve_mcp(custom_model, file_path):
   #instance["o"] = origin_location
   # Solve the problem
   
-  result = instance.solve()
+  result = await instance.solve_async()
 
   return result
 
@@ -99,9 +102,9 @@ if __name__ == "__main__":
     
     model_path = "./" + model_name
     data_path = "../instances_dnz/" + data_name
-    
+  
     #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
     #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
-    
-    res = solve_mcp(model_path, data_path)
+   # nest_asyncio.apply()
+    res = asyncio.run(solve_mcp(model_path, data_path))
     print(res)

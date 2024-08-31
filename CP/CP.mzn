@@ -24,14 +24,14 @@ array[1..m] of var min_dist..max_dist: y;
 array[1..n] of var 1..m: x; 
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
-array[1..m, 1..n+2] of var 0..n+1: path;
+array[1..m, 1..n+2] of var 1..n+1: path;
 
 
 % load[i] is the total load of courier i
-array[1..m] of var 0..80: load;
+%array[1..m] of var 0..80: load;
 
 % numpacks[i] is the number of packages delivered by courier i
-array[1..m] of var 0..10: numpacks;
+%array[1..m] of var 0..10: numpacks;
 
 
 
@@ -64,6 +64,7 @@ constraint alldifferent_except(path, {n+1});
 constraint forall(i in 1..m) (
   path[i,1] = n+1 /\ path[i,n+2] = n+1
 );
+
 %C5 - Checks if all the packages that are assigned to a courier are delivered by him
 constraint forall(j in 1..n)(
         exists(i in 1..n+1)(
