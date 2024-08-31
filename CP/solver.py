@@ -105,6 +105,6 @@ if __name__ == "__main__":
   
     #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
     #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
-   # nest_asyncio.apply()
+    nest_asyncio.apply()
     res = asyncio.run(solve_mcp(model_path, data_path))
     print(res)
