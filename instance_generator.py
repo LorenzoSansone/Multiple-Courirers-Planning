@@ -8,8 +8,8 @@ import random
 import os
 def generate_instance(file_path):
     # read couriers and items
-    num_couriers = random.randint(2, 50)  
-    num_items = random.randint(num_couriers, 50)  # At least as many items as couriers
+    num_couriers = random.randint(1, 1)  
+    num_items = 20  # At least as many items as couriers
     #  l_i
     capacities = [random.randint(5, 200) for i in range(num_couriers)]
     #  sizes
