@@ -196,7 +196,7 @@ def debug(x,y,m,n,s,l,D):
 if __name__ == "__main__":
     for i in range(1,10):
         file_path = f'instances/inst{i:02d}.dat'
-        print(f"################\nInstance: {file_path}")
+        print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
         solution = extract_solution(model, m, n, x, y, distance, max_dist)
