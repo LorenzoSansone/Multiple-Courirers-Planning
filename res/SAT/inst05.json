@@ -1,0 +1,16 @@
+{
+    "gurobi": {
+        "time": null,
+        "optimal": true,
+        "obj": null,
+        "sol": [
+            [
+                2,
+                3
+            ],
+            [
+                1
+            ]
+        ]
+    }
+}
