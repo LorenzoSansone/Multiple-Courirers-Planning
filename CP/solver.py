@@ -49,7 +49,7 @@ def read_instance(file_path):
 
 async def solve_mcp(custom_model, file_path):
   #m, n, l, s, D = read_instance(file_path)
-  
+  """
   m = "3;"
   n = "7;"
   l = "[15, 10, 7];"
@@ -61,10 +61,10 @@ async def solve_mcp(custom_model, file_path):
   
   """
   m = 3
-    n = 7
-    l = [15, 10, 7]
-    s = [3, 2, 6, 8, 5, 4, 4]
-    D =[[0, 3, 3, 6, 5, 6, 6, 2 ],
+  n = 7
+  l = [15, 10, 7]
+  s = [3, 2, 6, 8, 5, 4, 4]
+  D =[[0, 3, 3, 6, 5, 6, 6, 2 ],
         [ 3, 0, 4, 3, 4, 7, 7, 3 ],
         [ 3, 4, 0, 7, 6, 3, 5, 3 ],
         [ 6, 3, 7, 0, 3, 6, 6, 4 ],
@@ -72,9 +72,11 @@ async def solve_mcp(custom_model, file_path):
         [ 6, 7, 3, 6, 3, 0, 2, 4 ],
         [ 6, 7, 5, 6, 3, 2, 0, 4 ],
         [ 2, 3, 3, 4, 3, 4, 4, 0 ]]
-    LB = 0
-    UB = 50
-  """
+  LB = 0
+  UB = 50
+  min_dist = 0
+  max_dist = 1000
+  
 
   # Load model
   model = minizinc.Model(custom_model)
@@ -89,6 +91,9 @@ async def solve_mcp(custom_model, file_path):
   instance["D"] = D
   instance["LB"] = LB
   instance["UB"] = UB
+  instance["min_dist"] = UB
+  instance["max_dist"] = UB
+  
   #instance["o"] = origin_location
   # Solve the problem
   
