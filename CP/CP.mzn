@@ -33,19 +33,14 @@ array[1..m, 1..n+2] of var 1..n+1: path;
 % numpacks[i] is the number of packages delivered by courier i
 %array[1..m] of var 0..10: numpacks;
 
-
-
 %CONSTRAINTS
-%constraint
-%    forall(i in 1..m)(
-%        load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 1..n+2]) /\
-%        load[i] <= l[i] 
-%    );
+
 % constraint on bins
 %constraint
 %    forall(i in 1..m)(
 %        count_eq(x, i, numpacks[i])
 %    );
+
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
 
@@ -72,8 +67,6 @@ constraint forall(j in 1..n)(
         )
     );
 
-
-   
 %C6 - Couriers can't go back to the base to take other packages
 %constraint forall(i in 1..m)(
 %    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
