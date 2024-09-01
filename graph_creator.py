@@ -9,7 +9,7 @@ def ensure_symmetric(matrix):
     symmetric_matrix = (matrix + matrix.T) / 2
     return symmetric_matrix
 
-def plot_couriers_routes(instance_file):
+def plot_couriers_routes(instance_file, ax, SOL):
     # Extract the base name and instance number from the input file name
     base_name = os.path.basename(instance_file)
     instance_number = base_name.replace('.dat', '')  # Remove the .dat suffix
@@ -24,7 +24,7 @@ def plot_couriers_routes(instance_file):
         json_file_name = f'{instance_number}.json'
     
     # Define paths for the JSON file
-    json_file_path = f'res/MIP/{json_file_name}'
+    json_file_path = f'res/{SOL}/{json_file_name}'
     
     # Step 1: Read the input instance data
     with open(instance_file, 'r') as file:
@@ -63,17 +63,16 @@ def plot_couriers_routes(instance_file):
     coordinates -= origin_coord
     origin_coord = np.array([0, 0])  # Set the origin to (0,0)
 
-    # Step 4: Create the plot
-    plt.figure(figsize=(12, 12))
+    # Step 4: Create the plot in the provided subplot axis (`ax`)
 
     # Plot the depot
-    plt.scatter(*origin_coord, color='red', label='Depot (Origin)', s=100, edgecolor='black')
-    plt.text(*origin_coord, 'Origin', fontsize=12, ha='right')
+    ax.scatter(*origin_coord, color='red', label='Depot (Origin)', s=100, edgecolor='black')
+    ax.text(*origin_coord, 'Origin', fontsize=12, ha='right')
 
     # Plot the locations of items
     for i in range(n):
-        plt.scatter(*coordinates[i], color='blue', s=100, edgecolor='black')
-        plt.text(coordinates[i][0], coordinates[i][1], f'{i + 1}', fontsize=12, ha='right')
+        ax.scatter(*coordinates[i], color='blue', s=100, edgecolor='black')
+        ax.text(coordinates[i][0], coordinates[i][1], f'{i + 1}', fontsize=12, ha='right')
 
     # Plot the routes for each courier
     colors = plt.cm.get_cmap('tab10', m)  # Colormap for different couriers
@@ -87,7 +86,7 @@ def plot_couriers_routes(instance_file):
 
         # Plot the route with arrows
         for start, end in zip(route[:-1], route[1:]):
-            plt.annotate(
+            ax.annotate(
                 '', 
                 xy=end, 
                 xytext=start, 
@@ -96,17 +95,47 @@ def plot_couriers_routes(instance_file):
             )
         
         # Plot the route line
-        plt.plot(route[:, 0], route[:, 1], color=color, linestyle='-', linewidth=2, marker='o',
-                 label=f'Courier {courier_id}')
+        ax.plot(route[:, 0], route[:, 1], color=color, linestyle='-', linewidth=2, marker='o',
+                label=f'Courier {courier_id}')
         
-    # Step 5: Add labels and legends
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    plt.title(f'Couriers Routes Visualization\nObjective (Max Distance): {solution["obj"]}')
-    plt.legend()
-    plt.grid(True)
+    # Step 5: Add labels and legends to the subplot
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+    ax.set_title(f'Instance {instance_number}\nObjective (Max Distance): {solution["obj"]}')
+    ax.legend()
+    ax.grid(True)
+
+
+def visualize(instance_range, SOL):
+# Determine the grid size for subplots
+    n_instances = len(instance_range)
+    n_cols = 3
+    n_rows = (n_instances + n_cols - 1) // n_cols
+
+    # Create the subplots
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+
+    # Flatten the array of axes for easy indexing
+    axs = axs.flatten()
+
+    # Loop through the instances and plot each one
+    for i, instance_number in enumerate(instance_range):
+        instance_file = f'instances/inst{instance_number:02d}.dat'
+        plot_couriers_routes(instance_file, axs[i], SOL)
+
+    # Hide any empty subplots if there are any
+    for j in range(i + 1, len(axs)):
+        axs[j].set_visible(False)
+
+    # Adjust layout and display the combined plot
+    plt.tight_layout()
     plt.show()
 
-# Example usage:
-instance_file = 'instances/inst22.dat'
-plot_couriers_routes(instance_file)
+
+if __name__ == "__main__":
+    # Define the range of instances you want to plot
+    instance_range = range(1, 10)  # Example: plotting instances 1 to 4
+    SOL = "MIP" # adjust with type of solution to visualize
+    visualize(instance_range, SOL)
+
+    
