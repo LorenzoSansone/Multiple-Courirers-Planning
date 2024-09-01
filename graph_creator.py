@@ -107,13 +107,15 @@ def plot_couriers_routes(instance_file, ax, SOL):
 
 
 def visualize(instance_range, SOL):
-# Determine the grid size for subplots
+    # Determine the grid size for subplots
     n_instances = len(instance_range)
     n_cols = 3
     n_rows = (n_instances + n_cols - 1) // n_cols
 
     # Create the subplots
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+    fig.suptitle(f'Multiple Couriers Planning (MCP) Problem: Couriers Routes Visualization \nfor Instances {instance_range.start} to {instance_range.stop - 1}, \nsolver: {"gurobi (Mixed-Integer Linear)" if SOL=="MIP" else "Constraing Programming" if SOL == "CP" else "SAT" }',
+                 fontsize=16, fontweight='bold', y=0.98)
 
     # Flatten the array of axes for easy indexing
     axs = axs.flatten()
@@ -127,15 +129,14 @@ def visualize(instance_range, SOL):
     for j in range(i + 1, len(axs)):
         axs[j].set_visible(False)
 
-    # Adjust layout and display the combined plot
-    plt.tight_layout()
+    # Adjust layout and save the plot
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the rect to fit the title
+    plt.savefig('image.png')  # Save before showing
     plt.show()
-
+    return plt
 
 if __name__ == "__main__":
     # Define the range of instances you want to plot
-    instance_range = range(1, 10)  # Example: plotting instances 1 to 4
-    SOL = "MIP" # adjust with type of solution to visualize
+    instance_range = range(1, 22)  # Example: plotting instances 1 to 21
+    SOL = "MIP"  # Adjust with the type of solution to visualize
     visualize(instance_range, SOL)
-
-    
