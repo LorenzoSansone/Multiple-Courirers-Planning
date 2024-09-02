@@ -69,18 +69,20 @@ if __name__ == "__main__":
     print(f"Load couriers:{l}")
     print(f"Weight items:{s}")
     print(f"Sum weights{sum(s)}")
-    min_dist_dep = distances[n,0]
+# obj_lowerbound = max(i in ITEMS)(D[n+1,i] + D[i,n+1]);
+    min_dist_dep_list = []
+    min_dist_dep = 0
     max_dist_dep = distances[n,0]
     max_dist_all_pack = distances[n,0]
     for i in range(n):
         print(f"deposit -> items_{i+1} = {distances[n,i]}")
-        if min_dist_dep > distances[n,i]:
-            min_dist_dep = distances[n,i]
+        min_dist_dep_list.append(distances[n,i] + distances[i,n])
         if max_dist_dep < distances[n,i]:
             max_dist_dep = distances[n,i]
         
         #print(f"Load couriers:{l}")
         #print(f"Weight items:{s}")
+    min_dist_dep = max(min_dist_dep_list)
     print(f"min_dist={min_dist_dep}")
     print(f"max_dist={max_dist_dep}")
     for i in range(n):

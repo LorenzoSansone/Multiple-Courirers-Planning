@@ -9,7 +9,9 @@ int: n; %num items
 array[1..m] of int: l; % maximum load size for each courier
 array[1..n] of int: s; % size of each item
 array[1..n+1, 1..n+1] of int: D; % distance matrix
-
+set of int: ITEMS = 1..n;
+set of int: COURIERS = 1..m;
+set of int: D_SIZE = 1..n+1;
 int: LB; %lower bound
 int: UB; %upper bound
 int: min_dist;
@@ -71,14 +73,31 @@ constraint forall(j in 1..n)(
 %constraint forall(i in 1..m)(
 %    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
 %);
+%%%
 
+/*
+int: obj_lowerbound = max(i in ITEMS)(D[n+1,i] + D[i,n+1]);
+array[ITEMS] of int: max_dists = [max(j in ITEMS)(D[i,j]) | i in ITEMS];
+
+%array[ITEMS] of int: max_dists = sort([max(j in ITEMS)(D[i,j]) | i in ITEMS]);
+int: obj_upperbound = sum(i in m+1..n)(max_dists[i]) + max(j in ITEMS)(D[n+1,j]) + max(j in ITEMS)(D[j,n+1]);
+
+var obj_lowerbound..obj_upperbound: obj = max(i in COURIERS)(sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1]));
+*/
+
+%%%
 %%%%%%%% Objective function
+/*
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
     );
 
 constraint cost = max(y);
-
+*/
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, first_fail, indomain_min) minimize cost; 
+solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg
+/*
+output  [show(obj) ++ "\n"] ++
+        [show(obj_lowerbound)  ++ "\n"]  ++[ show(obj_upperbound) ++ "\n"];
+*/

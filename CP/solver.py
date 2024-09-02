@@ -47,7 +47,7 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
-async def solve_mcp(custom_model, file_path):
+def solve_mcp(custom_model, file_path):
   #m, n, l, s, D = read_instance(file_path)
   """
   m = "3;"
@@ -97,7 +97,7 @@ async def solve_mcp(custom_model, file_path):
   #instance["o"] = origin_location
   # Solve the problem
   
-  result = await instance.solve_async()
+  result = instance.solve()
 
   return result
 
