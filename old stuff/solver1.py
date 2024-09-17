@@ -62,16 +62,6 @@ if __name__ == "__main__":
     distances = np.array(distances)
     deposit = n 
     print(data_name)
-    """
-    print(f"{data_name}")
-    print(f"Couriers:{m}")
-    print(f"Items:{n}")
-    print(f"1)m < n {m<n}")
-    print(f"2)min(l(m))> min(w(s)){min(l)> min(s)}")
-    print(f"Load couriers:{l}")
-    print(f"Weight items:{s}")
-    print(f"Sum weights{sum(s)}")
-    """
 # obj_lowerbound = max(i in ITEMS)(D[n+1,i] + D[i,n+1]);
     min_dist_dep_list = []
     min_dist_dep = 0

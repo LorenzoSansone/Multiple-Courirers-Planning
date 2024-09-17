@@ -22,7 +22,7 @@ def save_solution(solution, input_file, m, n):
             "gurobi": {
                 "time": math.floor(model.Runtime),  # Time taken by the optimization
                 "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
-                "obj": solution['max_dist'],  # The objective value (max distance)
+                "obj": int(solution['max_dist']),  # The objective value (max distance)
                 "sol": []  # List of lists representing the solution (routes)
             }
         }
@@ -194,7 +194,7 @@ def debug(x,y,m,n,s,l,D):
 
 
 if __name__ == "__main__":
-    for i in range(11,12):
+    for i in range(11, 22):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)

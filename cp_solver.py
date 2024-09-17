@@ -13,6 +13,7 @@ import nest_asyncio
 import datetime
 import math
 import json
+import numpy as np
 
 # Function to parse the value after the equal sign
 def parse_value(value):
@@ -49,11 +50,36 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
-async def solve_mcp(custom_model, file_path):
+def findLBUB(m, n, l, s, D):
+    distances = np.array(D)
+    deposit = n 
+    min_dist_dep_list = []
+    min_dist_dep = 0
+    max_dist_dep = distances[n,0]
+    max_dist_all_pack = distances[n,0]
+    for i in range(n):
+        #print(f"deposit -> items_{i+1} = {distances[n,i]}")
+        min_dist_dep_list.append(distances[n,i] + distances[i,n])
+        if max_dist_dep < distances[n,i]:
+            max_dist_dep = distances[n,i]
+        
+        #print(f"Load couriers:{l}")
+        #print(f"Weight items:{s}")
+    min_dist_dep = max(min_dist_dep_list)
+    min_disep = min(min_dist_dep_list)
+    print(f"LB={min_dist_dep}")
+    #print(f"max_dist={max_dist_dep}")
+    print(f"min_dist:{min_disep}")
+    for i in range(n):
+        #print(i,i+1)
+        max_dist_all_pack = max_dist_all_pack + distances[i,i+1]
+    print(f"max_dist and UB:{max_dist_all_pack}")
+    print(f"UB={max_dist_all_pack}")
+    print(f"LB={min_dist_dep}")
+    return min_dist_dep, max_dist_all_pack    
+async def solve_mcp(custom_model, file_path):   
   m, n, l, s, D = read_instance(file_path)
-  
-  LB = 8
-  UB = 20
+  LB, UB = findLBUB(m, n, l, s, D)
   min_dist = 0
   max_dist = UB
   
@@ -77,7 +103,7 @@ async def solve_mcp(custom_model, file_path):
   #instance["o"] = origin_location
   # Solve the problem
   
-  result = await instance.solve_async(timeout=datetime.timedelta(seconds = 5))
+  result = await instance.solve_async(timeout=datetime.timedelta(seconds = 300))
 
   return result
 
@@ -145,16 +171,17 @@ def save_solution(res, data_path):
 
 
 if __name__ == "__main__":    
-    #model_name = "CP.mzn"
-    #data_name = "inst01.dzn"
-    
+
     model_path = "CP/CP.mzn"
-    data_path = "instances_dnz/inst01.dzn"
-  
-    #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
-    #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
-    nest_asyncio.apply()
-    res = asyncio.run(solve_mcp(model_path, data_path))
-    print(res)
-    save_solution(res, data_path)
-    #print(res)
+
+    for i in range(1,11):
+        inst_i = f"inst{i:02d}"
+        print(f"Instance: {inst_i}")
+        data_path = f"instances_dnz/{inst_i}.dzn"
+        #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
+        #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
+        nest_asyncio.apply()
+        res = asyncio.run(solve_mcp(model_path, data_path))
+        print(res)
+        save_solution(res, data_path)
+
