@@ -44,13 +44,17 @@ def plot_couriers_routes(instance_file, ax, SOL):
     # Step 2: Read the solution from the JSON file
     try:
         with open(json_file_path, 'r') as file:
-            solution = json.load(file)["gurobi"]
+            solution_data = json.load(file)
+            
+            # Get the first key-value pair, whatever the key is
+            solution = next(iter(solution_data.values()))
     except FileNotFoundError:
         print(f"JSON file {json_file_path} not found.")
         return
     except json.JSONDecodeError:
         print(f"Error decoding JSON file {json_file_path}.")
         return
+
 
     # Step 3: Apply Multidimensional Scaling (MDS) to get 2D coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
@@ -114,7 +118,7 @@ def visualize(instance_range, SOL):
 
     # Create the subplots
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
-    fig.suptitle(f'Multiple Couriers Planning (MCP) Problem: Couriers Routes Visualization \nfor Instances {instance_range.start} to {instance_range.stop - 1}, \nsolver: {"gurobi (Mixed-Integer Linear)" if SOL=="MIP" else "Constraing Programming" if SOL == "CP" else "SAT" }',
+    fig.suptitle(f'Multiple Couriers Planning (MCP) Problem: Couriers Routes Visualization \nfor Instances {instance_range.start} to {instance_range.stop - 1}, \nsolver: {"gurobi (Mixed-Integer Linear)" if SOL=="MIP" else "gecode" if SOL == "CP" else "SAT" }',
                  fontsize=16, fontweight='bold', y=0.98)
 
     # Flatten the array of axes for easy indexing
@@ -137,6 +141,6 @@ def visualize(instance_range, SOL):
 
 if __name__ == "__main__":
     # Define the range of instances you want to plot
-    instance_range = range(1, 22)  # Example: plotting instances 1 to 21
+    instance_range = range(10, 19)  # Example: plotting instances 1 to 21
     SOL = "MIP"  # Adjust with the type of solution to visualize
     visualize(instance_range, SOL)
