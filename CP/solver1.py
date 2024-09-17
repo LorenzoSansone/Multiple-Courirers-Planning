@@ -54,7 +54,7 @@ def read_instance(file_path):
 
 if __name__ == "__main__":    
     model_name = "CP.mzn"
-    data_name = "inst04.dzn"
+    data_name = "inst21.dzn"
     
     model_path = "./" + model_name
     data_path = "../instances_dnz/" + data_name

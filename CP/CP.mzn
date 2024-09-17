@@ -87,14 +87,14 @@ var obj_lowerbound..obj_upperbound: obj = max(i in COURIERS)(sum([ D[path[i, j1]
 
 %%%
 %%%%%%%% Objective function
-/*
+
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
     );
 
 constraint cost = max(y);
-*/
+  
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
 solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg
 /*
