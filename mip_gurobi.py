@@ -194,7 +194,7 @@ def debug(x,y,m,n,s,l,D):
 
 
 if __name__ == "__main__":
-    for i in range(1,10):
+    for i in range(11,12):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)
