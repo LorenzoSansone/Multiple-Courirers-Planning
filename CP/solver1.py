@@ -54,7 +54,7 @@ def read_instance(file_path):
 
 if __name__ == "__main__":    
     model_name = "CP.mzn"
-    data_name = "inst01.dzn"
+    data_name = "inst02.dzn"
     
     model_path = "./" + model_name
     data_path = "../instances_dnz/" + data_name
@@ -86,9 +86,10 @@ if __name__ == "__main__":
         #print(f"Load couriers:{l}")
         #print(f"Weight items:{s}")
     min_dist_dep = max(min_dist_dep_list)
+    min_disep = min(min_dist_dep_list)
     print(f"LB={min_dist_dep}")
     #print(f"max_dist={max_dist_dep}")
-    print("min_dist:0")
+    print(f"min_dist:{min_disep}")
     for i in range(n):
         #print(i,i+1)
         max_dist_all_pack = max_dist_all_pack + distances[i,i+1]

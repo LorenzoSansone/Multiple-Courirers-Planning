@@ -3,6 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
+include "../instances_dnz/inst11.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -97,6 +98,8 @@ constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
 solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg
+output  [show(cost) ++ "\n"];
+
 /*
 output  [show(obj) ++ "\n"] ++
         [show(obj_lowerbound)  ++ "\n"]  ++[ show(obj_upperbound) ++ "\n"];
