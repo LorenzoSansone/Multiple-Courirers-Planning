@@ -17,6 +17,10 @@ int: LB; %lower bound
 int: UB; %upper bound
 int: min_dist;
 int: max_dist;
+
+int: min_load;
+int: max_load;
+
 var LB..UB: cost;
 
 % DECISION VARIABLES
@@ -29,12 +33,8 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
 
-
 % load[i] is the total load of courier i
-%array[1..m] of var 0..80: load;
-
-% numpacks[i] is the number of packages delivered by courier i
-%array[1..m] of var 0..10: numpacks;
+array[1..m] of var min_load..max_load: load;
 
 %CONSTRAINTS
 
@@ -69,13 +69,32 @@ constraint forall(j in 1..n)(
             path[x[j], i] == j
         )
     );
-    
 
 %C6 - Couriers can't go back to the base to take other packages
-%constraint forall(i in 1..m)(
-%    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-%);
+constraint forall(i in 1..m)(
+    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
+);
+
+constraint
+    forall(i in 1..m)(
+        load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 2..n+1])
+    );
 %%%
+
+%SYMMETRY
+% couriers do not exceed their max load
+
+constraint symmetry_breaking_constraint(
+    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
+     ((l[c1] == l[c2]) -> (lex_less(row(path, c1), row(path, c2))))
+);
+
+constraint symmetry_breaking_constraint(
+    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
+    (
+      (max(load[c1], load[c2]) <= min(l[c1], l[c2])) ->
+      (lex_less(row(path, c1), row(path,c2))))
+);
 
 /*
 int: obj_lowerbound = max(i in ITEMS)(D[n+1,i] + D[i,n+1]);
@@ -99,7 +118,7 @@ constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
 solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
-output  [show(cost) ++ "\n"];
+output  ["cost:" ++ show(cost) ++ " load:" ++ show(load) ++ " y:" ++ show(y) ++ show(path)];
 
 /*
 output  [show(obj) ++ "\n"] ++
