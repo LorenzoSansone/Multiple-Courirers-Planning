@@ -135,12 +135,13 @@ def visualize(instance_range, SOL):
 
     # Adjust layout and save the plot
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the rect to fit the title
-    plt.savefig('image.png')  # Save before showing
+    plt.subplots_adjust(top=0.9)
+    plt.savefig(f'graphs/{SOL}/graph_results_{min(instance_range)}_to_{max(instance_range)}')  # Save before showing
     plt.show()
     return plt
 
 if __name__ == "__main__":
     # Define the range of instances you want to plot
-    instance_range = range(10, 19)  # Example: plotting instances 1 to 21
-    SOL = "MIP"  # Adjust with the type of solution to visualize
+    instance_range = range(10, 16)  # Example: plotting instances 1 to 21
+    SOL = "CP"  # Adjust with the type of solution to visualize
     visualize(instance_range, SOL)
