@@ -54,7 +54,7 @@ def read_instance(file_path):
 
 if __name__ == "__main__":    
     model_name = "CP.mzn"
-    data_name = "inst02.dzn"
+    data_name = "inst11.dzn"
     
     model_path = "./" + model_name
     data_path = "../instances_dnz/" + data_name
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         #print(i,i+1)
         max_dist_all_pack = max_dist_all_pack + distances[i,i+1]
     print(f"max_dist and UB:{max_dist_all_pack}")
-        
+    print(f"max_load {sum(l)}")
     #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
     #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
 """  
