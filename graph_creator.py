@@ -142,6 +142,6 @@ def visualize(instance_range, SOL):
 
 if __name__ == "__main__":
     # Define the range of instances you want to plot
-    instance_range = range(10, 16)  # Example: plotting instances 1 to 21
+    instance_range = range(16, 22)  # Example: plotting instances 1 to 21
     SOL = "CP"  # Adjust with the type of solution to visualize
     visualize(instance_range, SOL)

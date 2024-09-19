@@ -161,7 +161,9 @@ def save_solution(res, data_path, timeLimit):
 if __name__ == "__main__":    
     model_path = "CP/CP.mzn"
     timeLimit = 300  #seconds
-    for i in range(1,22):
+    first_instance = 1
+    last_instance = 10
+    for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         print(f"Instance: {inst_i}")
         data_path = f"instances_dnz/{inst_i}.dzn"

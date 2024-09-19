@@ -29,8 +29,7 @@ def save_solution(solution, input_file, m, n):
 
         for courier in range(m):
             route = []
-            current_location = n  # Start at the origin (assuming last location is the origin)
-            
+            current_location = n  # Start at the origin (assuming last location is the origin)     
             while True:
                 next_location = None
                 for j2 in range(n+1):
@@ -45,7 +44,6 @@ def save_solution(solution, input_file, m, n):
                 current_location = next_location
             
             solution_dict["gurobi"]["sol"].append(route)
-
     output_dir = "res/MIP"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -191,7 +189,6 @@ def debug(x,y,m,n,s,l,D):
     #Print distances
     print("Distances calculation for each courier:")
     utils.distances_check(D, solution['y'])
-
 
 if __name__ == "__main__":
     for i in range(1, 11):
