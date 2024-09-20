@@ -52,7 +52,7 @@ def read_instance(file_path):
 
 def findLBUB(m, n, l, s, D):
     distances = np.array(D)
-    deposit = n 
+    #deposit = n 
     min_dist_dep_list = []
     min_dist_dep = 0
     max_dist_dep = distances[n,0]
@@ -67,21 +67,21 @@ def findLBUB(m, n, l, s, D):
         #print(f"Weight items:{s}")
     min_dist_dep = max(min_dist_dep_list)
     min_disep = min(min_dist_dep_list)
-    print(f"LB={min_dist_dep}")
+    #print(f"LB={min_dist_dep}")
     #print(f"max_dist={max_dist_dep}")
-    print(f"min_dist:{min_disep}")
+    #print(f"min_dist:{min_disep}")
     for i in range(n):
         #print(i,i+1)
         max_dist_all_pack = max_dist_all_pack + distances[i,i+1]
-    print(f"max_dist and UB:{max_dist_all_pack}")
-    print(f"UB={max_dist_all_pack}")
-    print(f"LB={min_dist_dep}")
+    #print(f"max_dist and UB:{max_dist_all_pack}")
+    #print(f"UB={max_dist_all_pack}")
+    #print(f"LB={min_dist_dep}")
     return min_dist_dep, max_dist_all_pack    
-async def solve_mcp(custom_model, file_path):   
+async def solve_mcp(custom_model, file_path, timeLimit):   
   m, n, l, s, D = read_instance(file_path)
   LB, UB = findLBUB(m, n, l, s, D)
-  min_dist = 0
-  max_dist = UB
+  #min_dist = 0
+  #max_dist = UB
   
 
   # Load model
@@ -102,8 +102,7 @@ async def solve_mcp(custom_model, file_path):
   
   #instance["o"] = origin_location
   # Solve the problem
-  
-  result = await instance.solve_async(timeout=datetime.timedelta(seconds = 300))
+  result = await instance.solve_async(timeout=datetime.timedelta(seconds = timeLimit))
 
   return result
 
@@ -119,42 +118,31 @@ def output_path_prepare(path):
     return path_out
 
         
-def save_solution(res, data_path):
+def save_solution(res, data_path, timeLimit):
     # extract number from data_path
     match = re.search(r"inst(\d+)\.dzn", data_path)
     number = match.group(1)
-    output = f"{number}"
+    #output = f"{number}"
     output_directory = "res/CP"
-    
-    # calculate solve time
-    solveTime = math.floor(res.statistics['solveTime'].total_seconds())
-    
-    # check if a solution was found and whether it is optimal
-    if res.status.has_solution():
-        optimal = res.status == minizinc.result.Status.OPTIMAL_SOLUTION
-    else:
-        optimal = False
-    
     # prepare the solution dictionary
-    if res['objective'] is None:
-        solution_dict = {
-            "gecode": {
-                "time": solveTime,
-                "optimal": False,
-                "obj": None,
-                "sol": []
-            }
-        }
+    if res.objective is None:
+        time = timeLimit
+        optimal = False
+        obj = None
+        sol = []
     else:
-        output_path = output_path_prepare(res['path'])  # Assumed this function exists
-        solution_dict = {
-            "gecode": {
-                "time": solveTime,
-                "optimal": optimal,
-                "obj": res['objective'],
-                "sol": output_path
-            }
+        time = math.floor(res.statistics['solveTime'].total_seconds())
+        optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
+        obj = res['objective']
+        sol = output_path_prepare(res['path'])  
+    solution_dict = {
+        "gecode": {
+            "time": time,
+            "optimal": optimal,
+            "obj": obj,
+            "sol": sol
         }
+    }
     
     # ensure the directory exists
     if not os.path.exists(output_directory):
@@ -171,17 +159,16 @@ def save_solution(res, data_path):
 
 
 if __name__ == "__main__":    
-
     model_path = "CP/CP.mzn"
-
-    for i in range(1,11):
-        inst_i = f"inst{i:02d}"
+    timeLimit = 3  #seconds
+    first_instance = 12
+    last_instance = 19
+    for i in range(first_instance, last_instance+1):
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         print(f"Instance: {inst_i}")
         data_path = f"instances_dnz/{inst_i}.dzn"
-        #model_path = os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\CP\\" + model_name
-        #data_path= os.getcwd() + "\Desktop\CMDO\project_test\Multiple-Courirers-Planning\instances_dnz\\" + data_name
         nest_asyncio.apply()
-        res = asyncio.run(solve_mcp(model_path, data_path))
-        print(res)
-        save_solution(res, data_path)
+        res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
+        print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
+        save_solution(res, data_path, timeLimit)
 

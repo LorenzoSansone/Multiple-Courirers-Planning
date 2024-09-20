@@ -72,7 +72,7 @@ constraint
     );
 
 constraint cost = max(y);
-  
+
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
 solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
 output  [show(cost) ++ "\n"];
