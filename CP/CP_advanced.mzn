@@ -3,6 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
+include "../instances_dnz/inst11_1.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -16,10 +17,6 @@ int: LB; %lower bound
 int: UB; %upper bound
 int: min_dist;
 int: max_dist;
-
-int: min_load;
-int: max_load;
-
 var LB..UB: cost;
 
 % DECISION VARIABLES
@@ -30,18 +27,12 @@ array[1..m] of var min_dist..max_dist: y;
 array[1..n] of var 1..m: x; 
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
+%array[1..m, 1..n+2] of var 1..n+1: path = array2d(1..m, 1..n+2, [ n+1 | i in 1..m, j in 1..n+2 ]);
+%array[1..m, 1..n+2] of var 1..n+1: path;
+
 array[1..m, 1..n+2] of var 1..n+1: path;
 
-% load[i] is the total load of courier i
-array[1..m] of var min_load..max_load: load;
-
 %CONSTRAINTS
-
-% constraint on bins
-%constraint
-%    forall(i in 1..m)(
-%        count_eq(x, i, numpacks[i])
-%    );
 
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
@@ -69,30 +60,19 @@ constraint forall(j in 1..n)(
         )
     );
 
-%C6 - Couriers can't go back to the base to take other packages
+%C6 - If a courier has some packages to deliver he starts immediatly
+constraint forall(i in 1..m)(
+        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
+    );
+    
+%C7 - If a courier hasn't any package to deliver every cell is set to n+1
+constraint forall(i in 1..m)(
+        not exists(j in 1..n)(x[j] == i) -> not exists(k in 1..n+1)(path[i,k] != n+1)
+    );
+    
+%C8 - Couriers can't go back to the base to take other packages
 constraint forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);
-
-constraint
-    forall(i in 1..m)(
-        load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 2..n+1])
-    );
-%%%
-
-%SYMMETRY
-% couriers do not exceed their max load
-
-constraint symmetry_breaking_constraint(
-    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
-     ((l[c1] == l[c2]) -> (lex_less(row(path, c1), row(path, c2))))
-);
-
-constraint symmetry_breaking_constraint(
-    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
-    (
-      (max(load[c1], load[c2]) <= min(l[c1], l[c2])) ->
-      (lex_less(row(path, c1), row(path,c2))))
 );
 
 %%%%%%%% Objective function
@@ -105,8 +85,14 @@ constraint
 constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
-output  ["cost:" ++ show(cost) ++ " load:" ++ show(load) ++ " y:" ++ show(y) ++ show(path)];
+
+solve %:: warm_start([path], [n+1])
+
+      :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail
+      :: restart_luby(100)
+      :: relax_and_reconstruct(array1d(path), 85)
+      minimize cost;
+output  [show(cost) ++ "\n"] ++ [show(path) ++ "\n"];
 
 /*
 output  [show(obj) ++ "\n"] ++

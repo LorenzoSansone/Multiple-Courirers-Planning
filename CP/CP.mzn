@@ -28,20 +28,10 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
 
-
 % load[i] is the total load of courier i
 %array[1..m] of var 0..80: load;
 
-% numpacks[i] is the number of packages delivered by courier i
-%array[1..m] of var 0..10: numpacks;
-
 %CONSTRAINTS
-
-% constraint on bins
-%constraint
-%    forall(i in 1..m)(
-%        count_eq(x, i, numpacks[i])
-%    );
 
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
@@ -69,24 +59,11 @@ constraint forall(j in 1..n)(
         )
     );
     
-
 %C6 - Couriers can't go back to the base to take other packages
 %constraint forall(i in 1..m)(
 %    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
 %);
-%%%
 
-/*
-int: obj_lowerbound = max(i in ITEMS)(D[n+1,i] + D[i,n+1]);
-array[ITEMS] of int: max_dists = [max(j in ITEMS)(D[i,j]) | i in ITEMS];
-
-%array[ITEMS] of int: max_dists = sort([max(j in ITEMS)(D[i,j]) | i in ITEMS]);
-int: obj_upperbound = sum(i in m+1..n)(max_dists[i]) + max(j in ITEMS)(D[n+1,j]) + max(j in ITEMS)(D[j,n+1]);
-
-var obj_lowerbound..obj_upperbound: obj = max(i in COURIERS)(sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1]));
-*/
-
-%%%
 %%%%%%%% Objective function
 
 constraint

@@ -7,10 +7,9 @@ Created on Wed Aug 28 17:02:31 2024
 from minizinc import Instance, Model, Solver
 import os
 # Load n-Queens model from file
-base = os.getcwd() + "\\Desktop\\CMDO\\project_test\\Multiple-Courirers-Planning\\CP\\test\\"
 
 
-nqueens = Model(base + "nqueens.mzn")
+nqueens = Model( "./nqueens.mzn")
 # Find the MiniZinc solver configuration for Gecode
 gecode = Solver.lookup("gecode")
 # Create an Instance of the n-Queens model for Gecode

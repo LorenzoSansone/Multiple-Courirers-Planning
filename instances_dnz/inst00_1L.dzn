@@ -14,3 +14,5 @@ LB = 8;
 UB = 28;
 min_dist = 0;
 max_dist = 28;
+min_load = 0;
+max_load = 32;
