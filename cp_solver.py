@@ -67,15 +67,15 @@ def findLBUB(m, n, l, s, D):
         #print(f"Weight items:{s}")
     min_dist_dep = max(min_dist_dep_list)
     min_disep = min(min_dist_dep_list)
-    print(f"LB={min_dist_dep}")
+    #print(f"LB={min_dist_dep}")
     #print(f"max_dist={max_dist_dep}")
-    print(f"min_dist:{min_disep}")
+    #print(f"min_dist:{min_disep}")
     for i in range(n):
         #print(i,i+1)
         max_dist_all_pack = max_dist_all_pack + distances[i,i+1]
-    print(f"max_dist and UB:{max_dist_all_pack}")
-    print(f"UB={max_dist_all_pack}")
-    print(f"LB={min_dist_dep}")
+    #print(f"max_dist and UB:{max_dist_all_pack}")
+    #print(f"UB={max_dist_all_pack}")
+    #print(f"LB={min_dist_dep}")
     return min_dist_dep, max_dist_all_pack    
 async def solve_mcp(custom_model, file_path, timeLimit):   
   m, n, l, s, D = read_instance(file_path)
@@ -160,15 +160,15 @@ def save_solution(res, data_path, timeLimit):
 
 if __name__ == "__main__":    
     model_path = "CP/CP.mzn"
-    timeLimit = 300  #seconds
-    first_instance = 1
-    last_instance = 10
+    timeLimit = 3  #seconds
+    first_instance = 12
+    last_instance = 19
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         print(f"Instance: {inst_i}")
         data_path = f"instances_dnz/{inst_i}.dzn"
         nest_asyncio.apply()
         res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
-        print(res)
+        print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
         save_solution(res, data_path, timeLimit)
 

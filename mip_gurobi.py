@@ -97,7 +97,7 @@ def create_mcp_model(m, n, l, s, D, locations):
             # If the courier arrives at location j
             model.addConstr(quicksum(y[i, k, j] for k in range(locations)) ==
                             quicksum(y[i, j, k] for k in range(locations)),
-                            name = f"Flow conservation constraint, couerier {i}, location {j}")
+                            name = f"Flow conservation constraint, courier {i}, location {j}")
 
     # Subtour elimination constraints
     for i in range(m):  # for each courier
