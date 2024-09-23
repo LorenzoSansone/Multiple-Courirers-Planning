@@ -3,15 +3,15 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
+include "../instances_dnz/inst00_1L.dzn";
+
 
 int: m; %num couriers
 int: n; %num items
 array[1..m] of int: l; % maximum load size for each courier
 array[1..n] of int: s; % size of each item
 array[1..n+1, 1..n+1] of int: D; % distance matrix
-set of int: ITEMS = 1..n;
-set of int: COURIERS = 1..m;
-set of int: D_SIZE = 1..n+1;
+
 int: LB; %lower bound
 int: UB; %upper bound
 int: min_dist;
@@ -105,7 +105,11 @@ constraint
 constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
+solve :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail indomain_random indomain_min
+      :: restart_luby(2000)
+      :: relax_and_reconstruct(array1d(path), 85)
+      %:: relax_and_reconstruct(array1d(path), 85, array1d(1..(m)*(n+2), [ n+1 | i in 1..((m) * (n+2))]))
+      minimize cost;
 output  ["cost:" ++ show(cost) ++ " load:" ++ show(load) ++ " y:" ++ show(y) ++ show(path)];
 
 /*

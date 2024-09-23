@@ -3,20 +3,18 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dnz/inst11_1.dzn";
+include "../instances_dnz/inst11_1.dzn";
 
 int: m; %num couriers
 int: n; %num items
 array[1..m] of int: l; % maximum load size for each courier
 array[1..n] of int: s; % size of each item
 array[1..n+1, 1..n+1] of int: D; % distance matrix
-set of int: ITEMS = 1..n;
-set of int: COURIERS = 1..m;
-set of int: D_SIZE = 1..n+1;
-int: LB; %lower bound
-int: UB; %upper bound
-int: min_dist;
-int: max_dist;
+
+int: LB; %lower bound of the objective function (cost)
+int: UB; %upper bound of the objective function (cost)
+int: min_dist; %minimum distance that a courier can cover 
+int: max_dist; %maximum distance that a courier can cover
 var LB..UB: cost;
 
 % DECISION VARIABLES
@@ -29,7 +27,6 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 %array[1..m, 1..n+2] of var 1..n+1: path = array2d(1..m, 1..n+2, [ n+1 | i in 1..m, j in 1..n+2 ]);
 %array[1..m, 1..n+2] of var 1..n+1: path;
-
 array[1..m, 1..n+2] of var 1..n+1: path;
 
 %CONSTRAINTS
@@ -59,17 +56,19 @@ constraint forall(j in 1..n)(
             path[x[j], i] == j
         )
     );
-
+/*
 %C6 - If a courier has some packages to deliver he starts immediatly
 constraint forall(i in 1..m)(
         exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
     );
-    
+*/
+/*  
 %C7 - If a courier hasn't any package to deliver every cell is set to n+1
 constraint forall(i in 1..m)(
         not exists(j in 1..n)(x[j] == i) -> not exists(k in 1..n+1)(path[i,k] != n+1)
     );
-    
+*/
+ 
 %C8 - Couriers can't go back to the base to take other packages
 constraint forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
@@ -86,11 +85,10 @@ constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
 
-solve %:: warm_start([path], [n+1])
-
-      :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail
+solve :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail indomain_random indomain_min
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
+      %:: relax_and_reconstruct(array1d(path), 85, array1d(1..(m)*(n+2), [ n+1 | i in 1..((m) * (n+2))]))
       minimize cost;
 output  [show(cost) ++ "\n"] ++ [show(path) ++ "\n"];
 
