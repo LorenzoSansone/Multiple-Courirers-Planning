@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dnz/inst21.dzn";
+include "../instances_dnz/inst00.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -75,7 +75,10 @@ constraint
 constraint cost = max(y);
 
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% 
-solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
+%indomain_min -> Assign the smallest value in the domain
+%first_fail -> Choose the variable with the smallest domain
+
+solve :: int_search(path, first_fail, indomain_min) minimize cost; 
 output  [show(cost) ++ "\n"];
 
 /*

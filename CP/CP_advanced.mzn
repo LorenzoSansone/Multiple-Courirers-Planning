@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dnz/inst01.dzn";
+include "../instances_dnz/inst11_1.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -25,8 +25,6 @@ array[1..m] of var min_dist..max_dist: y;
 array[1..n] of var 1..m: x; 
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
-%array[1..m, 1..n+2] of var 1..n+1: path = array2d(1..m, 1..n+2, [ n+1 | i in 1..m, j in 1..n+2 ]);
-%array[1..m, 1..n+2] of var 1..n+1: path;
 array[1..m, 1..n+2] of var 1..n+1: path;
 
 %CONSTRAINTS
@@ -79,23 +77,24 @@ constraint forall(i in 1..m)(
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
+        %y[i] = D[n+1,path[i,1]] + sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1]) + D[path[i, n],n+1]
     );
 
 constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%%
+%dom_w_deg -> Weighted degree heuristic
+%restart_luby -> restart strategiy
+%relax_and_reconstruct -> large neighbourhood search 
 
-solve :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail indomain_random indomain_min
+solve :: int_search(path, dom_w_deg, indomain_random)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       %:: relax_and_reconstruct(array1d(path), 85, array1d(1..(m)*(n+2), [ n+1 | i in 1..((m) * (n+2))]))
       minimize cost;
-output  [show(cost) ++ "\n"] ++ [show(path) ++ "\n"];
+      
+output [show(cost) ++ "\n"] ++ [show(path[i,j]) ++ if j == n+1 then "\n" else " " endif | i in 1..m, j in 1..n+2]
 
 
 
 
-/*
-output  [show(obj) ++ "\n"] ++
-        [show(obj_lowerbound)  ++ "\n"]  ++[ show(obj_upperbound) ++ "\n"];
-*/

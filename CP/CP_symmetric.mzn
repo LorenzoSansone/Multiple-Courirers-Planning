@@ -37,12 +37,6 @@ array[1..m] of var min_load..max_load: load;
 
 %CONSTRAINTS
 
-% constraint on bins
-%constraint
-%    forall(i in 1..m)(
-%        count_eq(x, i, numpacks[i])
-%    );
-
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
 
@@ -54,7 +48,6 @@ constraint forall(i in 1..m)(
 );
 
 %C3: A package (is carried by only one courier only one time) and is delivered one time
-%constraint all_different(i in 1..m, j in 2..n+1 where path[i,j] != n+1)(path[i,j]); 
 constraint alldifferent_except(path, {n+1});
 
 %C4 - Couriers Start and End at the Deposit
@@ -69,10 +62,11 @@ constraint forall(j in 1..n)(
         )
     );
 
+/*
 %C6 - Couriers can't go back to the base to take other packages
 constraint forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);
+);*/
 
 constraint
     forall(i in 1..m)(
@@ -88,12 +82,20 @@ constraint symmetry_breaking_constraint(
      ((l[c1] == l[c2]) -> (lex_less(row(path, c1), row(path, c2))))
 );
 
+%S2 - If a courier has some packages to deliver he starts immediatly
+constraint symmetry_breaking_constraint( forall(i in 1..m)(
+        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
+    ));
+
+
+
+/*
 constraint symmetry_breaking_constraint(
     forall(c1 in 1..m, c2 in 1..m where c1 < c2)
     (
       (max(load[c1], load[c2]) <= min(l[c1], l[c2])) ->
       (lex_less(row(path, c1), row(path,c2))))
-);
+);*/
 
 %%%%%%%% Objective function
 
