@@ -3,6 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
+include "../instances_dnz/inst21.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -73,7 +74,7 @@ constraint
 
 constraint cost = max(y);
 
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
+%%%%%%%% SEARCH STRATEGY %%%%%%%%%% 
 solve :: int_search(path, first_fail, indomain_min) minimize cost; %dom_w_deg first_fail
 output  [show(cost) ++ "\n"];
 

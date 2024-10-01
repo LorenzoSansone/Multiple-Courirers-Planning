@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dnz/inst11_1.dzn";
+include "../instances_dnz/inst01.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -70,9 +70,9 @@ constraint forall(i in 1..m)(
 */
  
 %C8 - Couriers can't go back to the base to take other packages
-constraint forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);
+%constraint forall(i in 1..m)(
+%    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
+%);
 
 %%%%%%%% Objective function
 
@@ -83,7 +83,7 @@ constraint
 
 constraint cost = max(y);
   
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
+%%%%%%%% SEARCH STRATEGY %%%%%%%%%%
 
 solve :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail indomain_random indomain_min
       :: restart_luby(100)
@@ -91,6 +91,9 @@ solve :: int_search(path, dom_w_deg, indomain_min)  %dom_w_deg first_fail indoma
       %:: relax_and_reconstruct(array1d(path), 85, array1d(1..(m)*(n+2), [ n+1 | i in 1..((m) * (n+2))]))
       minimize cost;
 output  [show(cost) ++ "\n"] ++ [show(path) ++ "\n"];
+
+
+
 
 /*
 output  [show(obj) ++ "\n"] ++
