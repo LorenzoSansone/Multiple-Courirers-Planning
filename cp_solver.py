@@ -50,36 +50,52 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
-def findLBUB(m, n, l, s, D):
+async def find_LB_model(custom_model, file_path, timeLimit):
+  m, n, l, s, D = read_instance(file_path)
+  LB, UB = find_LB_UB(m, n, l, s, D)
+  #min_dist = 0
+  #max_dist = UB
+  
+
+  # Load model
+  model = minizinc.Model(custom_model)
+
+  gecode = minizinc.Solver.lookup("gecode")
+  # Create minizinc instance
+  instance = minizinc.Instance(gecode, model)
+  instance["n"] = n
+  instance["D"] = D
+  instance["LB"] = LB
+  instance["UB"] = UB
+  instance["min_dist"] = 0
+  instance["max_dist"] = UB
+  
+  #instance["o"] = origin_location
+  # Solve the problem
+  result = await instance.solve_async(timeout=datetime.timedelta(seconds = timeLimit))
+
+  return result
+
+
+def find_LB_UB(m, n, l, s, D):
     distances = np.array(D)
-    #deposit = n 
     min_dist_dep_list = []
-    min_dist_dep = 0
-    max_dist_dep = distances[n,0]
+    
+    for i in range(n):
+        min_dist_dep_list.append(distances[n,i] + distances[i,n])
+    min_dist_dep = max(min_dist_dep_list)
+
     max_dist_all_pack = distances[n,0]
     for i in range(n):
-        #print(f"deposit -> items_{i+1} = {distances[n,i]}")
-        min_dist_dep_list.append(distances[n,i] + distances[i,n])
-        if max_dist_dep < distances[n,i]:
-            max_dist_dep = distances[n,i]
-        
-        #print(f"Load couriers:{l}")
-        #print(f"Weight items:{s}")
-    min_dist_dep = max(min_dist_dep_list)
-    min_disep = min(min_dist_dep_list)
-    #print(f"LB={min_dist_dep}")
-    #print(f"max_dist={max_dist_dep}")
-    #print(f"min_dist:{min_disep}")
-    for i in range(n):
-        #print(i,i+1)
         max_dist_all_pack = max_dist_all_pack + distances[i,i+1]
-    #print(f"max_dist and UB:{max_dist_all_pack}")
-    #print(f"UB={max_dist_all_pack}")
-    #print(f"LB={min_dist_dep}")
+
     return min_dist_dep, max_dist_all_pack    
+
+
+
 async def solve_mcp(custom_model, file_path, timeLimit):   
   m, n, l, s, D = read_instance(file_path)
-  LB, UB = findLBUB(m, n, l, s, D)
+  LB, UB = find_LB_UB(m, n, l, s, D)
   #min_dist = 0
   #max_dist = UB
   
@@ -159,10 +175,55 @@ def save_solution(res, data_path, timeLimit):
 
 
 if __name__ == "__main__":    
+    timeLimit = 60  #seconds
+    first_instance = 0
+    last_instance = 21
+    
+    for i in range(first_instance, last_instance+1):
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+        print(f"Instance: {inst_i}")
+        data_path = f"instances_dnz/{inst_i}.dzn"
+
+        m, n, l, s, D = read_instance(data_path)
+        LB, UB = find_LB_UB(m, n, l, s, D)
+        print(f"LB:{LB} UB:{UB}")
+        print("")
+        #res_model = find_LB_model("CP/UB_model.dzn",data_path,timeLimit)
+
+        #res_model = asyncio.run(find_LB_model("CP/UB_model.dzn",data_path,timeLimit))
+        #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.dzn",data_path,timeLimit))
+    
+    """
+    nest_asyncio.apply()
+
+    data_path = f"instances_dnz/inst00.dzn"
+    
+    m, n, l, s, D = read_instance(data_path)
+    LB, UB = find_LB_UB(m, n, l, s, D)
+    res_model = asyncio.run(solve_mcp("CP/CP.mzn",data_path,timeLimit))
+    #res_model = asyncio.run(find_LB_model("CP/UB_model.mzn",data_path,timeLimit))
+    #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.mzn",data_path,timeLimit))
+    print(data_path)
+    print("---------")
+    print("ANALYTICAL")
+    print(f"LB: {LB}")
+    print(f"UB: {UB}")
+    print("---------")
+    print("MODEL")
+    print(res_model)
+
+    print("---------")
+    print("MODEL FAST")
+    #print(res_model_s)
+
+    """
+  
+    """  
     model_path = "CP/CP.mzn"
     timeLimit = 3  #seconds
-    first_instance = 12
-    last_instance = 19
+    first_instance = 11
+    last_instance = 21
+
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         print(f"Instance: {inst_i}")
@@ -171,4 +232,6 @@ if __name__ == "__main__":
         res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
         print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
         save_solution(res, data_path, timeLimit)
+    """
 
+    

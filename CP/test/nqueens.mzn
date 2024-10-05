@@ -1,3 +1,4 @@
+include "globals.mzn";
 int: n; % The number of queens.
 
 array [1..n] of var 1..n: q;
