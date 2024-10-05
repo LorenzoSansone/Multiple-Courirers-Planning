@@ -178,7 +178,7 @@ if __name__ == "__main__":
     timeLimit = 60  #seconds
     first_instance = 0
     last_instance = 21
-    
+    """
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         print(f"Instance: {inst_i}")
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
         #res_model = asyncio.run(find_LB_model("CP/UB_model.dzn",data_path,timeLimit))
         #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.dzn",data_path,timeLimit))
-    
+    """
     """
     nest_asyncio.apply()
 
@@ -218,11 +218,11 @@ if __name__ == "__main__":
 
     """
   
-    """  
+    
     model_path = "CP/CP.mzn"
-    timeLimit = 3  #seconds
-    first_instance = 11
-    last_instance = 21
+    timeLimit = 60  #seconds
+    first_instance = 0
+    last_instance = 3
 
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
@@ -232,6 +232,6 @@ if __name__ == "__main__":
         res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
         print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
         save_solution(res, data_path, timeLimit)
-    """
+    
 
     
