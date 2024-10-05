@@ -3,8 +3,8 @@ docker run hello_word(from image to container)
 pip3 freeze > requirements.txt
 
 RUN DOCKER COMMAND
-docker build . -t hello_word -f Dockerfile_example --> (build the image)
-docker run -v ./res:/projectMCP/res first_example  --> (map the volumes?)
+docker build . -t image_docker -f Dockerfile_example --> (build the image)
+docker run -v ./res:/projectMCP/res image_docker --> (map the volumes?)
 
 NOTES
 CMD python3 -m http.server
