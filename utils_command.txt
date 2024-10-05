@@ -1,13 +1,11 @@
-docker build . -t hello_word -f Dockerfile_example (build the image)
+COMMAND
 docker run hello_word(from image to container)
 pip3 freeze > requirements.txt
 
-docker run -v ./res:/projectMCP/res first_example (map the volumes?)
+RUN DOCKER COMMAND
+docker build . -t hello_word -f Dockerfile_example --> (build the image)
+docker run -v ./res:/projectMCP/res first_example  --> (map the volumes?)
 
+NOTES
 CMD python3 -m http.server
 
-/*RUN apt-get update && \
-    apt-get install -y python3 && \
-    apt-get install -y python3-pip && \
-    python3 -m pip install -r requirements.txt
-RUN python3 -m pip install -r requirements.txt
