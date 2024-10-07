@@ -31,12 +31,12 @@ array[1..n] of var 1..n: path;
 
 %CONSTRAINTS
 
-
+/*
 constraint forall(j in 1..n)(
         exists(i in 1..n)(
             path[i] == j
         )
-    );
+    );*/
 %C3: A package (is carried by only one courier only one time) and is delivered one time
 %constraint all_different(i in 1..m, j in 2..n+1 where path[i,j] != n+1)(path[i,j]); 
 constraint alldifferent(path);
