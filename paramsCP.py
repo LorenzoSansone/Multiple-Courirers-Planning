@@ -175,6 +175,7 @@ if __name__ == "__main__":
         print(f"UpperBound:{UB}")
         print(f"minDist:0")
         print(f"maxDist:{UB}")
+        print(f"maxLoad:{max(l)}")
         print()
     for i in range(10,22):
         file_path = "./instances_dnz/inst" + str(i) + ".dzn"
@@ -185,5 +186,6 @@ if __name__ == "__main__":
         print(f"UpperBound:{UB}")
         print(f"minDist:0")
         print(f"maxDist:{UB}")
+        print(f"maxLoad:{max(l)}")
         print()
 

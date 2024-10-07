@@ -106,6 +106,7 @@ async def solve_mcp(custom_model, file_path, timeLimit):
   gecode = minizinc.Solver.lookup("gecode")
   # Create minizinc instance
   instance = minizinc.Instance(gecode, model)
+  print(f"LB:{LB} UB:{UB}")
   instance["m"] = m
   instance["n"] = n
   instance["l"] = l
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     """
   
     
-    model_path = "CP/CP.mzn"
+    model_path = "CP/UB_model.mzn"
     timeLimit = 60  #seconds
     first_instance = 0
     last_instance = 3

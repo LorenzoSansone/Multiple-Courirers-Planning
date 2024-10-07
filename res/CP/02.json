@@ -1,28 +1,8 @@
 {
     "gecode": {
-        "time": 0,
-        "optimal": true,
-        "obj": 226,
-        "sol": [
-            [
-                1,
-                4
-            ],
-            [
-                2,
-                7,
-                3
-            ],
-            [
-                5,
-                9
-            ],
-            [
-                6,
-                8
-            ],
-            [],
-            []
-        ]
+        "time": 60,
+        "optimal": false,
+        "obj": null,
+        "sol": []
     }
 }
