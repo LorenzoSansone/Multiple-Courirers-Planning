@@ -2,7 +2,7 @@
 %Define input data
 
 include "globals.mzn";
-include "../instances_dnz/inst00.dzn";
+%include "../instances_dnz/inst00.dzn";
 
 int: m; %num couriers
 int: n; %num items

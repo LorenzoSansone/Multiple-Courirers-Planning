@@ -17,8 +17,6 @@ int: UB; %upper bound
 int: min_dist;
 int: max_dist;
 
-int: min_load;
-int: max_load;
 
 var LB..UB: cost;
 
@@ -29,11 +27,16 @@ array[1..m] of var min_dist..max_dist: y;
 % x[i] contains the index j of the courier assigned to item i. 
 array[1..n] of var 1..m: x; 
 
-%path[i,k] = j means courier i goes to point j as the k-th point in the tour
-array[1..m, 1..n+2] of var 1..n+1: path;
+% x[i, j1] = j2 means that the ith courier will go from the j1th node to the j2th node
+array[1..m, 1..n+1] of var 1..n+1: path;
 
-% load[i] is the total load of courier i
-%array[1..m] of var min_load..max_load: load;
+
+%%%%%%%% PREDICATES %%%%%%%%%%
+predicate at_most_one(array[int] of var bool:x) =
+          forall(i,j in index_set(x) where i < j)(
+            (not x[i] \/ not x[j]));
+predicate exactly_one(array[int] of var bool:x) =
+          at_most_one(x) /\ exists(x);
 
 %CONSTRAINTS
 
@@ -42,40 +45,41 @@ constraint bin_packing_capa(l, x, s);
 
 %C2: Courier deliver only the own items but it doesn't guarantee that all the packages that are assigned to a courier are delivered by him
 constraint forall(i in 1..m)(
-    forall (j in 2..n+1 where path[i,j] != n+1)(
+    forall (j in 1..n+1 where path[i,j] != j /\  path[i,j] != n+1)(
       x[path[i,j]] == i
     )
 );
 
 %C3: A package (is carried by only one courier only one time) and is delivered one time
-constraint alldifferent_except(path, {n+1});
+constraint
+    forall(j in 1..n) (
+        exactly_one(
+            [path[i, j] != j | i in 1..m]
+        )
+    );
 
 %C4 - Couriers Start and End at the Deposit
-constraint forall(i in 1..m) (
-  path[i,1] = n+1 /\ path[i,n+2] = n+1
-);
+constraint
+    forall(i in 1..m)(
+        if path[i, n+1] != n+1 then count([path[i, j1] | j1 in 1..n], n+1, 1) 
+        else forall(k in 1..n) (path[i, k] = k) endif
+    );
 
 %C5 - Checks if all the packages that are assigned to a courier are delivered by him
 constraint forall(j in 1..n)(
-        exists(i in 2..n+1)(
-            path[x[j], i] == j
-        )
+        exists(i in 1..n+1)(path[x[j], i] == j) /\ path[x[j], j] != j
     );
-/*
+    
+%C6
 constraint
-    forall(i in 1..m)(
-        load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 2..n+1])
+    forall(i in 1..m) (
+        subcircuit([path[i, j] | j in 1..n+1])
     );
-*/
-%%%
 
 %SYMMETRY
 % couriers do not exceed their max load
 
 %S1 - Couriers can't go back to the base to take other packages and starts immediatly
-constraint symmetry_breaking_constraint (forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
-);
 
 
 %S2
@@ -98,8 +102,9 @@ constraint symmetry_breaking_constraint(
 
 constraint
     forall(i in 1..m) (
-        y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
+        y[i] = sum([ D[j1, path[i, j1]] | j1 in 1..n+1])
     );
+
 
 constraint cost = max(y);
   
@@ -108,3 +113,4 @@ solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;
+%solve :: int_search(path, first_fail, indomain_min) minimize cost; 

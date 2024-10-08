@@ -13,9 +13,12 @@ nqueens = Model( "./nqueens.mzn")
 # Find the MiniZinc solver configuration for Gecode
 gecode = Solver.lookup("gecode")
 # Create an Instance of the n-Queens model for Gecode
-instance = Instance(gecode, nqueens)
+params = {"n":4}
 # Assign 4 to n
-instance["n"] = 4
-result = instance.solve()
-# Output the array q
-print(result["q"])
+for k,v in params.items():
+    print(k,v)
+    instance = Instance(gecode, nqueens)
+    instance[k] = v
+    result = instance.solve()
+    # Output the array q
+    print(result["q"])
