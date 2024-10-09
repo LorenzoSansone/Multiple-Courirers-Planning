@@ -7,18 +7,22 @@ Created on Wed Aug 28 17:02:31 2024
 from minizinc import Instance, Model, Solver
 import os
 # Load n-Queens model from file
+"""class SaveFile:
+  def __init__(self, path, age):
+    self.path = path
+    self.file = open(path, "a")  # append mode
+  def append(self, text):
+     
+  def close(self):
+     self.file.close()
+     """
+w = open('test.txt', 'a')
+w.write(str("\n"))
 
+w.write(str(["1","2"]))
+################################
 
-nqueens = Model( "./nqueens.mzn")
-# Find the MiniZinc solver configuration for Gecode
-gecode = Solver.lookup("gecode")
-# Create an Instance of the n-Queens model for Gecode
-params = {"n":4}
-# Assign 4 to n
-for k,v in params.items():
-    print(k,v)
-    instance = Instance(gecode, nqueens)
-    instance[k] = v
-    result = instance.solve()
-    # Output the array q
-    print(result["q"])
+################ RESULT ################
+
+w.write(str(["1","2"]))
+w.close()

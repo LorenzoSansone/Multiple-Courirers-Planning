@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dzn/inst11.dzn";
+%include "../instances_dzn/inst11.dzn";
 
 
 int: m; %num couriers
@@ -28,9 +28,6 @@ array[1..n] of var 1..m: x;
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
-
-% load[i] is the total load of courier i
-array[1..m] of var 0..200: load;
 
 %CONSTRAINTS
 
@@ -67,20 +64,7 @@ constraint forall(i in 1..m)(
     );
 
 
-constraint symmetry_breaking_constraint(
-    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
-    (
-    (max(sum([s[path[c1, j1]] | j1 in 2..n+1 where path[c1, j1] != n+1]), sum([s[path[c2, j1]] | j1 in 2..n+1 where path[c2, j1] != n+1])) <=   min(l[c1], l[c2])) -> (lex_less(row(path, c1), row(path,c2))))
-);
-/*
-constraint
-    forall(i in 1..m)(
-        %load[i] == sum([(if x[j] == i then 0 else s[path[i, j1]] endif) | j1 in 1..n])
-        %load[i] == sum([(if path[i, j1] == n+1 then 0 else s[path[i, j1]] endif) | j1 in 2..n+1])
-        load[i] == sum([s[path[i, j1]] | j1 in 2..n+1 where path[i, j1] != n+1])
-    );
-*/
-%%%
+
 
 %SYMMETRY
 % couriers do not exceed their max load
@@ -89,23 +73,14 @@ constraint
 constraint symmetry_breaking_constraint (forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
 );
-
-
+/*
 %S2
-/*
-constraint symmetry_breaking_constraint(
-    forall(c1 in 1..m, c2 in 1..m where c1 < c2)
-     ((l[c1] == l[c2]) -> (lex_less(row(path, c1), row(path, c2))))
-);
-*/
-%S3
-/*
 constraint symmetry_breaking_constraint(
     forall(c1 in 1..m, c2 in 1..m where c1 < c2)
     (
-      (max(load[c1], load[c2]) <= min(l[c1], l[c2])) ->
-      (lex_less(row(path, c1), row(path,c2))))
+    (max(sum([s[path[c1, j1]] | j1 in 2..n+1 where path[c1, j1] != n+1]), sum([s[path[c2, j1]] | j1 in 2..n+1 where path[c2, j1] != n+1])) <=   min(l[c1], l[c2])) -> (lex_less(row(path, c1), row(path,c2))))
 );*/
+
 
 %%%%%%%% Objective function
 

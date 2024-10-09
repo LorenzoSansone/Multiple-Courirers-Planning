@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dnz/inst11.dzn";
+%include "../instances_dzn/inst11.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -52,22 +52,10 @@ constraint forall(j in 1..n)(
         )
     );
 
-%C6 - If a courier has some packages to deliver he starts immediatly
-/*
-constraint forall(i in 1..m)(
-        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
-    );
-*/
-/*  
-%C7 - If a courier hasn't any package to deliver every cell is set to n+1
-constraint forall(i in 1..m)(
-        not exists(j in 1..n)(x[j] == i) -> not exists(k in 1..n+1)(path[i,k] != n+1)
-    );
-*/
- 
-%C8 - Couriers can't go back to the base to take other packages and starts immediatly
-constraint forall(i in 1..m)(
-    forall(j in 1..n)((path[i,j] == n+1) -> not exists(k in j..n)(path[i,k] != n+1))
+
+%S1 - Couriers can't go back to the base to take other packages and starts immediatly
+constraint symmetry_breaking_constraint (forall(i in 1..m)(
+    forall(j in 1..n)((path[i,j] == n+1) -> not exists(k in j..n)(path[i,k] != n+1)))
 );
 
 %%%%%%%% Objective function
@@ -76,11 +64,12 @@ constraint
     forall(i in 1..m) (
         y[i] = D[n+1,path[i, 1] ] +
             sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n-1]) + 
-            D[path[i, n], n+1 ] 
+            D[path[i, n], n+1] 
     );
 
 constraint cost = max(y);
-  
+%output [show(y) ++ "\n"];
+
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%%
 %dom_w_deg -> Weighted degree heuristic
 %restart_luby -> restart strategiy

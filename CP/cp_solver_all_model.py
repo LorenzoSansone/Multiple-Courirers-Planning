@@ -189,17 +189,13 @@ def save_solution(res, data_path, timeLimit):
 
 if __name__ == "__main__":    
     solver = "gecode"
-    model_path = "opt_model.mzn"
+    models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn"]
     timeLimit = 300
     first_instance = 11
     last_instance = 21
-    w = open('model_optimized_opt_model.txt', 'a')
-    w.write("\n")
-   
 
-
-    tableRes = PrettyTable(["Instance", "opt_model"]) 
-    tableRes.title = "MODEL LB UB optimized opt_model"
+    tableRes = PrettyTable(["Instance", "CP_base", "CP_heu_LNS", "CP_heu_LNS_sym"]) 
+    tableRes.title = "MODEL LB UB optimized"
     
     for i in range(first_instance, last_instance+1):
 
@@ -221,33 +217,91 @@ if __name__ == "__main__":
                   "min_dist":min_dist,
                   "max_dist":max_dist}
         ################################
+   
 
         ################ MODEL ################
-        try:
-            res = solve_model(model_path, timeLimit, params, solver)
-        except Exception as e:
-            row_table.append(str("Error"))
-        else:
-            if res.objective is not None and isinstance(res.objective, int):
-                flag = "" 
-                if res.status is Status.OPTIMAL_SOLUTION:
-                    flag = "(O)"
-                row_table.append(str(res.objective) + flag)
+        for model_path in models_params_path_list:
+            try:
+                res = solve_model(model_path, timeLimit, params, solver)
+            except Exception as e:
+                row_table.append(str("Error"))
             else:
-                row_table.append(str(res.status))
+                if res.objective is not None and isinstance(res.objective, int):
+                    flag = "" 
+                    if res.status is Status.OPTIMAL_SOLUTION:
+                        flag = "(O)"
+                    row_table.append(str(res.objective) + flag)
+                else:
+                    row_table.append(str(res.status))
 
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
         #save_solution(res, data_path, timeLimit)
-
-        w.write(str(row_table) + "\n")
+        
         ################################
 
     ################ RESULT ################
     print(tableRes)
-
-    w.write(str(tableRes) + "\n")
-    w.close()
+    with open('model_optimized_parameters.txt', 'w') as w:
+        w.write(str(tableRes))
     ################################
+    
+    
+    """
+    for i in range(first_instance, last_instance+1):
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+        print(f"Instance: {inst_i}")
+        data_path = f"instances_dnz/{inst_i}.dzn"
+
+        m, n, l, s, D = read_instance(data_path)
+        LB, UB = find_LB_UB(m, n, l, s, D)
+        print(f"LB:{LB} UB:{UB}")
+        print("")
+        #res_model = find_LB_model("CP/UB_model.dzn",data_path,timeLimit)
+
+        #res_model = asyncio.run(find_LB_model("CP/UB_model.dzn",data_path,timeLimit))
+        #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.dzn",data_path,timeLimit))
+    """
+    """
+    nest_asyncio.apply()
+
+    data_path = f"instances_dnz/inst00.dzn"
+    
+    m, n, l, s, D = read_instance(data_path)
+    LB, UB = find_LB_UB(m, n, l, s, D)
+    res_model = asyncio.run(solve_mcp("CP/CP.mzn",data_path,timeLimit))
+    #res_model = asyncio.run(find_LB_model("CP/UB_model.mzn",data_path,timeLimit))
+    #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.mzn",data_path,timeLimit))
+    print(data_path)
+    print("---------")
+    print("ANALYTICAL")
+    print(f"LB: {LB}")
+    print(f"UB: {UB}")
+    print("---------")
+    print("MODEL")
+    print(res_model)
+
+    print("---------")
+    print("MODEL FAST")
+    #print(res_model_s)
+
+    """
+  
+    """
+    model_path = "CP/UB_model.mzn"
+    timeLimit = 10  #seconds
+    first_instance = 0
+    last_instance = 3
+
+    for i in range(first_instance, last_instance+1):
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+        print(f"Instance: {inst_i}")
+        data_path = f"instances_dnz/{inst_i}.dzn"
+        nest_asyncio.apply()
+        res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
+        print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
+        save_solution(res, data_path, timeLimit)
+    """
+    
 
     

@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dnz/inst11.dzn";
+%include "../instances_dzn/inst11.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -68,9 +68,10 @@ constraint forall(i in 1..m)(
 */
  
 %C8 - Couriers can't go back to the base to take other packages and starts immediatly
+/*
 constraint forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);
+);*/
 
 %%%%%%%% Objective function
 

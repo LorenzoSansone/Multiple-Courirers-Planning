@@ -81,17 +81,7 @@ def solve_model(custom_model, timeLimit ,params):
   instance = minizinc.Instance(gecode, model)
   for k,v in params.items():
       instance[k] = v
-  """
-  instance["m"] = m
-  instance["n"] = n
-  instance["l"] = l
-  instance["s"] = s
-  instance["D"] = D
-  instance["LB"] = LB
-  instance["UB"] = UB
-  instance["min_dist"] = 0
-  instance["max_dist"] = UB
-  """
+
   # Solve the problem
   result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
   return result
@@ -160,18 +150,17 @@ def findLB(m, n, l, s, D):
 
 if __name__ == "__main__":  
     models_params_path_list = ["UB_model.mzn", "UB_model_optimized.mzn"]
-    timeLimit = 2
+    timeLimit = 1
     first_instance = 0
-    last_instance = 1
+    last_instance = 21
 
     tableRes = PrettyTable(["Instance", "LB_standard", "UB_standard", "UB_model","UB_model_optimized"]) 
-
+    tableRes.title = "PARAMETER LB UB"
 
     for i in range(first_instance, last_instance+1):
 
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
-        print(f"Instance: {inst_i}")
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
         min_dist, max_dist, LB_standard, UB_standard = find_boundaries(m, n, l, s, D)
@@ -197,6 +186,7 @@ if __name__ == "__main__":
             else:
                 row_table.append(str(res.status))
         tableRes.add_row(row_table) 
+        print(f"Instance: {inst_i}", row_table)
         
         ################################
 
