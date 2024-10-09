@@ -57,12 +57,16 @@ constraint forall(j in 1..n)(
     );
 
 %IMPLIED
+
+%I1
 constraint forall(i in 1..m)(
-        if not exists(j in 1..n)(x[j] == i) then not exists(k in 2..n+1)(path[i,k] != n+1)
-        else path[i,2] != n+1
-        endif
+        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
     );
-    
+
+%I2
+constraint forall(i in 1..m)(
+        not exists(j in 1..n)(x[j] == i) -> not exists(k in 2..n+1)(path[i,k] != n+1)
+    );
 
 %SYMMETRY
 

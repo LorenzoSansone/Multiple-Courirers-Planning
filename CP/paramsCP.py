@@ -70,6 +70,8 @@ def find_boundaries(m, n, l, s, D):
     UB = distances[n,0]
     for i in range(n):
         UB = UB + distances[i,i+1]
+
+    
     return 0, UB, LB, UB    
 
 def solve_model(custom_model, timeLimit ,params):   

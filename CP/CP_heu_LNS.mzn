@@ -54,27 +54,7 @@ constraint forall(j in 1..n)(
         )
     );
 
-%C6 - If a courier has some packages to deliver he starts immediatly
-/*
-constraint forall(i in 1..m)(
-        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
-    );
-*/
-/*  
-%C7 - If a courier hasn't any package to deliver every cell is set to n+1
-constraint forall(i in 1..m)(
-        not exists(j in 1..n)(x[j] == i) -> not exists(k in 1..n+1)(path[i,k] != n+1)
-    );
-*/
- 
-%C8 - Couriers can't go back to the base to take other packages and starts immediatly
-/*
-constraint forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
-);*/
-
 %%%%%%%% Objective function
-
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
@@ -90,7 +70,6 @@ constraint cost = max(y);
 solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
-      %:: relax_and_reconstruct(array1d(path), 85, array1d(1..(m)*(n+2), [ n+1 | i in 1..((m) * (n+2))]))
       minimize cost;
      
 

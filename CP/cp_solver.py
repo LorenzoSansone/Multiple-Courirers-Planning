@@ -186,21 +186,25 @@ def save_solution(res, data_path, timeLimit):
     return output_file
 
 
+def save_file(path, mode, text):
+    file = open(path, mode)  # append mode
+    file.write(text)
+    file.close()
 
 if __name__ == "__main__":    
     solver = "gecode"
     model_path = "opt_model.mzn"
     timeLimit = 300
     first_instance = 11
-    last_instance = 21
-    w = open('model_optimized_opt_model.txt', 'a')
-    w.write("\n")
+    last_instance = 10
+    file_name_save = 'test_a.txt'
+    mode_save = 'w'
    
 
 
     tableRes = PrettyTable(["Instance", "opt_model"]) 
     tableRes.title = "MODEL LB UB optimized opt_model"
-    
+    save_file(file_name_save, mode_save ,str(tableRes))
     for i in range(first_instance, last_instance+1):
 
         ################ SET PARAMETERS ################
@@ -239,15 +243,14 @@ if __name__ == "__main__":
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
         #save_solution(res, data_path, timeLimit)
-
-        w.write(str(row_table) + "\n")
+        save_file(file_name_save, mode_save ,str(tableRes))
+       
         ################################
 
     ################ RESULT ################
     print(tableRes)
 
-    w.write(str(tableRes) + "\n")
-    w.close()
+    save_file(file_name_save, mode_save ,str(tableRes))
     ################################
 
     

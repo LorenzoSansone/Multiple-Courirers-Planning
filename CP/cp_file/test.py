@@ -7,22 +7,11 @@ Created on Wed Aug 28 17:02:31 2024
 from minizinc import Instance, Model, Solver
 import os
 # Load n-Queens model from file
-"""class SaveFile:
-  def __init__(self, path, age):
-    self.path = path
-    self.file = open(path, "a")  # append mode
-  def append(self, text):
-     
-  def close(self):
-     self.file.close()
-     """
-w = open('test.txt', 'a')
-w.write(str("\n"))
-
-w.write(str(["1","2"]))
-################################
-
-################ RESULT ################
-
-w.write(str(["1","2"]))
-w.close()
+ 
+first_instance = 0
+last_instance = 21
+for i in [x for x in range(first_instance, last_instance+1) if x != 14]:
+    print(i, end = " ")
+print()
+for i in range(first_instance, last_instance+1):
+    print(i, end = " ")

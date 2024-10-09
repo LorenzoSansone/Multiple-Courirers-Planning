@@ -50,33 +50,11 @@ def read_instance(file_path):
                     row.append(int(c))
             distances.append(row)
     return m, n, l, s, distances
-"""
-async def find_LB_model(custom_model, file_path, timeLimit):
-  m, n, l, s, D = read_instance(file_path)
-  LB, UB = find_LB_UB(m, n, l, s, D)
-  #min_dist = 0
-  #max_dist = UB
-  
 
-  # Load model
-  model = minizinc.Model(custom_model)
-
-  gecode = minizinc.Solver.lookup("gecode")
-  # Create minizinc instance
-  instance = minizinc.Instance(gecode, model)
-  instance["n"] = n
-  instance["D"] = D
-  instance["LB"] = LB
-  instance["UB"] = UB
-  instance["min_dist"] = 0
-  instance["max_dist"] = UB
-  
-  #instance["o"] = origin_location
-  # Solve the problem
-  result = await instance.solve_async(timeout=datetime.timedelta(seconds = timeLimit))
-
-  return result
-"""
+def save_file(path, mode, text):
+    file = open(path, mode)  # append mode
+    file.write(text)
+    file.close()
 
 def find_boundaries_standard(m, n, l, s, D):
     distances = np.array(D)
@@ -189,22 +167,26 @@ def save_solution(res, data_path, timeLimit):
 
 if __name__ == "__main__":    
     solver = "gecode"
-    models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn"]
+    models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     timeLimit = 300
-    first_instance = 11
+    first_instance = 0
     last_instance = 21
+    file_name_save = 'result_standard_all_model.txt'
+    mode_save = 'w'
 
-    tableRes = PrettyTable(["Instance", "CP_base", "CP_heu_LNS", "CP_heu_LNS_sym"]) 
-    tableRes.title = "MODEL LB UB optimized"
-    
-    for i in range(first_instance, last_instance+1):
+    tableRes = PrettyTable(["Instance"] + models_params_path_list) 
+    tableRes.title = "MODEL LB UB standard"
+    save_file(file_name_save, mode_save ,str(tableRes))
+
+    #for i in range(first_instance, last_instance+1):
+    for i in [x for x in range(first_instance, last_instance+1) if x != 14]:
 
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        min_dist, max_dist, LB, UB = find_boundaries_optimized(m, n, l, s, D)
-        
+        #min_dist, max_dist, LB, UB = find_boundaries_optimized(m, n, l, s, D)
+        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
         row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")"]
   
         params = {"m":m, 
@@ -237,13 +219,14 @@ if __name__ == "__main__":
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
         #save_solution(res, data_path, timeLimit)
-        
+        save_file(file_name_save, mode_save ,str(tableRes))
+
         ################################
 
     ################ RESULT ################
     print(tableRes)
-    with open('model_optimized_parameters.txt', 'w') as w:
-        w.write(str(tableRes))
+    save_file(file_name_save, mode_save ,str(tableRes))
+
     ################################
     
     
