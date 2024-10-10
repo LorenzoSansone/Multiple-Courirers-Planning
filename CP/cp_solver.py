@@ -193,16 +193,18 @@ def save_file(path, mode, text):
 
 if __name__ == "__main__":    
     solver = "gecode"
-    model_path = "opt_model.mzn"
+    model_path = "CP_base.mzn"
     timeLimit = 300
-    first_instance = 11
-    last_instance = 10
+    first_instance = 20
+    last_instance = 20
     file_name_save = 'test_a.txt'
+    file_name_error = 'error_model.txt'
     mode_save = 'w'
+    mode_save_error = "a"
    
 
 
-    tableRes = PrettyTable(["Instance", "opt_model"]) 
+    tableRes = PrettyTable(["Instance"] + [model_path]) 
     tableRes.title = "MODEL LB UB optimized opt_model"
     save_file(file_name_save, mode_save ,str(tableRes))
     for i in range(first_instance, last_instance+1):
@@ -211,7 +213,8 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        min_dist, max_dist, LB, UB = find_boundaries_optimized(m, n, l, s, D)
+        #min_dist, max_dist, LB, UB = find_boundaries_optimized(m, n, l, s, D)
+        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
         
         row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")"]
   
@@ -231,6 +234,7 @@ if __name__ == "__main__":
             res = solve_model(model_path, timeLimit, params, solver)
         except Exception as e:
             row_table.append(str("Error"))
+            save_file(file_name_error, mode_save_error ,str(e))
         else:
             if res.objective is not None and isinstance(res.objective, int):
                 flag = "" 

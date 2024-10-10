@@ -169,17 +169,19 @@ if __name__ == "__main__":
     solver = "gecode"
     models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     timeLimit = 300
-    first_instance = 0
-    last_instance = 21
+    first_instance = 14
+    last_instance = 14
     file_name_save = 'result_standard_all_model.txt'
+    file_name_error = 'error_model.txt'
     mode_save = 'w'
+    mode_save_error = "a"
 
     tableRes = PrettyTable(["Instance"] + models_params_path_list) 
     tableRes.title = "MODEL LB UB standard"
     save_file(file_name_save, mode_save ,str(tableRes))
 
     #for i in range(first_instance, last_instance+1):
-    for i in [x for x in range(first_instance, last_instance+1) if x != 14]:
+    for i in [x for x in range(first_instance, last_instance+1)]:
 
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
@@ -207,6 +209,7 @@ if __name__ == "__main__":
                 res = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
                 row_table.append(str("Error"))
+                save_file(file_name_error, mode_save_error ,str(e))
             else:
                 if res.objective is not None and isinstance(res.objective, int):
                     flag = "" 
