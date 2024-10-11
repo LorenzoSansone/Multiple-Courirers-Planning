@@ -12,14 +12,16 @@ from prettytable import PrettyTable
  
 model_path = "opt_model.mzn"
 timeLimit = 300
-first_instance = 11
-last_instance = 10
+first_instance = 0
+last_instance = 21
 file_name_save = 'test_a.txt'
 file_name_error = 'error_model.txt'
 mode_save = 'w'
 mode_save_error = "a"
 
 
-
-tableRes = PrettyTable(["Instance"] + [model_path])
-print(tableRes) 
+for i in range(first_instance, last_instance+1):
+    print(i, end = " ")
+print()
+for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
+    print(i, end = " ")

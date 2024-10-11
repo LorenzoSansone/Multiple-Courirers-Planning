@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst11.dzn";
+include "../instances_dzn/inst18.dzn";
 
 
 int: m; %num couriers
@@ -28,7 +28,6 @@ array[1..n] of var 1..m: x;
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
-
 
 %CONSTRAINTS
 
@@ -57,16 +56,27 @@ constraint forall(j in 1..n)(
         )
     );
 
+%IMPLIED
 
+%I1
+constraint forall(i in 1..m)(
+        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
+    );
+
+%I2
+constraint forall(i in 1..m)(
+        not exists(j in 1..n)(x[j] == i) -> not exists(k in 2..n+1)(path[i,k] != n+1)
+    );
 
 %SYMMETRY
+
 %S1 - Couriers can't go back to the base to take other packages and starts immediatly
 constraint symmetry_breaking_constraint (forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
 );
 
-%%%%%%%% Objective function
 
+%%%%%%%% Objective function
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
@@ -75,7 +85,9 @@ constraint
 constraint cost = max(y);
   
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, dom_w_deg, indomain_min)  
-      :: restart_luby(100)
+solve :: seq_search([
+             int_search(x, first_fail, indomain_min),
+             int_search(path, dom_w_deg, indomain_min)])
+      %:: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;

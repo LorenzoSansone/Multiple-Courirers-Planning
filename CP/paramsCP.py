@@ -152,7 +152,7 @@ def findLB(m, n, l, s, D):
 
 if __name__ == "__main__":  
     models_params_path_list = ["UB_model.mzn", "UB_model_optimized.mzn"]
-    timeLimit = 1
+    timeLimit = 70
     first_instance = 0
     last_instance = 21
 
