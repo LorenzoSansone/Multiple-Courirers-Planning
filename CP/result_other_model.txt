@@ -1,0 +1,16 @@
++-----------------------------------------------------------------------------------------------+
+|                                MODEL EXPERIMENT LB UB STANDARD                                |
++----------------------------------------+---------------+------------+------------+------------+
+|                Instance                | opt_model.mzn | model1.mzn | model2.mzn | model3.mzn |
++----------------------------------------+---------------+------------+------------+------------+
+| inst11 (mD:0 MD:12676 LB:304 UB:12676) |    UNKNOWN    |  UNKNOWN   |    621     |  UNKNOWN   |
+|  inst12 (mD:0 MD:7169 LB:346 UB:7169)  |     346(O)    |  UNKNOWN   |   346(O)   |  UNKNOWN   |
+|  inst13 (mD:0 MD:3776 LB:292 UB:3776)  |      488      |    602     |    518     |   292(O)   |
+| inst15 (mD:0 MD:16846 LB:350 UB:16846) |    UNKNOWN    |  UNKNOWN   |  UNKNOWN   |  UNKNOWN   |
+|  inst16 (mD:0 MD:3687 LB:286 UB:3687)  |     286(O)    |   286(O)   |   286(O)   |   286(O)   |
+| inst17 (mD:0 MD:23869 LB:380 UB:23869) |     Error     |   Error    |   Error    |   Error    |
+| inst18 (mD:0 MD:16411 LB:300 UB:16411) |    UNKNOWN    |  UNKNOWN   |  UNKNOWN   |  UNKNOWN   |
+|  inst19 (mD:0 MD:6197 LB:334 UB:6197)  |     334(O)    |   334(O)   |   334(O)   |   334(O)   |
+| inst20 (mD:0 MD:22773 LB:346 UB:22773) |     Error     |   Error    |   Error    |   Error    |
+| inst21 (mD:0 MD:14220 LB:374 UB:14220) |      946      |  UNKNOWN   |    870     |  UNKNOWN   |
++----------------------------------------+---------------+------------+------------+------------+

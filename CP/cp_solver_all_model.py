@@ -167,19 +167,19 @@ def save_solution(res, data_path, timeLimit):
 
 if __name__ == "__main__":    
     solver = "gecode"
-    models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
+    models_params_path_list = ["opt_model.mzn", "model1.mzn", "model2.mzn","model3.mzn"]
     timeLimit = 300
-    first_instance = 14
+    first_instance = 11
     last_instance = 21
-    file_name_save = 'result_opt_all_model.txt'
+    file_name_save = 'result_other_model.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
 
     tableRes = PrettyTable(["Instance"] + models_params_path_list) 
-    tableRes.title = "MODEL LB UB OPTIMIZED"
+    tableRes.title = "MODEL EXPERIMENT LB UB STANDARD"
     save_file(file_name_save, mode_save ,str(tableRes))
-
+    print("START")
     #for i in range(first_instance, last_instance+1):
     for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
 
@@ -187,9 +187,9 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        min_dist, max_dist, LB, UB, UB_list = find_boundaries_optimized(m, n, l, s, D)
-        #min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")" + "(" + str(UB_list) +  ")"]
+        #min_dist, max_dist, LB, UB, UB_list = find_boundaries_optimized(m, n, l, s, D)
+        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")"]
   
         params = {"m":m, 
                   "n":n,
