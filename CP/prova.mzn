@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dzn/inst14.dzn";
+include "../instances_dzn/inst18.dzn";
 
 
 int: m; %num couriers

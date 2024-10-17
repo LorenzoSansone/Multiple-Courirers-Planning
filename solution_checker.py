@@ -29,6 +29,9 @@ def main(args):
   errors = []
   warnings = []  
   results_folder = args[2]
+  print(os.getcwd())
+  print(os.listdir(results_folder))
+  print("-----")
   for subfolder in os.listdir(results_folder):
     if subfolder.startswith('.'):
       # Skip hidden folders.

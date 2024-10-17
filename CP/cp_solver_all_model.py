@@ -15,6 +15,7 @@ import math
 import json
 import numpy as np
 from prettytable import PrettyTable 
+import time
 
 # Function to parse the value after the equal sign
 def parse_value(value):
@@ -125,12 +126,12 @@ def output_path_prepare(path):
     return path_out
 
         
-def save_solution(res, data_path, timeLimit):
+def save_solution(res, data_path, save_path, timeLimit):
     # extract number from data_path
     match = re.search(r"inst(\d+)\.dzn", data_path)
     number = match.group(1)
     #output = f"{number}"
-    output_directory = "res/CP"
+    output_directory = save_path #"res/CP"
     # prepare the solution dictionary
     if res.objective is None:
         time = timeLimit
@@ -138,7 +139,10 @@ def save_solution(res, data_path, timeLimit):
         obj = None
         sol = []
     else:
-        time = math.floor(res.statistics['solveTime'].total_seconds())
+        if res.statistics['solveTime'] is None:
+            time = 300
+        else:
+            time = math.floor(res.statistics['solveTime'].total_seconds())
         optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
         obj = res['objective']
         sol = output_path_prepare(res['path'])  
@@ -167,29 +171,37 @@ def save_solution(res, data_path, timeLimit):
 
 if __name__ == "__main__":    
     solver = "gecode"
-    models_params_path_list = ["opt_model.mzn", "model1.mzn", "model2.mzn","model3.mzn"]
-    timeLimit = 300
+    models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
+    #models_params_path_list = ["CP_base.mzn","CP_heu_LNS.mzn"]
+
     first_instance = 11
     last_instance = 21
-    file_name_save = 'result_other_model.txt'
+    file_name_save = 'result_models_standard.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
 
     tableRes = PrettyTable(["Instance"] + models_params_path_list) 
-    tableRes.title = "MODEL EXPERIMENT LB UB STANDARD"
+    tableRes.title = "MODEL LB UB STANDARD GECODE"
     save_file(file_name_save, mode_save ,str(tableRes))
     print("START")
     #for i in range(first_instance, last_instance+1):
     for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
-
+        timeLimit = 300
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        #min_dist, max_dist, LB, UB, UB_list = find_boundaries_optimized(m, n, l, s, D)
+
+        #START PRE-SOLVING
+        start_pre_solving = time.time()
         min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")"]
+        end_pre_solving = time.time()
+        #END PRE-SOLVING
+        delta_pre_solving = end_pre_solving - start_pre_solving
+
+        timeLimit = int(timeLimit - delta_pre_solving)
+        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " P:" + str(timeLimit) +")"]
   
         params = {"m":m, 
                   "n":n,
@@ -205,6 +217,8 @@ if __name__ == "__main__":
 
         ################ MODEL ################
         for model_path in models_params_path_list:
+            save_solution_path = f"../res/CP/{model_path}"
+
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
@@ -218,6 +232,7 @@ if __name__ == "__main__":
                     row_table.append(str(res.objective) + flag)
                 else:
                     row_table.append(str(res.status))
+                save_solution(res, data_path,save_solution_path, timeLimit)
 
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
