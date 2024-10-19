@@ -71,6 +71,9 @@ def find_boundaries_standard(m, n, l, s, D):
     UB = int(UB)
     return 0, UB, LB, UB 
 
+def find_max_path(m, n, l, s, D):
+    return n-m+1
+
 def find_boundaries_optimized(m, n, l, s, D):
     min_dist, max_dist, LB_standard, UB_standard = find_boundaries_standard(m, n, l, s, D)
 
@@ -192,10 +195,10 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-
         #START PRE-SOLVING
         start_pre_solving = time.time()
         min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+        max_path = find_max_path(m, n, l, s, D)
         end_pre_solving = time.time()
         #END PRE-SOLVING
         delta_pre_solving = end_pre_solving - start_pre_solving
@@ -213,8 +216,8 @@ if __name__ == "__main__":
                   "min_dist":min_dist,
                   "max_dist":max_dist}
         ################################
-   
-
+        print(i,":",max_path)
+        """
         ################ MODEL ################
         for model_path in models_params_path_list:
             save_solution_path = f"../res/CP/{model_path}"
@@ -247,7 +250,8 @@ if __name__ == "__main__":
 
     ################################
     
-    
+    """
+
     """
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
