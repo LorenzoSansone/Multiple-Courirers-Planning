@@ -74,30 +74,20 @@ def find_boundaries_standard(m, n, l, s, D):
 def find_boundaries_advanced(m, n, l, s, D):
     distances = np.array(D)
     min_dist_dep_list = []
-    min_dist_dict = {}
-    
+
     for i in range(n):
         dist_one = distances[n,i] + distances[i,n]
         min_dist_dep_list.append(dist_one)
-        min_dist_dict.update({i:dist_one})
+
     LB = max(min_dist_dep_list)
-
-    #Sort the dictionary by values
-    sorted_by_values = dict(sorted(min_dist_dict.items(), key=lambda item: item[1], reverse=False))
-
-    #Select only the m-1 to n packages
-    sub = {k: sorted_by_values[k] for k in list(sorted_by_values.keys())[m-1:]}
-    sub = list(sub.keys())
     
-    #Compute the distance
-    UB = distances[n,sub[0]]
-
-    for i in range(len(sub) - 1):
-        UB = UB + distances[sub[i],sub[i+1]]
-    UB = UB + distances[sub[i],n]
-    
-    #len(sub) -> max_path
-    return min(min_dist_dep_list), UB, LB, UB, len(sub)
+    UB = distances[n,0]
+    for i in range(n):
+        UB = UB + distances[i,i+1]
+    UB = int(UB)
+   
+    max_path_len = n-m+1
+    return min(min_dist_dep_list), UB, LB, UB, max_path_len
 
 def find_boundaries_optimized(m, n, l, s, D):
     min_dist, max_dist, LB_standard, UB_standard = find_boundaries_standard(m, n, l, s, D)
@@ -200,11 +190,11 @@ def save_solution(res, data_path, save_path, timeLimit):
 if __name__ == "__main__":    
     solver = "gecode"
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
-    models_params_path_list = ["model_all_start.mzn","model_optimized.mzn"]
+    models_params_path_list = ["model_all_start.mzn","model_path_opt.mzn"]
 
     first_instance = 0
     last_instance = 21
-    file_name_save = 'result_models_standard_1.txt'
+    file_name_save = 'result_models_standard_3.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
@@ -222,12 +212,14 @@ if __name__ == "__main__":
         m, n, l, s, D = read_instance(data_path)
         #START PRE-SOLVING
         start_pre_solving = time.time()
-        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-        #min_dist, max_dist, LB, UB,max_path1 = find_boundaries_advanced(m, n, l, s, D)
+        #min_dist1, max_dist1, LB1, UB1 = find_boundaries_standard(m, n, l, s, D)
+        min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
         end_pre_solving = time.time()
+        #print("INSTANCES",i,min_dist, max_dist, LB, UB, max_pack )
+        
         #END PRE-SOLVING
         delta_pre_solving = end_pre_solving - start_pre_solving
-
+        
         timeLimit = int(timeLimit - delta_pre_solving)
         row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " P:" + str(timeLimit) +")"]
   
@@ -240,11 +232,15 @@ if __name__ == "__main__":
                   "UB":UB,
                   "min_dist":min_dist,
                   "max_dist":max_dist}
+        
+        
         ################################
         
         ################ MODEL ################
         for model_path in models_params_path_list:
-            save_solution_path = f"../res/CP/{model_path}"
+            if model_path == "model_path_opt.mzn":
+                params.update({"max_pack": max_pack})
+            save_solution_path = f"../res/CP/{model_path}" + "_adv"
 
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
@@ -274,7 +270,7 @@ if __name__ == "__main__":
 
     ################################
     
-
+    
     """
     for i in range(first_instance, last_instance+1):
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i

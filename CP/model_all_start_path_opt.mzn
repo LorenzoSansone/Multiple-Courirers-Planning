@@ -65,7 +65,7 @@ constraint forall(j in 1..n)(exists(i in 1..m)(x[j] == i));
 
 %IMPLIED
 constraint forall(i in 1..m)(
-        path[i,2] != n+1
+        path[i,1] != n+1
     );
 
 %SYMMETRY
