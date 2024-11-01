@@ -158,7 +158,7 @@ def save_solution(res, data_path, save_path, timeLimit):
         sol = []
     else:
         if res.statistics['solveTime'] is None:
-            time = 300
+            time = timeLimit
         else:
             time = math.floor(res.statistics['solveTime'].total_seconds())
         optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
@@ -192,9 +192,9 @@ if __name__ == "__main__":
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     models_params_path_list = ["model_all_start.mzn","model_path_opt.mzn"]
 
-    first_instance = 0
+    first_instance = 21
     last_instance = 21
-    file_name_save = 'result_models_standard_3.txt'
+    file_name_save = 'result_models_standard_4.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
