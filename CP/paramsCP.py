@@ -72,7 +72,7 @@ def find_boundaries(m, n, l, s, D):
         UB = UB + distances[i,i+1]
 
     
-    return 0, UB, LB, UB    
+    return min(min_dist_dep_list), UB, LB, UB    
 
 def solve_model(custom_model, timeLimit ,params):   
   # Load model
@@ -149,7 +149,8 @@ def findLB(m, n, l, s, D):
     min_dist_dep = min(min_dist_dep_list)
     return min_dist_dep, dict_res
 """
-
+def findB(m, n, l, s, D):
+    return (n-m)+1
 if __name__ == "__main__":  
     models_params_path_list = ["UB_model.mzn", "UB_model_optimized.mzn"]
     timeLimit = 70
@@ -166,9 +167,12 @@ if __name__ == "__main__":
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
         min_dist, max_dist, LB_standard, UB_standard = find_boundaries(m, n, l, s, D)
-
+        B = findB(m, n, l, s, D)
+        print(i, "----")
+        print(min_dist, max_dist, LB_standard, UB_standard)
+        print("B",B)
         row_table = [inst_i, str(LB_standard), str(UB_standard)]
-  
+        """
         params = {"m":m, 
                   "n":n,
                   "l":l,
@@ -197,5 +201,6 @@ if __name__ == "__main__":
     with open('parameters_UB_LB.txt', 'w') as w:
         w.write(str(tableRes))
     ################################
+        """
        
     

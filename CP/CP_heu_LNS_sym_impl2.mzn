@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst11.dzn";
+%include "../instances_dzn/inst15.dzn";
 
 
 int: m; %num couriers
@@ -29,7 +29,8 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
 
-%CONSTRAINTS
+
+%CONSTRAINTS 
 
 %C1: Courier don't exceed their max load
 constraint bin_packing_capa(l, x, s);
