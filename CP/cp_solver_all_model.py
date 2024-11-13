@@ -188,13 +188,13 @@ def save_solution(res, data_path, save_path, timeLimit):
 
 
 if __name__ == "__main__":    
-    solver = "gecode"
+    solver = "chuffed"
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
-    models_params_path_list = ["model_all_start.mzn","model_path_opt.mzn"]
+    models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 21
+    first_instance = 0
     last_instance = 21
-    file_name_save = 'result_models_standard_4.txt'
+    file_name_save = 'result_models_standard_5.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
@@ -212,8 +212,9 @@ if __name__ == "__main__":
         m, n, l, s, D = read_instance(data_path)
         #START PRE-SOLVING
         start_pre_solving = time.time()
-        #min_dist1, max_dist1, LB1, UB1 = find_boundaries_standard(m, n, l, s, D)
-        min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
+        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+        max_pack = n
+        #min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
         end_pre_solving = time.time()
         #print("INSTANCES",i,min_dist, max_dist, LB, UB, max_pack )
         
@@ -240,7 +241,7 @@ if __name__ == "__main__":
         for model_path in models_params_path_list:
             if model_path == "model_path_opt.mzn":
                 params.update({"max_pack": max_pack})
-            save_solution_path = f"../res/CP/{model_path}" + "_adv"
+            save_solution_path = f"../res/CP/{model_path}" #+ "_adv"
 
             try:
                 res = solve_model(model_path, timeLimit, params, solver)

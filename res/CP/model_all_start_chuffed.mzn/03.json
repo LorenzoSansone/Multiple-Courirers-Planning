@@ -1,17 +1,17 @@
 {
     "gecode": {
-        "time": 299,
-        "optimal": false,
+        "time": 0,
+        "optimal": true,
         "obj": 12,
         "sol": [
             [
-                2,
-                4,
+                3,
+                6,
                 5
             ],
             [
-                3,
-                6
+                2,
+                4
             ],
             [
                 1,
