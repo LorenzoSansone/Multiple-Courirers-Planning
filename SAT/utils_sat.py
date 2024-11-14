@@ -118,10 +118,25 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
+def num_bits(x):
+    """Compute the number of bits necessary to represent the integer number x"""
+    return math.floor(math.log2(x)) + 1
+
+def int_to_binary(x, digits):
+    """Get binary representation of integer x"""
+    res = []
+    for _ in range(digits):
+        res.append(x%2==1)
+        x = x//2
+    res.reverse()
+
+    return res
+
+
 def geq(x,y):
     """Encoding of x >= y"""
     #encoding_num x and y
-    
+
     if len(x) != len(y):
         raise ValueError("Both lists must have the same length.")
     
@@ -130,12 +145,3 @@ def geq(x,y):
     else:
         return Or(And(Not(y[0]), x[0]),
                   And(x[0]==y[0], geq(x[1:], y[1:])))
-    """
-    constraint = []
-
-    for i in range(len(x)):
-
-        constraint.append(Or(x[i]==u[i], And(Not(v[0]), u[0])))
-
-        if 
-    """
