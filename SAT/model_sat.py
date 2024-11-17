@@ -92,15 +92,8 @@ def mcp_sat(m, n, l, s, D):
         #s.add(conditional_sum_K_bin(a[i], s_bin, courier_loads[i], f"compute_courier_load_{i}"))
         s.add(geq(l_b[i],courier_loads[i]))
     
-    
-    
-    
-    
     end_time = time.time()
     
-
-
-
     return ""
 
 
@@ -110,37 +103,36 @@ if __name__ == "__main__":
     last_instance = 1
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
-    mode_save = 'w'
-    mode_save_error = "a"
-
+    mode_file_result = 'w'
+    mode_file_error = "a"
+    """
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
         #mcp_sat(m, n, l, s, D)
-  
-
-    
     """
-    x = [Bool("x_0"), Bool("x_1"), Bool("x_2")]
-    y = [Bool("y_0"), Bool("y_1"), Bool("y_2")]
+    
+    x = [Bool("x_0"),Bool("x_1")]
+    y = [Bool("y_0"),Bool("y_1")]
+    res = [Bool("res_0"),Bool("res_1")]
+
     s = Solver()
 
     s.add(x[0] == True)
-    s.add(x[1] == False)
-    s.add(x[2] == False)
+    s.add(y[0] == True)
 
-    s.add(y[0] == False)
+    s.add(x[1] == True)
     s.add(y[1] == True)
-    s.add(y[2] == False)
+   
+ 
+    s.add(sum_bin(x,y,res))
 
-    s.add(geq(x,y))
     if s.check() == sat:
         print(s.model())
     else:
-        print("Fail")
-    """
+        print(s.check())
 
     
 

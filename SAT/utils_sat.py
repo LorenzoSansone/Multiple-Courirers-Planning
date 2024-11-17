@@ -145,3 +145,68 @@ def geq(x,y):
     else:
         return Or(And(Not(y[0]), x[0]),
                   And(x[0]==y[0], geq(x[1:], y[1:])))
+    
+
+def sum_b(l1, l2):   
+                                
+    #l1, l2 = get_bool_lists(l1, l2)
+    max_len = max(len(l1), len(l2))
+    #l1 = pad(l1, max_len)
+    #l2 = pad(l2, max_len)
+    
+    result = []
+
+    carry_in = False
+    carry_out = False
+
+    for i in range(max_len - 1, -1, -1):
+        a = l1[i]
+        b = l2[i]
+        result.append(Xor(Xor(a, b), carry_in))
+
+        carry_out = Or(And(Xor(a, b), carry_in), And(a, b))
+        carry_in = carry_out
+    result.append(carry_in)
+    result = result[::-1]
+
+    return result
+
+def sum_one_bit(x, y, c_in, res, c_res):
+  """
+      Implementation of the full adder for one bit
+      Constraints for a + b + c_in = res with c_res (1 bit)
+      :param a:     first bit
+      :param b:     second bit
+      :param c_in:  carry in
+      :param res:   result
+      :param c_res: carry result  
+  """
+  # Xor(A, B) encodes the binary sum between the bit A and the bit B
+  c_1 = res == Xor( Xor(x, y), c_in)  #Sum between x, y and c_in
+  c_2 = c_res == Or(And( Xor(x, y) , c_in), And(x, y)) #Computation of the carry
+  return And(c_1, c_2) 
+
+def pad_bool(x, length):
+    return [BoolVal(False)] * (length - len(x)) + x
+
+def sum_bin(x, y, res, name= ""):
+    """
+      The constraints for full adder. x + y = res
+      :param x:   binary inputs
+      :param y:   binary inputs
+      :param res: binary result
+      :param name:
+    """
+
+    max_len = max(len(x), len(y))
+    x = pad_bool(x, max_len)
+    y = pad_bool(y, max_len)
+
+    c = [Bool(f"carry_{name}_{i}") for i in range(max_len)] + [BoolVal(False)]
+
+    constr = []
+
+    for i in range(max_len):
+        constr.append(sum_one_bit(x= x[max_len-i-1], y = y[max_len-i-1], c_in= c[max_len - i], res= res[max_len - i - 1], c_res= c[max_len - i - 1]))
+    constr.append(Not(c[0]))
+    return And(constr)
