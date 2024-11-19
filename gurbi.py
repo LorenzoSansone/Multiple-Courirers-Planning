@@ -17,13 +17,23 @@ def save_solution(result, input_file, m, n):
         objective = None
     else:
         solution = result.solution
+        print(type(solution))
         optimal = (result.status.name == 'OPTIMAL_SOLUTION')
         objective = result.objective if result.objective is not None else None
+
+    # Create a dictionary to store solution details
+    solution_data = {
+        "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
+    }
+
+    # Try to extract 'y' from solution if it exists
+    if hasattr(solution, "y"):
+        solution_data["y"] = solution.y
 
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
     solution_dict = {
         solver: {
-            "time": 0,  # Time taken by the optimization (placeholder; replace if available)
+            "time": math.floor(result.statistics['solveTime'].total_seconds()),  # Time taken by the optimization (placeholder; replace if available)
             "optimal": optimal,
             "obj": objective,
             "sol": []
@@ -37,7 +47,7 @@ def save_solution(result, input_file, m, n):
         while True:
             next_location = None
             for j2 in range(n+1):
-                if solution.y[courier][current_location][j2] == 1:
+                if solution_data["y"][courier][current_location][j2] == 1:
                     next_location = j2
                     break
 
@@ -61,7 +71,7 @@ def save_solution(result, input_file, m, n):
     return output_file
 
 if __name__ == "__main__":
-    time_limit = 3  # Time limit of 3 seconds
+    time_limit = 300  # Time limit of 5 minutes
     for i in range(1, 22):
         print(f"\nSolving instance: inst{i:02d}.dat")
         file_path = f'instances/inst{i:02d}.dat'

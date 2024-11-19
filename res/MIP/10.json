@@ -1,7 +1,7 @@
 {
     "gurobi": {
-        "time": 0,
-        "optimal": false,
+        "time": 8,
+        "optimal": true,
         "obj": 244,
         "sol": [
             [
