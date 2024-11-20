@@ -1,15 +1,15 @@
-int: m;                     % Number of couriers
-int: n;                     % Number of items
-int: locations;             % Number of locations (n + 1 for origin)
-array[1..m] of int: l;      % Load capacities of each courier
-array[1..n] of int: s;      % Sizes of each item
-array[1..locations, 1..locations] of int: D;  % Distance matrix between locations
+int: m;                                         % Number of couriers
+int: n;                                         % Number of items
+int: locations;                                 % Number of locations (n + 1 for origin)
+array[1..m] of int: l;                          % Load capacities of each courier
+array[1..n] of int: s;                          % Sizes of each item
+array[1..locations, 1..locations] of int: D;    % Distance matrix between locations
 
 % Variables
-array[1..m, 1..n] of var 0..1: x;                    % x[i, j] = 1 if courier i delivers item j
+array[1..m, 1..n] of var 0..1: x;                       % x[i, j] = 1 if courier i delivers item j
 array[1..m, 1..locations, 1..locations] of var 0..1: y; % y[i, j1, j2] = 1 if courier i travels from j1 to j2
-array[1..m] of var int: Distance;                    % Total distance for each courier
-var int: max_distance;                               % Maximum distance among couriers
+array[1..m] of var int: Distance;                       % Total distance for each courier
+var int: max_distance;                                  % Maximum distance among couriers
 
 % Subtour elimination variables
 array[1..m, 1..n] of var 1..n: u;

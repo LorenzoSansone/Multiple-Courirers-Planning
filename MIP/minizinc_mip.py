@@ -1,5 +1,5 @@
 from minizinc import Instance, Model, Solver
-import utils
+import utils as utils
 import os, math, json, datetime
 
 if __name__ == "__main__":
@@ -10,18 +10,13 @@ if __name__ == "__main__":
         m, n, l, s, D, locations = utils.read_input(file_path)
         
         # Load the MiniZinc model
-        model = Model("gurbi.mzn")
+        model = Model("MIP/minizinc_mip.mzn")
         solver = Solver.lookup("gurobi")
         instance = Instance(solver, model)
         
         # Set parameters
-        instance["m"] = m
-        instance["n"] = n
-        instance["l"] = l
-        instance["s"] = s
-        instance["D"] = D
-        instance["locations"] = locations
-        
+        for i in ["m", "n", "l", "s", "D", "locations"]:
+            instance[i] = locals()[i]
         # Solve the model with timeout
         result = instance.solve(timeout=datetime.timedelta(seconds=time_limit))
         print(f"Solved instance: {file_path}")
