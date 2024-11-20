@@ -71,4 +71,6 @@ constraint
         max_distance >= Distance[i]
     );
 
-solve minimize max_distance;
+
+% Search strategy for y variables (individual assignment of values)
+solve :: int_search([y[i, j1, j2] | i in 1..m, j1 in 1..locations, j2 in 1..locations], first_fail, indomain_min) minimize max_distance;
