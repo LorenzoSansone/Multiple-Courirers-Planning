@@ -99,13 +99,61 @@ def output_path_prepare(path):
         path_out.append(path_i_out)
     return path_out
 
+class SaveFileJson:
+    def __init__(self, data_path):
+        self.solution_dict = {}
+
+        # extract number from data_path
+        match = re.search(r"inst(\d+)\.dzn", data_path)
+        self.number = match.group(1)
+
+    def append(self, title, res, timeLimit):
+        if res.objective is None:
+            time = timeLimit
+            optimal = False
+            obj = None
+            sol = []
+        else:
+            if res.statistics['solveTime'] is None:
+                time = timeLimit
+            else:
+                time = math.floor(res.statistics['solveTime'].total_seconds())
+            optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
+            obj = res['objective']
+            sol = output_path_prepare(res['path'])  
         
-def save_solution(res, data_path, timeLimit):
+        self.solution_dict.update(
+            {
+            title: {
+            "time": time,
+            "optimal": optimal,
+            "obj": obj,
+            "sol": sol
+            }
+            }
+            )
+            
+    def save(self, output_directory):
+        #output_directory = res/CP
+
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+    
+        output_file = output_directory + "/" + self.number + ".json"
+
+        # write the solution to the output file
+        with open(output_file, 'w') as outfile:
+            json.dump(self.solution_dict, outfile, indent=4)
+
+        print(f"Solution saved to {output_file}")
+
+
+def save_solution(title, res, data_path, save_path, timeLimit):
     # extract number from data_path
     match = re.search(r"inst(\d+)\.dzn", data_path)
     number = match.group(1)
     #output = f"{number}"
-    output_directory = "res/CP"
+    output_directory = save_path #"res/CP"
     # prepare the solution dictionary
     if res.objective is None:
         time = timeLimit
@@ -113,12 +161,15 @@ def save_solution(res, data_path, timeLimit):
         obj = None
         sol = []
     else:
-        time = math.floor(res.statistics['solveTime'].total_seconds())
+        if res.statistics['solveTime'] is None:
+            time = timeLimit
+        else:
+            time = math.floor(res.statistics['solveTime'].total_seconds())
         optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
         obj = res['objective']
         sol = output_path_prepare(res['path'])  
     solution_dict = {
-        "gecode": {
+        title: {
             "time": time,
             "optimal": optimal,
             "obj": obj,
@@ -131,12 +182,24 @@ def save_solution(res, data_path, timeLimit):
         os.makedirs(output_directory)
     
     output_file = output_directory + "/" + number + ".json"
+
+
+    data = {}
+    if os.path.isfile(output_file):
+        with open(output_file, 'r') as file:
+                data = json.load(file)
+                
+
+    data.update(solution_dict)
+    
     # write the solution to the output file
     with open(output_file, 'w') as outfile:
-        json.dump(solution_dict, outfile, indent=4)
+        json.dump(data, outfile, indent=4)
 
     print(f"Solution saved to {output_file}")
     return output_file
+
+
 """
 def findLB(m, n, l, s, D):
     distances = np.array(D)
@@ -151,17 +214,80 @@ def findLB(m, n, l, s, D):
 """
 def findB(m, n, l, s, D):
     return (n-m)+1
+
+class resultTest():
+    def __init__(self):
+        self.objective = None
+        pass
+
 if __name__ == "__main__":  
     models_params_path_list = ["UB_model.mzn", "UB_model_optimized.mzn"]
     timeLimit = 70
-    first_instance = 0
+    first_instance = 1
     last_instance = 21
 
-    tableRes = PrettyTable(["Instance", "LB_standard", "UB_standard", "UB_model","UB_model_optimized"]) 
-    tableRes.title = "PARAMETER LB UB"
+  
+    dir_save = "../res/CP"
+    for dir in os.listdir("../res/CP"):
+        title_model = dir.replace(".mzn","")
+
+        for file in os.listdir("../res/CP/" + dir):
+            """"
+            i = file.split(".")[0]
+            inst_i = f"inst" + i #or: inst_i = f"0{i}" if i<10 else i
+            data_path = f"../instances_dzn/{inst_i}.dzn"
+            """
+
+            data_old = {}
+            file_path_origin = dir_save + "/" + dir + "/" + file
+
+            ###READ origin file
+            with open(file_path_origin, 'r') as file_1:
+                    data_old = json.load(file_1)
+            data_old[title_model] = data_old.pop('gecode')
+
+            #####
+            data_new = {}
+            file_path_target = "../res/general/" + file
+            #Check if it exists already
+            if os.path.isfile(file_path_target):
+                with open(file_path_target, 'r') as file_2:
+                    data_new = json.load(file_2)
+        
+            data_new.update(data_old)
+            
+            
+            # write the solution to the output file
+            with open(file_path_target, 'w') as outfile:
+                json.dump(data_new, outfile, indent=4)
+        
+        print()
+
 
     for i in range(first_instance, last_instance+1):
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+        data_path = f"../instances_dzn/{inst_i}.dzn"
+        res = resultTest()
 
+
+        #print(res.objective)
+        """
+        file_json = SaveFileJson(data_path)
+        file_json.append("res1",res,300)
+        file_json.append("res2",res,299)
+        file_json.save(".")
+        """
+       
+        #print()
+        
+
+            
+        
+
+
+
+
+        """
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
@@ -172,6 +298,9 @@ if __name__ == "__main__":
         print(min_dist, max_dist, LB_standard, UB_standard)
         print("B",B)
         row_table = [inst_i, str(LB_standard), str(UB_standard)]
+        """
+
+
         """
         params = {"m":m, 
                   "n":n,
