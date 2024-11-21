@@ -1,6 +1,6 @@
 {
     "CP_base": {
-        "time": 298,
+        "time": 300,
         "optimal": false,
         "obj": 931,
         "sol": [
@@ -255,7 +255,7 @@
         ]
     },
     "CP_heu_LNS_sym2_impl": {
-        "time": 299,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
@@ -717,7 +717,7 @@
         "sol": []
     },
     "model_all_start_chuffed": {
-        "time": 299,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
