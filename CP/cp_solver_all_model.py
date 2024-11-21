@@ -129,7 +129,7 @@ def solve_model(custom_model, timeLimit ,params, solver):
       instance[k] = v
 
   # Solve the problem
-  result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
+  result = instance.solve(timeout=datetime.timedelta(milliseconds = timeLimit))
   return result
 
 def output_path_prepare(path): 
@@ -202,8 +202,8 @@ if __name__ == "__main__":
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 12
-    last_instance = 21
+    first_instance = 15
+    last_instance = 15
     file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
@@ -217,7 +217,8 @@ if __name__ == "__main__":
     print("START")
     #for i in range(first_instance, last_instance+1):
     for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
-        timeLimit = 300
+        print(i)
+        timeLimit = 300000
 
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
@@ -260,7 +261,7 @@ if __name__ == "__main__":
                 title_json = title_json + "_adv"
             if model_path == "model_path_opt.mzn":
                 params.update({"max_pack": max_pack})
-            save_solution_path = f"../res/general" 
+            save_solution_path = f"." 
 
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
