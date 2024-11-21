@@ -54,4 +54,4 @@ if __name__ == "__main__":
 
         # Save the solution to file
         instance_number = utils.get_instance_number(file_path)
-        output_file = utils.save_solution(result, f"inst{instance_number}.dat", m, n)
+        output_file = utils.save_solution(time_limit, result, f"inst{instance_number}.dat", m, n)

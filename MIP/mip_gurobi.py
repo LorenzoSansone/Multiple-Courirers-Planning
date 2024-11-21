@@ -20,7 +20,7 @@ def save_solution(solution, input_file, m, n):
         # Prepare the solution dictionary in the required format
         solution_dict = {
             "gurobi": {
-                "time": math.floor(model.Runtime),  # Time taken by the optimization
+                "time": 300 if model.status!= GRB.OPTIMAL else math.floor(model.Runtime),  # Time taken by the optimization
                 "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
                 "obj": int(solution['max_dist']),  # The objective value (max distance)
                 "sol": []  # List of lists representing the solution (routes)
