@@ -5,26 +5,27 @@ import os
 import math
 import utils as utils
 
-def save_solution(solution, input_file, m, n):
+def save_solution(solution, input_file, m, n, solver_name='gurobi'):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
+    output_dir = "res/MIP"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir, f"{instance_number}.json")
+
+    # Prepare solution dictionary
     if solution['objective'] is None:
-        solution_dict = {
-            "gurobi": {
-                "time": math.floor(model.Runtime),  # Time taken by the optimization
-                "optimal": False,  # Indicate that no optimal solution was found
-                "obj": None,  # No objective value
-                "sol": []  # Empty solution
-            }
+        solver_solution_dict = {
+            "time": math.floor(model.Runtime),  # Time taken by the optimization
+            "optimal": False,  # Indicate that no optimal solution was found
+            "obj": None,  # No objective value
+            "sol": []  # Empty solution
         }
     else:
-        # Prepare the solution dictionary in the required format
-        solution_dict = {
-            "gurobi": {
-                "time": 300 if model.status!= GRB.OPTIMAL else math.floor(model.Runtime),  # Time taken by the optimization
-                "optimal": model.status == GRB.OPTIMAL,  # True if the solution is optimal
-                "obj": int(solution['max_dist']),  # The objective value (max distance)
-                "sol": []  # List of lists representing the solution (routes)
-            }
+        solver_solution_dict = {
+            "time": 300 if model.status != GRB.OPTIMAL else math.floor(model.Runtime),
+            "optimal": model.status == GRB.OPTIMAL,
+            "obj": int(solution['max_dist']),
+            "sol": []
         }
 
         for courier in range(m):
@@ -43,17 +44,23 @@ def save_solution(solution, input_file, m, n):
                 route.append(next_location + 1) 
                 current_location = next_location
             
-            solution_dict["gurobi"]["sol"].append(route)
-    output_dir = "gurobipy_results"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = os.path.join(output_dir, f"{instance_number}.json")
+            solver_solution_dict["sol"].append(route)
+
+    # Read existing solutions or create new dictionary
+    try:
+        with open(output_file, 'r') as infile:
+            existing_solutions = json.load(infile)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_solutions = {}
+
+    # Add or update the current solver's solution
+    existing_solutions[solver_name] = solver_solution_dict
+    # Write updated solutions back to the file
     with open(output_file, 'w') as outfile:
-        json.dump(solution_dict, outfile, indent=4)
+        json.dump(existing_solutions, outfile, indent=4)
 
     print(f"Solution saved to {output_file}")
     return output_file
-
 def create_mcp_model(m, n, l, s, D, locations):
     model = gp.Model("MCP")
     # Variables
@@ -191,7 +198,7 @@ def debug(x,y,m,n,s,l,D):
     utils.distances_check(D, solution['y'])
 
 if __name__ == "__main__":
-    for i in range(1, 11):
+    for i in range(1, 22):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)
@@ -207,6 +214,6 @@ if __name__ == "__main__":
                 "max_dist": None
             }
         instance_number = utils.get_instance_number(file_path)
-        output_file = save_solution(solution, f"inst{instance_number}.dat", m, n)
+        output_file = save_solution(solution, f"inst{instance_number}.dat", m, n, solver_name='gurobi')
         # debug functions
         #debug(solution['x'], solution['y'], m, n, s, l, D)

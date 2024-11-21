@@ -11,8 +11,15 @@ def read_input(file_path):
     return m, n, l, s, D, locations
 
 
-def save_solution(time_limit, result, input_file, m, n):
-    solver = 'gurobi'
+def save_solution(input_file, m, n, solver_name, time_limit= 300, result = None, ):
+    # Determine the output file path
+    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
+    output_dir = "res/MIP"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir, f"{instance_number}.json")
+    
+    # Prepare the solution dictionary
     if result is None or result.solution is None:
         # Default solution if no result or solution found
         solution = {
@@ -38,18 +45,15 @@ def save_solution(time_limit, result, input_file, m, n):
     if hasattr(solution, "y"):
         solution_data["y"] = solution.y
 
-    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
-    solution_dict = {
-        solver: {
-            "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
-            "optimal": optimal,
-            "obj": objective,
-            "sol": []
-        }
+    # Prepare the solver-specific solution dictionary
+    solver_solution_dict = {
+        "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
+        "optimal": optimal,
+        "obj": objective,
+        "sol": []
     }
 
     # Populate the solution routes
-    #if y is not empty:
     if hasattr(solution, "y"):
         for courier in range(m):
             route = []
@@ -67,21 +71,26 @@ def save_solution(time_limit, result, input_file, m, n):
                 route.append(next_location + 1)
                 current_location = next_location
             
-            solution_dict[solver]["sol"].append(route)
+            solver_solution_dict["sol"].append(route)
     else:
-        solution_dict[solver]["sol"] = []
-    # Save the solution to a JSON file
-    output_dir = "res/MIP"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = os.path.join(output_dir, f"{instance_number}.json")
+        solver_solution_dict["sol"] = []
+
+    # Read existing solutions or create new dictionary
+    try:
+        with open(output_file, 'r') as infile:
+            existing_solutions = json.load(infile)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_solutions = {}
+
+    # Add or update the current solver's solution
+    existing_solutions[solver_name] = solver_solution_dict
+
+    # Write updated solutions back to the file
     with open(output_file, 'w') as outfile:
-        json.dump(solution_dict, outfile, indent=4)
+        json.dump(existing_solutions, outfile, indent=4)
 
     print(f"Solution saved to {output_file}")
     return output_file
-
-
 def check_load_sizes(x, s, m, n, l):
     load_sizes = [0] * m
     for courier in range(m):

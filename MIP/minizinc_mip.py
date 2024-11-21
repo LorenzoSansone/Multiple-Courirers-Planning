@@ -1,6 +1,6 @@
 from minizinc import Instance, Model, Solver
 import utils as utils
-import os, math, json, datetime
+import os, math, json, datetime, re
 import numpy as np  # Required for the boundary calculation
 
 # Function to calculate the bounds
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     for i in range(1, 22):
         print(f"\nSolving instance: inst{i:02d}.dat")
         file_path = f'instances/inst{i:02d}.dat'
-        
+        chosen_model = "base_bounded"
         # Read instance data
         m, n, l, s, D, locations = utils.read_input(file_path)
         
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         print(f"Instance: inst{i:02d} | LB: {LB}, UB: {UB}, MinDist: {min_dist}, MaxDist: {max_dist}")
 
         # Load the MiniZinc model
-        model = Model("MIP/base.mzn")
+        model = Model(f"MIP/{chosen_model}.mzn")
         solver = Solver.lookup("gurobi")
         instance = Instance(solver, model)
         
@@ -54,4 +54,6 @@ if __name__ == "__main__":
 
         # Save the solution to file
         instance_number = utils.get_instance_number(file_path)
-        output_file = utils.save_solution(time_limit, result, f"inst{instance_number}.dat", m, n)
+        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+        data_path = f"../instances_dzn/{inst_i}.dzn"
+        output_file = utils.save_solution(time_limit = time_limit, result = result, input_file = f"inst{instance_number}.dat", m=m, n=n, solver_name = chosen_model)
