@@ -3,7 +3,7 @@ from gurobipy import GRB, quicksum
 import json
 import os
 import math
-import utils
+import utils as utils
 
 def save_solution(solution, input_file, m, n):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
@@ -44,7 +44,7 @@ def save_solution(solution, input_file, m, n):
                 current_location = next_location
             
             solution_dict["gurobi"]["sol"].append(route)
-    output_dir = "res/MIP"
+    output_dir = "gurobipy_results"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_file = os.path.join(output_dir, f"{instance_number}.json")
@@ -191,7 +191,7 @@ def debug(x,y,m,n,s,l,D):
     utils.distances_check(D, solution['y'])
 
 if __name__ == "__main__":
-    for i in range(10, 11):
+    for i in range(1, 11):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)

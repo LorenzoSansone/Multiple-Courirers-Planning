@@ -1,3 +1,4 @@
+import math, os, json
 def read_input(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -8,6 +9,78 @@ def read_input(file_path):
     D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
     locations = n + 1
     return m, n, l, s, D, locations
+
+
+def save_solution(result, input_file, m, n):
+    solver = 'gurobi'
+    if result is None or result.solution is None:
+        # Default solution if no result or solution found
+        solution = {
+            "objective": None,
+            "x": [[0 for _ in range(n)] for _ in range(m)],
+            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
+            "tour_distance": [0 for _ in range(m)],
+            "max_dist": None
+        }
+        optimal = False
+        objective = None
+    else:
+        solution = result.solution
+        optimal = (result.status.name == 'OPTIMAL_SOLUTION')
+        objective = result.objective if result.objective is not None else None
+
+    # Create a dictionary to store solution details
+    solution_data = {
+        "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
+    }
+
+    # Try to extract 'y' from solution if it exists
+    if hasattr(solution, "y"):
+        solution_data["y"] = solution.y
+
+    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
+    solution_dict = {
+        solver: {
+            "time": math.floor(result.statistics['solveTime'].total_seconds()),  # Time taken by the optimization (placeholder; replace if available)
+            "optimal": optimal,
+            "obj": objective,
+            "sol": []
+        }
+    }
+
+    # Populate the solution routes
+    #if y is not empty:
+    if hasattr(solution, "y"):
+        for courier in range(m):
+            route = []
+            current_location = n  # Start at the origin (assuming last location is the origin)
+            while True:
+                next_location = None
+                for j2 in range(n+1):
+                    if solution_data["y"][courier][current_location][j2] == 1:
+                        next_location = j2
+                        break
+
+                if next_location is None or next_location == n:
+                    break  # No further movement or return to origin
+
+                route.append(next_location + 1)
+                current_location = next_location
+            
+            solution_dict[solver]["sol"].append(route)
+    else:
+        solution_dict[solver]["sol"] = []
+    # Save the solution to a JSON file
+    output_dir = "res/MIP"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir, f"{instance_number}.json")
+    with open(output_file, 'w') as outfile:
+        json.dump(solution_dict, outfile, indent=4)
+
+    print(f"Solution saved to {output_file}")
+    return output_file
+
 
 def check_load_sizes(x, s, m, n, l):
     load_sizes = [0] * m
