@@ -144,7 +144,7 @@ def output_path_prepare(path):
     return path_out
 
         
-def save_solution(res, data_path, save_path, timeLimit):
+def save_solution(title, res, data_path, save_path, timeLimit):
     # extract number from data_path
     match = re.search(r"inst(\d+)\.dzn", data_path)
     number = match.group(1)
@@ -165,7 +165,7 @@ def save_solution(res, data_path, save_path, timeLimit):
         obj = res['objective']
         sol = output_path_prepare(res['path'])  
     solution_dict = {
-        "gecode": {
+        title: {
             "time": time,
             "optimal": optimal,
             "obj": obj,
@@ -178,9 +178,19 @@ def save_solution(res, data_path, save_path, timeLimit):
         os.makedirs(output_directory)
     
     output_file = output_directory + "/" + number + ".json"
+
+
+    data = {}
+    if os.path.isfile(output_file):
+        with open(output_file, 'r') as file:
+                data = json.load(file)
+                
+
+    data.update(solution_dict)
+    
     # write the solution to the output file
     with open(output_file, 'w') as outfile:
-        json.dump(solution_dict, outfile, indent=4)
+        json.dump(data, outfile, indent=4)
 
     print(f"Solution saved to {output_file}")
     return output_file
@@ -192,12 +202,14 @@ if __name__ == "__main__":
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 0
+    first_instance = 12
     last_instance = 21
-    file_name_save = 'result_models_standard_5.txt'
+    file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
+    
+    selectParams = "standard"
 
     tableRes = PrettyTable(["Instance"] + models_params_path_list) 
     tableRes.title = "MODEL LB UB STANDARD GECODE"
@@ -206,18 +218,21 @@ if __name__ == "__main__":
     #for i in range(first_instance, last_instance+1):
     for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
         timeLimit = 300
+
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        #START PRE-SOLVING
-        start_pre_solving = time.time()
-        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-        max_pack = n
-        #min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
-        end_pre_solving = time.time()
-        #print("INSTANCES",i,min_dist, max_dist, LB, UB, max_pack )
         
+        #START PRE-SOLVING
+        
+        start_pre_solving = time.time()
+        if selectParams == "standard":
+            min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+            max_pack = n
+        else:
+            min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
+        end_pre_solving = time.time()
         #END PRE-SOLVING
         delta_pre_solving = end_pre_solving - start_pre_solving
         
@@ -239,9 +254,13 @@ if __name__ == "__main__":
         
         ################ MODEL ################
         for model_path in models_params_path_list:
+            title_json = model_path.replace(".mzn","")
+
+            if selectParams != "standard":
+                title_json = title_json + "_adv"
             if model_path == "model_path_opt.mzn":
                 params.update({"max_pack": max_pack})
-            save_solution_path = f"../res/CP/{model_path}" #+ "_adv"
+            save_solution_path = f"../res/general" 
 
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
@@ -256,11 +275,11 @@ if __name__ == "__main__":
                     row_table.append(str(res.objective) + flag)
                 else:
                     row_table.append(str(res.status))
-                save_solution(res, data_path, save_solution_path, timeLimit)
+                save_solution(title_json,res, data_path, save_solution_path, timeLimit)
 
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
-        #save_solution(res, data_path, timeLimit)
+
         save_file(file_name_save, mode_save ,str(tableRes))
 
         ################################
