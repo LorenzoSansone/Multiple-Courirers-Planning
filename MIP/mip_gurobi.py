@@ -214,6 +214,5 @@ if __name__ == "__main__":
                 "max_dist": None
             }
         instance_number = utils.get_instance_number(file_path)
-        output_file = save_solution(solution, f"inst{instance_number}.dat", m, n, solver_name='gurobi')
-        # debug functions
+        output_file = utils.save_solution_by_solver(solution, f"inst{instance_number}.dat", m, n, solver_name='gurobipy')
         debug(solution['x'], solution['y'], m, n, s, l, D)

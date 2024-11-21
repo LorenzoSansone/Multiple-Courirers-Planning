@@ -9,23 +9,6 @@ ALL_MODELS = [  'base_bounded',
                 ]
 
 # Function to calculate the bounds
-def find_boundaries_standard(m, n, l, s, D):
-    distances = np.array(D)  # Convert distance matrix to numpy array for easier handling
-    
-    # Lower bound (LB): Maximum of minimum distances for a round trip to each item
-    min_dist_dep_list = []
-    for i in range(n):
-        min_dist_dep_list.append(distances[n, i] + distances[i, n])  # To and from the origin
-    LB = max(min_dist_dep_list)  # The largest of these minimum round trips
-
-    # Upper bound (UB): Greedy estimate for total tour distance
-    UB = distances[n, 0]  # Start from origin
-    for i in range(n - 1):
-        UB += distances[i, i + 1]  # Add distances between consecutive locations
-    UB += distances[n - 1, n]  # Return to the origin
-    UB = int(UB)
-
-    return 0, UB, LB, UB  # Return values as in the example
 
 if __name__ == "__main__":
     time_limit = 300  # Time limit of 5 minutes
@@ -34,17 +17,17 @@ if __name__ == "__main__":
         for i in range(1, 22):
             file_path = f'instances/inst{i:02d}.dat'
             chosen_model = mod
-            print(f"\nSolving instance: inst{i:02d}.dat, model: {chosen_model}.mzn")
             # Read instance data
             m, n, l, s, D, locations = utils.read_input(file_path)
             
             # Calculate bounds
-            min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+            min_dist, max_dist, LB, UB = utils.find_boundaries_standard(m, n, l, s, D)
             print(f"Instance: inst{i:02d} | LB: {LB}, UB: {UB}")
 
             # Load the MiniZinc model
             model = Model(f"MIP/{chosen_model}.mzn")
-            solver = Solver.lookup("gurobi")
+            solver_name = "gecode"
+            solver = Solver.lookup(solver_name)
             instance = Instance(solver, model)
             
             # Set parameters for the instance
@@ -53,6 +36,7 @@ if __name__ == "__main__":
             
             # Solve the model with timeout
             try:
+                print(f"\nSolving instance: inst{i:02d}.dat | Model: {chosen_model}.mzn | Solver: {solver_name}")
                 result = instance.solve(timeout=datetime.timedelta(seconds=time_limit))
                 print(f"Solved instance: {file_path} | Objective: {result.objective if result.objective else 'No solution'} | Optimal: {result.status.name == 'OPTIMAL_SOLUTION'}")
                 
@@ -69,4 +53,5 @@ if __name__ == "__main__":
             instance_number = utils.get_instance_number(file_path)
             inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
             data_path = f"../instances_dzn/{inst_i}.dzn"
-            output_file = utils.save_solution(time_limit = time_limit, result = result, input_file = f"inst{instance_number}.dat", m=m, n=n, solver_name = chosen_model)
+            output_file = utils.save_solution_by_solver(time_limit = time_limit, result = result, input_file = f"inst{instance_number}.dat", m=m, n=n, solver_name = solver_name)
+            #output_file = utils.save_solution_by_model(input_file = f"inst{instance_number}.dat", m = m, n = n, model_name = chosen_model, time_limit = time_limit, result = result)

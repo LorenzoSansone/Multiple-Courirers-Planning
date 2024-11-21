@@ -1,5 +1,6 @@
 import math, os, json
-def read_input(file_path):
+import numpy as np
+def read_input(file_path):    
     with open(file_path, 'r') as file:
         lines = file.readlines()
     m = int(lines[0].strip())  # number of couriers
@@ -9,9 +10,89 @@ def read_input(file_path):
     D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
     locations = n + 1
     return m, n, l, s, D, locations
+def save_solution_by_model(input_file, m, n, model_name, time_limit=300, result=None):
+    # Determine the output file path
+    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
+    output_dir = "res/MIP"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir, f"{instance_number}.json")
+    
+    # Prepare the solution dictionary
+    if result is None or result.solution is None:
+        # Default solution if no result or solution found
+        solution = {
+            "objective": None,
+            "x": [[0 for _ in range(n)] for _ in range(m)],
+            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
+            "tour_distance": [0 for _ in range(m)],
+            "max_dist": None
+        }
+        optimal = False
+        objective = None
+    else:
+        solution = result.solution
+        optimal = (result.status.name == 'OPTIMAL_SOLUTION')
+        objective = result.objective if result.objective is not None else None
+
+    # Create a dictionary to store solution details
+    solution_data = {
+        "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
+    }
+
+    # Try to extract 'y' from solution if it exists
+    if hasattr(solution, "y"):
+        solution_data["y"] = solution.y
+
+    # Prepare the solver-specific solution dictionary
+    solver_solution_dict = {
+        "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
+        "optimal": optimal,
+        "obj": objective,
+        "sol": []
+    }
+
+    # Populate the solution routes
+    if hasattr(solution, "y"):
+        for courier in range(m):
+            route = []
+            current_location = n  # Start at the origin (assuming last location is the origin)
+            while True:
+                next_location = None
+                for j2 in range(n+1):
+                    if solution_data["y"][courier][current_location][j2] == 1:
+                        next_location = j2
+                        break
+
+                if next_location is None or next_location == n:
+                    break  # No further movement or return to origin
+
+                route.append(next_location + 1)
+                current_location = next_location
+            
+            solver_solution_dict["sol"].append(route)
+    else:
+        solver_solution_dict["sol"] = []
+
+    # Read existing solutions or create new dictionary
+    try:
+        with open(output_file, 'r') as infile:
+            existing_solutions = json.load(infile)
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing_solutions = {}
+
+    # Add or update the current solver's solution
+    existing_solutions[model_name] = solver_solution_dict
+
+    # Write updated solutions back to the file
+    with open(output_file, 'w') as outfile:
+        json.dump(existing_solutions, outfile, indent=4)
+
+    print(f"Solution saved to {output_file}")
+    return output_file
 
 
-def save_solution(input_file, m, n, solver_name, time_limit= 300, result = None, ):
+def save_solution_by_solver(input_file, m, n, solver_name, time_limit=300, result=None):
     # Determine the output file path
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
     output_dir = "res/MIP"
@@ -98,7 +179,6 @@ def check_load_sizes(x, s, m, n, l):
         load_sizes[courier] = load_size
         print(f"Courier {courier} loaded: {load_sizes[courier]}, maximum capacity is {l[courier]}: {load_sizes[courier] <= l[courier]}")
     return load_sizes
-
 def check_if_every_courier_starts_at_origin(y, n, m):
     origin = n+1
     for courier in range(m):
@@ -108,7 +188,6 @@ def check_if_every_courier_starts_at_origin(y, n, m):
             return False
 
     return True
-
 def check_if_every_courier_ends_at_origin(y, n, m):
     origin = n+1
     for courier in range(m):
@@ -117,7 +196,6 @@ def check_if_every_courier_ends_at_origin(y, n, m):
             print(f"Courier {courier} does not end at the origin.")
             return False
     return True
-
 def picked_up_objects(x, m, n):
     for courier in range(m):
         print(f"Courier {courier} picked up objects: ")
@@ -126,7 +204,6 @@ def picked_up_objects(x, m, n):
              if x[courier][item] == 1:
                 loaded_objects.append(item)
         print(loaded_objects)
-
 def distances_check(D, y_matrix):
     for courier_index in range(len(y_matrix)):
         route_distances = []
@@ -163,7 +240,6 @@ def distances_check(D, y_matrix):
         
         # Print to the console
         print(output_str)
-
 def print_routes_from_solution(y):
     n = len(y[0]) - 1
     for courier_index in range(len(y)):
@@ -186,11 +262,10 @@ def print_routes_from_solution(y):
         route.append(n + 1)
         
         print(f"Courier {courier_index}: {' -> '.join(map(str, route))}")
-
 def get_instance_number(file_path):
     return file_path.split('/')[-1].split('.')[0].replace('inst', '')
-
 def check_if_items_are_taken_by_couriers(x, m, n):
+    
     for item in range(n):
         count = 0
         for courier in range(m):
@@ -200,9 +275,23 @@ def check_if_items_are_taken_by_couriers(x, m, n):
             print(f"Item {item} is delivered by {count} couriers instead of exactly one.")
             return False
     return True
+def find_boundaries_standard(m, n, l, s, D):
+    distances = np.array(D)  # Convert distance matrix to numpy array for easier handling
+    
+    # Lower bound (LB): Maximum of minimum distances for a round trip to each item
+    min_dist_dep_list = []
+    for i in range(n):
+        min_dist_dep_list.append(distances[n, i] + distances[i, n])  # To and from the origin
+    LB = max(min_dist_dep_list)  # The largest of these minimum round trips
 
+    # Upper bound (UB): Greedy estimate for total tour distance
+    UB = distances[n, 0]  # Start from origin
+    for i in range(n - 1):
+        UB += distances[i, i + 1]  # Add distances between consecutive locations
+    UB += distances[n - 1, n]  # Return to the origin
+    UB = int(UB)
 
-
+    return 0, UB, LB, UB  # Return values as in the example
 def debug(x,y,m,n,s,l,D):
     picked_up_objects(x, m, n)
     # Check load sizes

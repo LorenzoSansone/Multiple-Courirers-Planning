@@ -27,7 +27,7 @@
             ]
         ]
     },
-    "base_bounded_penaltyterm": {
+    "gecode": {
         "time": 0,
         "optimal": true,
         "obj": 206,
@@ -40,11 +40,5 @@
                 3
             ]
         ]
-    },
-    "base_bounded_penaltyterm_symbrk": {
-        "time": 300,
-        "optimal": false,
-        "obj": null,
-        "sol": []
     }
 }

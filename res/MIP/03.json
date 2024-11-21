@@ -10,8 +10,8 @@
                 5
             ],
             [
-                2,
-                4
+                4,
+                2
             ],
             [
                 1,
@@ -39,7 +39,7 @@
             ]
         ]
     },
-    "base_bounded_penaltyterm": {
+    "gecode": {
         "time": 0,
         "optimal": true,
         "obj": 12,
@@ -52,26 +52,6 @@
             [
                 4,
                 2
-            ],
-            [
-                7,
-                1
-            ]
-        ]
-    },
-    "base_bounded_penaltyterm_symbrk": {
-        "time": 0,
-        "optimal": true,
-        "obj": 12,
-        "sol": [
-            [
-                3,
-                6,
-                5
-            ],
-            [
-                2,
-                4
             ],
             [
                 1,
