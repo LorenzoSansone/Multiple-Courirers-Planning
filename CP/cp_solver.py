@@ -195,66 +195,25 @@ if __name__ == "__main__":
     solver = "gecode"
     model_path = "CP_base.mzn"
     timeLimit = 300
-    first_instance = 20
-    last_instance = 20
+    first_instance = 1
+    last_instance = 21
     file_name_save = 'test_a.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
-   
-
-
-    tableRes = PrettyTable(["Instance"] + [model_path]) 
-    tableRes.title = "MODEL LB UB optimized opt_model"
-    save_file(file_name_save, mode_save ,str(tableRes))
+    path_dir  = "../res/CP"
     for i in range(first_instance, last_instance+1):
+           
+        path_file = f"/{i:02d}.json" 
+        with open(path_dir + path_file, 'r') as file_1:
+            data_old = json.load(file_1)
+            for k in data_old.keys():
+                if data_old[k]["optimal"] == False and data_old[k]["time"] !=300 :
+                    print()
+                    print(data_old[k])
 
-        ################ SET PARAMETERS ################
-        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
-        data_path = f"../instances_dzn/{inst_i}.dzn"
-        m, n, l, s, D = read_instance(data_path)
-        #min_dist, max_dist, LB, UB = find_boundaries_optimized(m, n, l, s, D)
-        min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-        
-        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + ")"]
-  
-        params = {"m":m, 
-                  "n":n,
-                  "l":l,
-                  "s":s,
-                  "D":D,
-                  "LB":LB,
-                  "UB":UB,
-                  "min_dist":min_dist,
-                  "max_dist":max_dist}
-        ################################
-
-        ################ MODEL ################
-        try:
-            res = solve_model(model_path, timeLimit, params, solver)
-        except Exception as e:
-            row_table.append(str("Error"))
-            save_file(file_name_error, mode_save_error ,str(e))
-        else:
-            if res.objective is not None and isinstance(res.objective, int):
-                flag = "" 
-                if res.status is Status.OPTIMAL_SOLUTION:
-                    flag = "(O)"
-                row_table.append(str(res.objective) + flag)
-            else:
-                row_table.append(str(res.status))
-
-        tableRes.add_row(row_table) 
-        print(f"Instance: {inst_i}", row_table)
-        #save_solution(res, data_path, timeLimit)
-        save_file(file_name_save, mode_save ,str(tableRes))
-       
-        ################################
-
-    ################ RESULT ################
-    print(tableRes)
-
-    save_file(file_name_save, mode_save ,str(tableRes))
+            #print(data_old['CP_base'].keys())
+        #data_old[title_model] = data_old.pop('gecode')
     ################################
 
     

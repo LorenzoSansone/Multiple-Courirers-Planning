@@ -1,18 +1,18 @@
 {
     "CP_base": {
-        "time": 299,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
     },
     "CP_heu_LNS": {
-        "time": 299,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
     },
     "CP_heu_LNS_sym": {
-        "time": 276,
+        "time": 300,
         "optimal": false,
         "obj": 1089,
         "sol": [
@@ -197,13 +197,13 @@
         ]
     },
     "CP_heu_LNS_sym2_impl": {
-        "time": 299,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
     },
     "CP_heu_LNS_sym_impl": {
-        "time": 276,
+        "time": 300,
         "optimal": false,
         "obj": 1240,
         "sol": [
@@ -387,7 +387,7 @@
         ]
     },
     "CP_heu_LNS_sym_impl2": {
-        "time": 276,
+        "time": 300,
         "optimal": false,
         "obj": 1008,
         "sol": [
@@ -570,7 +570,7 @@
         ]
     },
     "model_all_start": {
-        "time": 278,
+        "time": 300,
         "optimal": false,
         "obj": 964,
         "sol": [
@@ -760,7 +760,7 @@
         ]
     },
     "model_all_start_adv": {
-        "time": 271,
+        "time": 300,
         "optimal": false,
         "obj": 1249,
         "sol": [
@@ -950,7 +950,7 @@
         ]
     },
     "model_optimized": {
-        "time": 278,
+        "time": 300,
         "optimal": false,
         "obj": 892,
         "sol": [
@@ -1135,7 +1135,7 @@
         ]
     },
     "model_path_opt_adv": {
-        "time": 271,
+        "time": 300,
         "optimal": false,
         "obj": null,
         "sol": []
