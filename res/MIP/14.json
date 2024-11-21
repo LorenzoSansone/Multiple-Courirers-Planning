@@ -260,5 +260,23 @@
                 124
             ]
         ]
+    },
+    "base_bounded": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "base_bounded_penaltyterm": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "base_bounded_penaltyterm_symbrk": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
     }
 }

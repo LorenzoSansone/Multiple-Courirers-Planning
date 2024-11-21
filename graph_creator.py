@@ -9,7 +9,7 @@ def ensure_symmetric(matrix):
     symmetric_matrix = (matrix + matrix.T) / 2
     return symmetric_matrix
 
-def plot_couriers_routes(instance_file, ax, SOL):
+def plot_couriers_routes(instance_file, ax, SOL, model_name):
     # Extract the base name and instance number from the input file name
     base_name = os.path.basename(instance_file)
     instance_number = base_name.replace('.dat', '')  # Remove the .dat suffix
@@ -46,15 +46,18 @@ def plot_couriers_routes(instance_file, ax, SOL):
         with open(json_file_path, 'r') as file:
             solution_data = json.load(file)
             
-            # Get the first key-value pair, whatever the key is
-            solution = next(iter(solution_data.values()))
+            # Ensure the model_name exists in the JSON file
+            if model_name not in solution_data:
+                print(f"Model '{model_name}' not found in the JSON file.")
+                return
+            
+            solution = solution_data[model_name]  # Get the specified model solution
     except FileNotFoundError:
         print(f"JSON file {json_file_path} not found.")
         return
     except json.JSONDecodeError:
         print(f"Error decoding JSON file {json_file_path}.")
         return
-
 
     # Step 3: Apply Multidimensional Scaling (MDS) to get 2D coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
@@ -110,7 +113,7 @@ def plot_couriers_routes(instance_file, ax, SOL):
     ax.grid(True)
 
 
-def visualize(instance_range, SOL):
+def visualize(instance_range, SOL, model_name):
     # Determine the grid size for subplots
     n_instances = len(instance_range)
     n_cols = 3
@@ -118,7 +121,7 @@ def visualize(instance_range, SOL):
 
     # Create the subplots
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
-    fig.suptitle(f'Multiple Couriers Planning (MCP) Problem: Couriers Routes Visualization \nfor Instances {instance_range.start} to {instance_range.stop - 1}, \nsolver: {"gurobi (Mixed-Integer Linear)" if SOL=="MIP" else "gecode" if SOL == "CP" else "SAT" }',
+    fig.suptitle(f'Multiple Couriers Planning (MCP) Problem: Couriers Routes Visualization \nfor Instances {instance_range.start} to {instance_range.stop - 1}, \nsolver: {model_name}',
                  fontsize=16, fontweight='bold', y=0.98)
 
     # Flatten the array of axes for easy indexing
@@ -127,7 +130,7 @@ def visualize(instance_range, SOL):
     # Loop through the instances and plot each one
     for i, instance_number in enumerate(instance_range):
         instance_file = f'instances/inst{instance_number:02d}.dat'
-        plot_couriers_routes(instance_file, axs[i], SOL)
+        plot_couriers_routes(instance_file, axs[i], SOL, model_name)
 
     # Hide any empty subplots if there are any
     for j in range(i + 1, len(axs)):
@@ -144,4 +147,5 @@ if __name__ == "__main__":
     # Define the range of instances you want to plot
     instance_range = range(1, 7)  # Example: plotting instances 1 to 21
     SOL = "MIP"
-    visualize(instance_range, SOL)
+    model_name = "base_bounded"  # Specify the model name here (e.g., 'gurobi' or 'base_bounded')
+    visualize(instance_range, SOL, model_name)

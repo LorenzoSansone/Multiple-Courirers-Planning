@@ -216,4 +216,4 @@ if __name__ == "__main__":
         instance_number = utils.get_instance_number(file_path)
         output_file = save_solution(solution, f"inst{instance_number}.dat", m, n, solver_name='gurobi')
         # debug functions
-        #debug(solution['x'], solution['y'], m, n, s, l, D)
+        debug(solution['x'], solution['y'], m, n, s, l, D)

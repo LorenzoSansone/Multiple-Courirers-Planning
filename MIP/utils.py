@@ -164,8 +164,7 @@ def distances_check(D, y_matrix):
         # Print to the console
         print(output_str)
 
-def print_routes_from_solution(solution):
-    y = solution['y']
+def print_routes_from_solution(y):
     n = len(y[0]) - 1
     for courier_index in range(len(y)):
         route = []
@@ -201,3 +200,21 @@ def check_if_items_are_taken_by_couriers(x, m, n):
             print(f"Item {item} is delivered by {count} couriers instead of exactly one.")
             return False
     return True
+
+
+
+def debug(x,y,m,n,s,l,D):
+    picked_up_objects(x, m, n)
+    # Check load sizes
+    print(check_load_sizes(x, s, m, n, l))
+    #check start and end
+    print(f"All couriers start at the origin: {check_if_every_courier_starts_at_origin(y, n, m)}")
+    print(f"All couriers end at the origin: {check_if_every_courier_ends_at_origin(y, n, m)}")
+    #check if all items are being taken
+    print(f"All items are being taken by a courier: {check_if_items_are_taken_by_couriers(x, m, n)}")
+    # Print routes
+    print("Routes for each courier:")
+    print_routes_from_solution(y)
+    #Print distances
+    print("Distances calculation for each courier:")
+    distances_check(D, y)

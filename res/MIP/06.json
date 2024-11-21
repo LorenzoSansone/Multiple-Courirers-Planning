@@ -52,5 +52,59 @@
                 1
             ]
         ]
+    },
+    "base_bounded_penaltyterm": {
+        "time": 0,
+        "optimal": true,
+        "obj": 322,
+        "sol": [
+            [
+                8
+            ],
+            [
+                7
+            ],
+            [
+                6
+            ],
+            [
+                5
+            ],
+            [
+                4
+            ],
+            [
+                3,
+                2,
+                1
+            ]
+        ]
+    },
+    "base_bounded_penaltyterm_symbrk": {
+        "time": 0,
+        "optimal": true,
+        "obj": 322,
+        "sol": [
+            [
+                6,
+                3
+            ],
+            [
+                8,
+                7
+            ],
+            [
+                5
+            ],
+            [
+                4
+            ],
+            [
+                1
+            ],
+            [
+                2
+            ]
+        ]
     }
 }
