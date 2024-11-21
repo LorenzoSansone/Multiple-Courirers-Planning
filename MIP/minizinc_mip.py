@@ -1,15 +1,16 @@
 from minizinc import Instance, Model, Solver
 import utils as utils
-import os, math, json, datetime, re
-import numpy as np  # Required for the boundary calculation
-
+import datetime
 ALL_MODELS = [  'base_bounded', 
                 'base_bounded_penaltyterm', 
                 'base_bounded_penaltyterm_symbrk'
                 ]
-
-# Function to calculate the bounds
-
+ALL_SOLVERS = [
+                'gurobi',
+                'gecode',
+                'chuffed',
+                'cplex'
+]
 if __name__ == "__main__":
     time_limit = 300  # Time limit of 5 minutes
     for mod in ALL_MODELS:
@@ -22,11 +23,11 @@ if __name__ == "__main__":
             
             # Calculate bounds
             min_dist, max_dist, LB, UB = utils.find_boundaries_standard(m, n, l, s, D)
-            print(f"Instance: inst{i:02d} | LB: {LB}, UB: {UB}")
+            print(f"\nInstance: inst{i:02d} | LB: {LB}, UB: {UB}")
 
             # Load the MiniZinc model
             model = Model(f"MIP/{chosen_model}.mzn")
-            solver_name = "gecode"
+            solver_name = "gurobi"
             solver = Solver.lookup(solver_name)
             instance = Instance(solver, model)
             
@@ -36,7 +37,7 @@ if __name__ == "__main__":
             
             # Solve the model with timeout
             try:
-                print(f"\nSolving instance: inst{i:02d}.dat | Model: {chosen_model}.mzn | Solver: {solver_name}")
+                print(f"Solving instance: inst{i:02d}.dat | Model: {chosen_model}.mzn | Solver: {solver_name}")
                 result = instance.solve(timeout=datetime.timedelta(seconds=time_limit))
                 print(f"Solved instance: {file_path} | Objective: {result.objective if result.objective else 'No solution'} | Optimal: {result.status.name == 'OPTIMAL_SOLUTION'}")
                 
