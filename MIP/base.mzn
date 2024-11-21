@@ -4,12 +4,14 @@ int: locations;                                 % Number of locations (n + 1 for
 array[1..m] of int: l;                          % Load capacities of each courier
 array[1..n] of int: s;                          % Sizes of each item
 array[1..locations, 1..locations] of int: D;    % Distance matrix between locations
+int: LB;    % Lower bound for max_distance
+int: UB;    % Upper bound for max_distance
 
 % Variables
 array[1..m, 1..n] of var 0..1: x;                       % x[i, j] = 1 if courier i delivers item j
 array[1..m, 1..locations, 1..locations] of var 0..1: y; % y[i, j1, j2] = 1 if courier i travels from j1 to j2
 array[1..m] of var int: Distance;                       % Total distance for each courier
-var int: max_distance;                                  % Maximum distance among couriers
+var LB..UB: max_distance;  % Restricted max_distance to the range [LB, UB]
 
 % Subtour elimination variables
 array[1..m, 1..n] of var 1..n: u;
@@ -73,4 +75,4 @@ constraint
 
 
 % Search strategy for y variables (individual assignment of values)
-solve :: int_search([y[i, j1, j2] | i in 1..m, j1 in 1..locations, j2 in 1..locations], first_fail, indomain_min) minimize max_distance;
+solve :: int_search([max_distance], first_fail, indomain_min) minimize max_distance;
