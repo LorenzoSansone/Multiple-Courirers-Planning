@@ -11,7 +11,7 @@ def read_input(file_path):
     return m, n, l, s, D, locations
 
 
-def save_solution(result, input_file, m, n):
+def save_solution(time_limit, result, input_file, m, n):
     solver = 'gurobi'
     if result is None or result.solution is None:
         # Default solution if no result or solution found
@@ -41,7 +41,7 @@ def save_solution(result, input_file, m, n):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
     solution_dict = {
         solver: {
-            "time": math.floor(result.statistics['solveTime'].total_seconds()),  # Time taken by the optimization (placeholder; replace if available)
+            "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
             "optimal": optimal,
             "obj": objective,
             "sol": []
