@@ -1,5 +1,11 @@
 {
     "gurobi": {
+        "time": 36,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "gurobipy": {
         "time": 0,
         "optimal": true,
         "obj": 244,

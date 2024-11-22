@@ -5,9 +5,13 @@ import os
 import math
 import utils as utils
 
-def save_solution(solution, input_file, m, n, solver_name='gurobi'):
+
+
+
+
+def save_solution(solution, input_file, m, n, solver_name='gurobipy', time_limit = 300):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
-    output_dir = "res/MIP"
+    output_dir = "res/MIP/gurobipy"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_file = os.path.join(output_dir, f"{instance_number}.json")
@@ -15,7 +19,7 @@ def save_solution(solution, input_file, m, n, solver_name='gurobi'):
     # Prepare solution dictionary
     if solution['objective'] is None:
         solver_solution_dict = {
-            "time": math.floor(model.Runtime),  # Time taken by the optimization
+            "time": time_limit,  # Time taken by the optimization
             "optimal": False,  # Indicate that no optimal solution was found
             "obj": None,  # No objective value
             "sol": []  # Empty solution
@@ -131,23 +135,24 @@ def create_mcp_model(m, n, l, s, D, locations):
             )
         , name = f"Distance calculation for courier {i}"
        )
+    # Constrain the max_distance to be within these bounds
+    model.addConstr(max_distance >= LB, name="LowerBoundConstraint")
+    model.addConstr(max_distance <= UB, name="UpperBoundConstraint")
     # Max distance objective
     for i in Distance:
         model.addConstr(max_distance >= Distance[i],
                         name = f"Max distance (objective)")
     model.setObjective(max_distance, GRB.MINIMIZE)
     return model, x, y, Distance, max_distance
-
 def diagnose_infeasibility(model):
     model.computeIIS()
     print("\nThe following constraints are causing the model to be infeasible:")
     for c in model.getConstrs():
         if c.IISConstr:
             print(f"Infeasible constraint: {c.constrName}")
-
-def extract_solution(model, m, n, x, y, distance, max_dist):
+def extract_solution(model, m, n, x, y, distance, max_dist, time_limit = 300):
     model.Params.MIPGap = 0.05    # 5% gap on time limit
-    model.Params.TimeLimit = 300
+    model.Params.TimeLimit = time_limit
     model.optimize()
     
     # Check if the model was stopped due to time limit or other reasons
@@ -196,14 +201,16 @@ def debug(x,y,m,n,s,l,D):
     #Print distances
     print("Distances calculation for each courier:")
     utils.distances_check(D, solution['y'])
-
 if __name__ == "__main__":
     for i in range(1, 22):
         file_path = f'instances/inst{i:02d}.dat'
+        time_limit = 300
         print(f"################\n################\n################\nInstance: {file_path}")
         m, n, l, s, D, origin = utils.read_input(file_path)
+        LB, UB = utils.find_boundaries_hybrid(m, n, l, s, D)
+        print(f"Bounds: LB={LB}, UB={UB}")
         model, x, y, distance, max_dist = create_mcp_model(m, n, l, s, D, origin)
-        solution = extract_solution(model, m, n, x, y, distance, max_dist)
+        solution = extract_solution(model, m, n, x, y, distance, max_dist, time_limit=time_limit)
         if solution is None: 
             # No solution found, save a default solution structure
             solution = {
@@ -214,6 +221,5 @@ if __name__ == "__main__":
                 "max_dist": None
             }
         instance_number = utils.get_instance_number(file_path)
-        output_file = save_solution(solution, f"inst{instance_number}.dat", m, n, solver_name='gurobi')
-        # debug functions
+        output_file = save_solution(solution, file_path, m, n, time_limit = 300)
         #debug(solution['x'], solution['y'], m, n, s, l, D)

@@ -1,5 +1,5 @@
 {
-    "gurobi": {
+    "gurobipy": {
         "time": 300,
         "optimal": false,
         "obj": null,
