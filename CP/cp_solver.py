@@ -195,7 +195,7 @@ if __name__ == "__main__":
     solver = "gecode"
     model_path = "CP_base.mzn"
     timeLimit = 300
-    first_instance = 1
+    first_instance = 11
     last_instance = 21
     file_name_save = 'test_a.txt'
     file_name_error = 'error_model.txt'
@@ -207,10 +207,9 @@ if __name__ == "__main__":
         path_file = f"/{i:02d}.json" 
         with open(path_dir + path_file, 'r') as file_1:
             data_old = json.load(file_1)
-            for k in data_old.keys():
-                if data_old[k]["optimal"] == False and data_old[k]["time"] !=300 :
-                    print()
-                    print(data_old[k])
+            if "model_all_start_chuffed" in data_old:
+                print(path_dir + path_file,data_old["model_all_start_chuffed"]["obj"] )
+           
 
             #print(data_old['CP_base'].keys())
         #data_old[title_model] = data_old.pop('gecode')

@@ -129,7 +129,7 @@ def solve_model(custom_model, timeLimit ,params, solver):
       instance[k] = v
 
   # Solve the problem
-  result = instance.solve(timeout=datetime.timedelta(milliseconds = timeLimit))
+  result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
   return result
 
 def output_path_prepare(path): 
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     #for i in range(first_instance, last_instance+1):
     for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
         print(i)
-        timeLimit = 300000
+        timeLimit = 300
 
         ################ SET PARAMETERS ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
@@ -262,10 +262,14 @@ if __name__ == "__main__":
             if model_path == "model_path_opt.mzn":
                 params.update({"max_pack": max_pack})
             save_solution_path = f"." 
-
+            res = None
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
+                print("1)",e.args)
+                print("2",e.__cause__)
+                print("3",res)
+
                 row_table.append(str("Error"))
                 save_file(file_name_error, mode_save_error ,str(e))
             else:

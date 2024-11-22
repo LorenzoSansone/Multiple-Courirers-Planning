@@ -3,6 +3,7 @@ import os
 from utils_sat import *
 import time
 from z3 import *
+import numpy as np
 
 def save_solution(sat_model, m, n, output_file):
     solution = {
@@ -36,31 +37,34 @@ def mcp_sat(m, n, l, s, D):
     s = Solver()
 
     deposit = n #if we count from 0
+    max_load = sum(s)
 
     #VARIABLES
 
     # path[i][j][k] = T if the courier i delivers the package j at the k-th step 
     path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
     
-    # weights[i][j] = T if the courier i take the package  j
-    weights = [[Bool(f"w_{courier}_{package}")for package in range(n+1)] for courier in range(m)]
+    # courier_weights[i][j] = T if the courier i take the package  j
+    courier_weights = [[Bool(f"w_{courier}_{package}")for package in range(n)] for courier in range(m)]
 
-    max_load = sum(s)
-    courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for i in range(m)]
     # courier_loads_i = it represents binary representation of actual load carried by each courier
+    courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for i in range(m)]
 
-    
-    
+
 
     #Binary conversion of s
-    s_b = []
-    for s_value in s:
-        s_b.append(int_to_binary(s_value, num_bits(s_value)))
-    
+    s_max = max(s)
+    s_b = [int_to_binary(s_value, num_bits(s_max)) for s_value in s]
+
     #Binary conversion of l
-    l_b = []
-    for l_value in l:
-        l_b.append(int_to_binary(l_value, num_bits(l_value)))
+    l_max = max(l)
+    l_b = [int_to_binary(l_value, num_bits(l_max)) for l_value in l]
+
+    #Binary conversion of D
+    D_max = np.matrix(D).max()
+    D_b = [[int_to_binary(D[i][j], num_bits(D_max)) for j in range(n+1)] for i in range(n+1)]
+
+
 
     #CONSTRAINTS
 
@@ -69,29 +73,36 @@ def mcp_sat(m, n, l, s, D):
     for courier in range(m):
         for step in range(n+2):
             for package in range(n+1):
-                s.add(Implies(path[courier][package][step], weights[courier][package]))
+                s.add(Implies(path[courier][package][step], courier_weights[courier][package]))
 
 
     #1: the courier delivers exactly one package at each step
     for courier in range(m):
         for step in range(n+2):
-            s.add(exactly_one_he(path[courier][:][step]))
+            s.add(at_most_one_he([path[courier][i][step] for i in range(n+1)]))
     
     
     #2: Each package is carried only once
-    for package in [x for x in range(n+1) if x!=deposit]:
-        s.add(exactly_one_he(path[courier][package][:]))
+    for package in range(n): #not consider n+1 (deposit)
+        #s.add(exactly_one_he(path[courier][package][:]))
+        s.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)]))
 
     #3: Couriers start and end at the deposit
     for courier in range(m):
         s.add(path[courier][deposit][0])
-        s.add(path[courier][deposit][n+1]) #n+1 means n+2 but we count from zero
+        s.add(path[courier][deposit][n+1]) #n+1 means n+2 because we count from zero
 
     #4: Every courier has a maximum load capacity to respect
     for i in range(m):
         #s.add(conditional_sum_K_bin(a[i], s_bin, courier_loads[i], f"compute_courier_load_{i}"))
         s.add(geq(l_b[i],courier_loads[i]))
     
+
+    #5: All couriers must start as soon as possible
+    for courier in range(m):
+        s.add(at_least_one_he([path[courier][i][1] for i in range(n)]))
+
+
     end_time = time.time()
     
     return ""
@@ -113,26 +124,46 @@ if __name__ == "__main__":
         m, n, l, s, D = read_instance(data_path)
         #mcp_sat(m, n, l, s, D)
     """
-    
-    x = [Bool("x_0"),Bool("x_1")]
-    y = [Bool("y_0"),Bool("y_1")]
-    res = [Bool("res_0"),Bool("res_1")]
-
+    n = 5
+    m = 3
     s = Solver()
-
-    s.add(x[0] == True)
-    s.add(y[0] == True)
-
-    s.add(x[1] == True)
-    s.add(y[1] == True)
-   
- 
-    s.add(sum_bin(x,y,res))
+    path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
+    d = [[1,2],[4,5]]
+    print([d[i][j] for i in range(2) for j in range(2)])
+    """
+    for courier in range(m):
+        for step in range(n+2):
+            s.add(at_most_one_he(path[courier][:][step]))
+    
 
     if s.check() == sat:
         print(s.model())
     else:
         print(s.check())
+    """
+    """
+    x = [Bool("x_0")]
+    y = [Bool("y_0"),Bool("y_1")]
+    #y = [Bool("y_0"),Bool("y_1"),Bool("y_2")]
+    res = [Bool("res_0")]
+
+    s = Solver()
+    s.add(x[0] == True)
+    s.add(y[0] == True)
+
+    #s.add(x[1] == False)
+    s.add(y[1] == False)
+
+    #s.add(y[2] == False)
+   
+    
+    s.add(geq(y,x))
+
+    if s.check() == sat:
+        print(s.model())
+    else:
+        print(s.check())
+    """
 
     
 

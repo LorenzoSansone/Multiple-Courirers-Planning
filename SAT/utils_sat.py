@@ -138,7 +138,12 @@ def geq(x,y):
     #encoding_num x and y
 
     if len(x) != len(y):
-        raise ValueError("Both lists must have the same length.")
+        max_len = max(len(x), len(y))
+        x = pad_bool(x, max_len)
+        y = pad_bool(y, max_len)
+        print("x",x)
+        print("y",y)
+        #raise ValueError("Both lists must have the same length.")
     
     if len(x) == 1:
         return Or(x[0]==y[0], And(Not(y[0]), x[0]))
@@ -147,31 +152,12 @@ def geq(x,y):
                   And(x[0]==y[0], geq(x[1:], y[1:])))
     
 
-def sum_b(l1, l2):   
-                                
-    #l1, l2 = get_bool_lists(l1, l2)
-    max_len = max(len(l1), len(l2))
-    #l1 = pad(l1, max_len)
-    #l2 = pad(l2, max_len)
-    
-    result = []
-
-    carry_in = False
-    carry_out = False
-
-    for i in range(max_len - 1, -1, -1):
-        a = l1[i]
-        b = l2[i]
-        result.append(Xor(Xor(a, b), carry_in))
-
-        carry_out = Or(And(Xor(a, b), carry_in), And(a, b))
-        carry_in = carry_out
-    result.append(carry_in)
-    result = result[::-1]
-
-    return result
-
 def sum_one_bit(x, y, c_in, res, c_res):
+  print("x:",x)
+  print("y:",y)
+  print("c_int", c_in)
+  print("res", res)
+  print("c_res", c_res)
   """
       Implementation of the full adder for one bit
       Constraints for a + b + c_in = res with c_res (1 bit)
@@ -184,6 +170,7 @@ def sum_one_bit(x, y, c_in, res, c_res):
   # Xor(A, B) encodes the binary sum between the bit A and the bit B
   c_1 = res == Xor( Xor(x, y), c_in)  #Sum between x, y and c_in
   c_2 = c_res == Or(And( Xor(x, y) , c_in), And(x, y)) #Computation of the carry
+  print(And(c_1, c_2))
   return And(c_1, c_2) 
 
 def pad_bool(x, length):
@@ -203,10 +190,14 @@ def sum_bin(x, y, res, name= ""):
     y = pad_bool(y, max_len)
 
     c = [Bool(f"carry_{name}_{i}") for i in range(max_len)] + [BoolVal(False)]
-
+    print("x",x)
+    print("y",y)
+    print("c",c)
     constr = []
 
     for i in range(max_len):
+        print("---",i,"---")
         constr.append(sum_one_bit(x= x[max_len-i-1], y = y[max_len-i-1], c_in= c[max_len - i], res= res[max_len - i - 1], c_res= c[max_len - i - 1]))
     constr.append(Not(c[0]))
     return And(constr)
+
