@@ -128,7 +128,7 @@ def save_solution_by_solver(input_file, m, n, solver_name, time_limit=300, resul
 
     # Prepare the solver-specific solution dictionary
     solver_solution_dict = {
-        "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
+        "time": math.floor(result.statistics['solveTime'].total_seconds()) if result.status.name == 'OPTIMAL_SOLUTION' else time_limit,
         "optimal": optimal,
         "obj": objective,
         "sol": []
@@ -292,6 +292,50 @@ def find_boundaries_standard(m, n, l, s, D):
     UB = int(UB)
 
     return 0, UB, LB, UB  # Return values as in the example
+
+def find_boundaries_hybrid(m: int, n: int, l: list, s: list, D: list):
+    """
+    Calculate bounds for MCP returning single LB and UB
+    Args:
+        m: number of couriers
+        n: number of items
+        l: courier capacities
+        s: item sizes
+        D: distance matrix
+    Returns:
+        Tuple of (LB, UB)
+    """
+    distances = np.array(D)
+    
+    # Lower Bound: Maximum round-trip
+    min_dist_dep_list = []
+    for i in range(n):
+        min_dist_dep_list.append(distances[n, i] + distances[i, n])
+    LB = max(min_dist_dep_list)
+    
+    # Upper Bound: Enhanced nearest neighbor
+    current = n  # Start at origin
+    unvisited = set(range(n))
+    UB = 0
+    
+    while unvisited:
+        # Find nearest unvisited point
+        if len(unvisited) == 1:
+            next_point = unvisited.pop()
+        else:
+            next_point = min(unvisited, 
+                           key=lambda x: distances[current, x])
+            unvisited.remove(next_point)
+        
+        # Add distance to next point
+        UB += distances[current, next_point]
+        current = next_point
+    
+    # Return to origin
+    UB += distances[current, n]
+    UB = int(UB)
+    
+    return LB, UB
 def debug(x,y,m,n,s,l,D):
     picked_up_objects(x, m, n)
     # Check load sizes
@@ -307,3 +351,50 @@ def debug(x,y,m,n,s,l,D):
     #Print distances
     print("Distances calculation for each courier:")
     distances_check(D, y)
+
+
+def verify_solution(x_sol, y_sol, l, s, D, n, m, locations):
+    # Check load constraints
+    load_valid = all(
+        sum(x_sol[i-1][j-1] * s[j-1] for j in range(1, n+1)) <= l[i-1] 
+        for i in range(1, m+1)
+    )
+    
+    # Check item assignment constraint
+    item_assignment_valid = all(
+        sum(x_sol[i-1][j-1] for i in range(1, m+1)) == 1 
+        for j in range(1, n+1)
+    )
+    
+    # Check courier starts and ends at origin
+    origin_constraint_valid = all(
+        (sum(y_sol[i-1][locations-1][j-1] for j in range(1, n+1)) == 1) and
+        (sum(y_sol[i-1][j-1][locations-1] for j in range(1, n+1)) == 1)
+        for i in range(1, m+1)
+    )
+    
+    # Check flow conservation
+    flow_conservation_valid = all(
+        sum(y_sol[i-1][k-1][j-1] for k in range(1, locations+1)) ==
+        sum(y_sol[i-1][j-1][k-1] for k in range(1, locations+1))
+        for i in range(1, m+1)
+        for j in range(2, locations+1)
+    )
+    
+    # Calculate total distances
+    distances = [
+        sum(y_sol[i-1][j1-1][j2-1] * D[j1-1][j2-1] 
+        for j1 in range(1, locations+1) 
+        for j2 in range(1, locations+1))
+        for i in range(1, m+1)
+    ]
+    
+    return {
+        'load_valid': load_valid,
+        'item_assignment_valid': item_assignment_valid,
+        'origin_constraint_valid': origin_constraint_valid,
+        'flow_conservation_valid': flow_conservation_valid,
+        'distances': distances,
+        'is_valid': (load_valid and item_assignment_valid and 
+                     origin_constraint_valid and flow_conservation_valid)
+    }
