@@ -48,7 +48,7 @@ def mcp_sat(m, n, l, s, D):
     courier_weights = [[Bool(f"w_{courier}_{package}")for package in range(n)] for courier in range(m)]
 
     # courier_loads_i = it represents binary representation of actual load carried by each courier
-    courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for i in range(m)]
+    courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
 
 
 
@@ -64,23 +64,19 @@ def mcp_sat(m, n, l, s, D):
     D_max = np.matrix(D).max()
     D_b = [[int_to_binary(D[i][j], num_bits(D_max)) for j in range(n+1)] for i in range(n+1)]
 
-
-
-    #CONSTRAINTS
-
+    
+    #-----CONSTRAINTS-----
 
     # Binding the weight and path
     for courier in range(m):
         for step in range(n+2):
-            for package in range(n+1):
+            for package in range(n): #we don't consider the depoist
                 s.add(Implies(path[courier][package][step], courier_weights[courier][package]))
-
 
     #1: the courier delivers exactly one package at each step
     for courier in range(m):
         for step in range(n+2):
-            s.add(at_most_one_he([path[courier][i][step] for i in range(n+1)]))
-    
+            s.add(at_most_one_he([path[courier][package][step] for package in range(n+1)]))
     
     #2: Each package is carried only once
     for package in range(n): #not consider n+1 (deposit)
@@ -99,10 +95,19 @@ def mcp_sat(m, n, l, s, D):
     
 
     #5: All couriers must start as soon as possible
+    #1 is the first step
+    #range(n) because they have to pick one package and not choose the deposit (n+1)
     for courier in range(m):
         s.add(at_least_one_he([path[courier][i][1] for i in range(n)]))
 
 
+    #6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
+    # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
+    # it also means that the courier can come back to the deposit if he has to deliver other packagages
+    for courier in range(m):
+        for step in range(1,n):
+            s.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
+        
     end_time = time.time()
     
     return ""
@@ -125,11 +130,12 @@ if __name__ == "__main__":
         #mcp_sat(m, n, l, s, D)
     """
     n = 5
-    m = 3
+    m = 2
     s = Solver()
+    max_load = 100
+    #courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
     path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
-    d = [[1,2],[4,5]]
-    print([d[i][j] for i in range(2) for j in range(2)])
+
     """
     for courier in range(m):
         for step in range(n+2):
