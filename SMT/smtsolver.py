@@ -195,12 +195,19 @@ class SMTMultipleCouriersSolver:
         for i in range(self.m_couriers):
             for j in range(self.n_items + 1):
                 self.solver.add(z3.Not(y[i][j][j]))
-        
+                
+        # Add symmetry breaking constraints
+        for i in range(self.m_couriers - 1):
+            # Force couriers to be used in order (if courier i+1 is used, courier i must be used)
+            self.solver.add(z3.Implies(
+                z3.Or([x[i+1][j] for j in range(self.n_items)]),
+                z3.Or([x[i][j] for j in range(self.n_items)])
+            ))
         # Set objective
         self.solver.minimize(max_distance)
         
         return x, y, max_distance
-   
+
     def save_solution_by_model(self, input_file, m, n, model_name, time_limit=300, result=None):
         # Determine the output file path
         instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
@@ -355,20 +362,42 @@ def main():
         print(f"\nProcessing instance {file_path}")
         
         try:
+            start_time = time.time()
             solver = SMTMultipleCouriersSolver(file_path)
-            # Increase timeout for larger instances
-            timeout = 300000  # 5 minutes for larger instances
+            timeout = 300000  # 5 minutes (300000 milliseconds)
+            
+            # Print initial status
+            print("Solving... ", end='', flush=True)
+            
+            # Start progress tracking in a separate thread
+            def print_progress():
+                while True:
+                    elapsed = time.time() - start_time
+                    if elapsed >= 300:  # Stop at timeout
+                        break
+                    print(f"\rSolving... {elapsed:.1f}s", end='', flush=True)
+                    time.sleep(1)  # Update every second
+            
+            import threading
+            progress_thread = threading.Thread(target=print_progress)
+            progress_thread.daemon = True  # Thread will be killed when main program exits
+            progress_thread.start()
+            
+            # Solve the instance
             result = solver.solve(timeout_ms=timeout)
+            
+            # Print final status
+            elapsed_time = time.time() - start_time
+            print(f"\rCompleted in {elapsed_time:.1f}s")
             
             # Print meaningful solution information
             if result.status.name == 'OPTIMAL_SOLUTION':
                 print(f"Status: Optimal solution found")
                 print(f"Objective value: {result.objective}")
-                print(f"Solve time: {result.statistics['solveTime'].total_seconds():.2f} seconds")
             else:
                 print(f"Status: No optimal solution found within time limit")
             
-            # Save solution using save_solution_by_model
+            # Save solution
             output_file = solver.save_solution_by_model(
                 input_file=file_path,
                 m=solver.m_couriers,
