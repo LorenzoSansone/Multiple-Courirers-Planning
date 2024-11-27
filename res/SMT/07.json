@@ -1,0 +1,8 @@
+{
+    "z3_smt_base": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    }
+}
