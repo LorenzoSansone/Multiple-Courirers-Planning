@@ -170,13 +170,13 @@ def sum_one_bit(x, y, c_in, res, c_res):
   # Xor(A, B) encodes the binary sum between the bit A and the bit B
   c_1 = res == Xor( Xor(x, y), c_in)  #Sum between x, y and c_in
   c_2 = c_res == Or(And( Xor(x, y) , c_in), And(x, y)) #Computation of the carry
-  print(And(c_1, c_2))
+
   return And(c_1, c_2) 
 
 def pad_bool(x, length):
     return [BoolVal(False)] * (length - len(x)) + x
 
-def sum_bin(x, y, res, name= ""):
+def sum_bin(x, y, res, name= "", mask = BoolVal(True)):
     """
       The constraints for full adder. x + y = res
       :param x:   binary inputs
@@ -190,14 +190,33 @@ def sum_bin(x, y, res, name= ""):
     y = pad_bool(y, max_len)
 
     c = [Bool(f"carry_{name}_{i}") for i in range(max_len)] + [BoolVal(False)]
-    print("x",x)
-    print("y",y)
-    print("c",c)
+    
     constr = []
 
     for i in range(max_len):
-        print("---",i,"---")
+        #print("---",i,"---")
         constr.append(sum_one_bit(x= x[max_len-i-1], y = y[max_len-i-1], c_in= c[max_len - i], res= res[max_len - i - 1], c_res= c[max_len - i - 1]))
     constr.append(Not(c[0]))
+    #constr.append(mask)
     return And(constr)
 
+def cond_sum_bin(name = ""):
+    pass
+
+
+def eq_bin(x, y):                                        
+    max_len = max(len(x), len(y))
+    x = pad_bool(x, max_len)
+    y = pad_bool(y, max_len)
+
+    return And([x[i] == y[i] for i in range(max_len)])
+
+def max_var(list_var_bits, max_var):
+    
+    equal_number = Or([eq_bin(var_bits, max_var) for var_bits in list_var_bits])
+    geq_list = And([geq(max_var, var_bits) for var_bits in list_var_bits])
+
+    return And(equal_number, geq_list)
+
+def linear_search(solver):
+    pass
