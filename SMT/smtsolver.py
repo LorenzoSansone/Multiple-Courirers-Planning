@@ -303,8 +303,14 @@ class SMTMultipleCouriersSolver:
         
         if timeout_ms is not None:
             self.solver.set("timeout", timeout_ms)
+            timeout_s = timeout_ms / 1000  # Convert to seconds
         
+        # Time the model construction
+        model_construction_start = time.time()
         x, y, max_distance = self.create_smt_model()
+        model_construction_time = time.time() - model_construction_start
+        print(f"Model construction time: {model_construction_time:.2f} seconds")
+        
         result = self.solver.check()
         solve_time = math.floor(time.time() - start_time)
         
@@ -315,6 +321,11 @@ class SMTMultipleCouriersSolver:
                 self.status = None
                 self.objective = None
                 self.statistics = {}
+        
+        # Define Status class outside the conditional blocks
+        class Status:
+            def __init__(self, name):
+                self.name = name
         
         result_obj = Result()
         
@@ -340,12 +351,6 @@ class SMTMultipleCouriersSolver:
             
             result_obj.solution = solution
             result_obj.objective = model[max_distance].as_long()
-            
-            # Set status
-            class Status:
-                def __init__(self, name):
-                    self.name = name
-            
             result_obj.status = Status('OPTIMAL_SOLUTION')
             result_obj.statistics = {'solveTime': timedelta(seconds=solve_time)}
             
@@ -354,6 +359,10 @@ class SMTMultipleCouriersSolver:
             
         return result_obj
 
+def seconds_to_milliseconds(seconds:int):
+    return seconds * 1000
+def minutes_to_milliseconds(minutes:int):
+    return minutes * 60 * 1000
 def main():
     os.makedirs("res/SMT", exist_ok=True)
     
@@ -364,7 +373,8 @@ def main():
         try:
             start_time = time.time()
             solver = SMTMultipleCouriersSolver(file_path)
-            timeout = 300000  # 5 minutes (300000 milliseconds)
+
+            timeout = minutes_to_milliseconds(5)  # 5 minutes (300000 milliseconds)
             
             # Print initial status
             print("Solving... ", end='', flush=True)
