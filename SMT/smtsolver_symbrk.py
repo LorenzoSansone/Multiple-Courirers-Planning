@@ -8,260 +8,212 @@ import traceback
 import math
 from datetime import timedelta
 from z3 import is_true
+from dataclasses import dataclass
+from enum import Enum
+
+def seconds_to_milliseconds(seconds: int):
+    return seconds * 1000
+
+def minutes_to_milliseconds(minutes: int):
+    return minutes * 60 * 1000
+
+TIMEOUT_TIME = minutes_to_milliseconds(5)  # 5 minutes in milliseconds
+
+class Status(Enum):
+    OPTIMAL_SOLUTION = "OPTIMAL_SOLUTION"
+    FEASIBLE_SOLUTION = "FEASIBLE_SOLUTION"
+    INFEASIBLE = "INFEASIBLE"
+
+@dataclass
+class Solution:
+    x: list
+    y: list
+
+@dataclass
+class Result:
+    solution: Solution = None
+    status: Status = None
+    objective: int = None
+    statistics: dict = None
 
 class SMTMultipleCouriersSolver:
     def __init__(self, input_file):
-        # Parse input file
-        with open(input_file, 'r') as f:
-            lines = [line.strip() for line in f.readlines()]
-        # Parsing first line: number of couriers
-        if len(lines) < 1:
-            raise ValueError("The input file is empty.")
-        self.m_couriers = int(lines[0])
-        
-        # Parsing second line: number of items
-        if len(lines) < 2:
-            raise ValueError("Missing line specifying the number of items.")
-        self.n_items = int(lines[1])
-        
-        # Parsing third line: courier load limits
-        if len(lines) < 3:
-            raise ValueError("Missing line specifying courier load limits.")
-        self.courier_load_limits = list(map(int, lines[2].split()))
-        if len(self.courier_load_limits) != self.m_couriers:
-            raise ValueError(f"Expected {self.m_couriers} load limits, found {len(self.courier_load_limits)}.")
-        
-        # Parsing fourth line: item sizes
-        if len(lines) < 4:
-            raise ValueError("Missing line specifying item sizes.")
-        self.item_sizes = list(map(int, lines[3].split()))
-        if len(self.item_sizes) != self.n_items:
-            raise ValueError(f"Expected {self.n_items} item sizes, found {len(self.item_sizes)}.")
-        
-        # Parsing distance matrix
-        if len(lines) < 4 + self.n_items + 1:
-            raise ValueError(f"Expected at least {4 + self.n_items + 1} lines for the distance matrix.")
-        
-        self.distance_matrix = [
-            list(map(int, line.split())) 
-            for line in lines[4:4 + self.n_items + 1]
-        ]
-        if len(self.distance_matrix) != self.n_items + 1:
-            raise ValueError(f"Expected {self.n_items + 1} rows in the distance matrix, found {len(self.distance_matrix)}.")
-        for row in self.distance_matrix:
-            if len(row) != self.n_items + 1:
-                raise ValueError(f"Malformed distance matrix row: expected {self.n_items + 1} elements, found {len(row)}.")
-
-        # Initialize the Z3 optimizer
+        self.parse_input(input_file)
         self.solver = z3.Solver()
-        self.solver.set("timeout", 1)
-        
-        # Calculate bounds right after initialization
+        self.solver.set("timeout", TIMEOUT_TIME)
         self.LB, self.UB = self.find_boundaries_hybrid()
 
+    def parse_input(self, input_file):
+        with open(input_file, 'r') as f:
+            lines = [line.strip() for line in f.readlines()]
+        if len(lines) < 4:
+            raise ValueError("The input file is incomplete.")
+        self.num_couriers = int(lines[0])
+        self.num_items = int(lines[1])
+        self.courier_load_limits = list(map(int, lines[2].split()))
+        self.item_sizes = list(map(int, lines[3].split()))
+        self.distance_matrix = [
+            list(map(int, line.split())) 
+            for line in lines[4:4 + self.num_items + 1]
+        ]
+
     def find_boundaries_hybrid(self):
-        """
-        Calculate bounds for MCP returning single LB and UB
-        Returns:
-            Tuple of (LB, UB)
-        """
         distances = np.array(self.distance_matrix)
-        n = self.n_items
-        
-        # Lower Bound: Maximum round-trip
-        min_dist_dep_list = []
-        for i in range(n):
-            min_dist_dep_list.append(distances[n, i] + distances[i, n])
+        n = self.num_items
+        min_dist_dep_list = [distances[n, i] + distances[i, n] for i in range(n)]
         LB = max(min_dist_dep_list)
-        
-        # Upper Bound: Enhanced nearest neighbor
         current = n  # Start at origin
         unvisited = set(range(n))
         UB = 0
-        
         while unvisited:
-            # Find nearest unvisited point
             if len(unvisited) == 1:
                 next_point = unvisited.pop()
             else:
-                next_point = min(unvisited, 
-                               key=lambda x: distances[current, x])
+                next_point = min(unvisited, key=lambda x: distances[current, x])
                 unvisited.remove(next_point)
-            
-            # Add distance to next point
             UB += distances[current, next_point]
             current = next_point
-        
-        # Return to origin
         UB += distances[current, n]
-        UB = int(UB)
-        
-        return LB, UB
+        return int(LB), int(UB)
 
     def create_smt_model(self):
-        # Boolean assignment variables
-        x = [[z3.Bool(f'assign_{i}_{j}') for j in range(self.n_items)] 
-             for i in range(self.m_couriers)]
-        
-        # Boolean routing variables (1 if courier i travels from point j to k)
-        y = [[[z3.Bool(f'route_{i}_{j}_{k}') 
-               for k in range(self.n_items + 1)]  # +1 for depot
-               for j in range(self.n_items + 1)]
-               for i in range(self.m_couriers)]
-        
-        # Distance variables
-        courier_distances = [z3.Int(f'distance_{i}') for i in range(self.m_couriers)]
+        x = self.create_assignment_variables()
+        y = self.create_routing_variables()
+        courier_distances = self.create_distance_variables()
         max_distance = z3.Int('max_distance')
-        
-        # 1. Load constraints - respect maximum load size for each courier
-        for i in range(self.m_couriers):
-            self.solver.add(
-                z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) for j in range(self.n_items)]) 
-                <= self.courier_load_limits[i]
-            )
-        
-        # 2. Each item must be delivered by exactly one courier
-        for j in range(self.n_items):
-            self.solver.add(z3.Sum([z3.If(x[i][j], 1, 0) for i in range(self.m_couriers)]) == 1)
-        
-        depot = self.n_items  # depot index
-        
-        # 3. Link assignment and routing variables
-        for i in range(self.m_couriers):
-            for j in range(self.n_items):
-                # If item j is assigned to courier i, it must be visited in the route
+        self.add_load_constraints(x)
+        self.add_item_assignment_constraints(x)
+        self.link_assignment_and_routing(x, y)
+        self.add_depot_constraints(x, y)
+        self.add_flow_conservation_constraints(y)
+        self.add_subtour_elimination_constraints(y)
+        self.calculate_distance_and_objective(courier_distances, y, max_distance)
+        self.add_no_self_loops_constraint(y)
+        self.add_symmetry_breaking_constraints(x)
+        self.add_bound_constraints(max_distance)
+        return x, y, max_distance
+
+    def create_assignment_variables(self):
+        return [[z3.Bool(f'assign_{i}_{j}') for j in range(self.num_items)] 
+                for i in range(self.num_couriers)]
+
+    def create_routing_variables(self):
+        return [[[z3.Bool(f'route_{i}_{j}_{k}') 
+                  for k in range(self.num_items + 1)]  
+                  for j in range(self.num_items + 1)]
+                  for i in range(self.num_couriers)]
+
+    def create_distance_variables(self):
+        return [z3.Int(f'distance_{i}') for i in range(self.num_couriers)]
+
+    def add_load_constraints(self, x):
+        for i in range(self.num_couriers):
+            load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) for j in range(self.num_items)])
+            self.solver.add(load_sum <= self.courier_load_limits[i])
+
+    def add_item_assignment_constraints(self, x):
+        for j in range(self.num_items):
+            self.solver.add(z3.Sum([z3.If(x[i][j], 1, 0) for i in range(self.num_couriers)]) == 1)
+
+    def link_assignment_and_routing(self, x, y):
+        for i in range(self.num_couriers):
+            for j in range(self.num_items):
                 self.solver.add(z3.Implies(x[i][j],
-                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.n_items + 1)]) == 1))
+                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)]) == 1))
                 self.solver.add(z3.Implies(x[i][j],
-                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.n_items + 1)]) == 1))
-                # If item j is not assigned to courier i, it must not be visited
+                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)]) == 1))
                 self.solver.add(z3.Implies(z3.Not(x[i][j]),
-                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.n_items + 1)]) == 0))
+                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)]) == 0))
                 self.solver.add(z3.Implies(z3.Not(x[i][j]),
-                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.n_items + 1)]) == 0))
-        
-        # 4. Start and end at depot constraints
-        for i in range(self.m_couriers):
-            # Must leave depot exactly once if courier is used
-            courier_used = z3.Bool(f'courier_used_{i}')
-            self.solver.add(z3.Sum([z3.If(y[i][depot][j], 1, 0) for j in range(self.n_items)]) == 
+                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)]) == 0))
+
+    def add_depot_constraints(self, x, y):
+        depot = self.num_items  # depot index
+        for i in range(self.num_couriers):
+            courier_used = z3.Or([x[i][j] for j in range(self.num_items)])
+            self.solver.add(z3.Sum([z3.If(y[i][depot][j], 1, 0) for j in range(self.num_items)]) == 
                            z3.If(courier_used, 1, 0))
-            # Must return to depot exactly once if courier is used
-            self.solver.add(z3.Sum([z3.If(y[i][j][depot], 1, 0) for j in range(self.n_items)]) == 
+            self.solver.add(z3.Sum([z3.If(y[i][j][depot], 1, 0) for j in range(self.num_items)]) == 
                            z3.If(courier_used, 1, 0))
-            # Courier is used if it has any assignments
-            self.solver.add(courier_used == 
-                           z3.Or([x[i][j] for j in range(self.n_items)]))
-        
-        # 5. Flow conservation
-        for i in range(self.m_couriers):
-            for j in range(self.n_items + 1):
-                self.solver.add(
-                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.n_items + 1)]) ==
-                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.n_items + 1)])
-                )
-        
-        # 6. Subtour elimination using MTZ formulation
-        u = [[z3.Int(f'u_{i}_{j}') for j in range(self.n_items + 1)] 
-             for i in range(self.m_couriers)]
-        
-        for i in range(self.m_couriers):
-            # Initialize depot position
+
+    def add_flow_conservation_constraints(self, y):
+        for i in range(self.num_couriers):
+            for j in range(self.num_items + 1):
+                incoming = z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)])
+                outgoing = z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)])
+                self.solver.add(incoming == outgoing)
+
+    def add_subtour_elimination_constraints(self, y):
+        u = [[z3.Int(f'u_{i}_{j}') for j in range(self.num_items + 1)] 
+             for i in range(self.num_couriers)]
+        depot = self.num_items
+        for i in range(self.num_couriers):
             self.solver.add(u[i][depot] == 0)
-            
-            for j in range(self.n_items):
-                # Position constraints
+            for j in range(self.num_items):
                 self.solver.add(u[i][j] >= 1)
-                self.solver.add(u[i][j] <= self.n_items)
-                
-                # MTZ constraints
-                for k in range(self.n_items):
+                self.solver.add(u[i][j] <= self.num_items)
+                for k in range(self.num_items):
                     if j != k:
-                        self.solver.add(z3.Implies(y[i][j][k],
-                            u[i][k] >= u[i][j] + 1))
-        
-        # 7. Distance calculation and objective
-        for i in range(self.m_couriers):
-            dist_terms = []
-            for j in range(self.n_items + 1):
-                for k in range(self.n_items + 1):
-                    dist_terms.append(
-                        z3.If(y[i][j][k], self.distance_matrix[j][k], 0)
-                    )
+                        self.solver.add(z3.Implies(y[i][j][k], u[i][k] >= u[i][j] + 1))
+
+    def calculate_distance_and_objective(self, courier_distances, y, max_distance):
+        for i in range(self.num_couriers):
+            dist_terms = [z3.If(y[i][j][k], self.distance_matrix[j][k], 0)
+                          for j in range(self.num_items + 1)
+                          for k in range(self.num_items + 1)]
             self.solver.add(courier_distances[i] == z3.Sum(dist_terms))
-            self.solver.add(max_distance >= courier_distances[i])
-        
-        # 8. No self-loops
-        for i in range(self.m_couriers):
-            for j in range(self.n_items + 1):
+            self.solver.add(courier_distances[i] <= max_distance)
+
+        # Force max_distance to be equal to the maximum courier distance
+        self.solver.add(z3.Or([max_distance == courier_distances[i] 
+                              for i in range(self.num_couriers)]))
+
+    def add_no_self_loops_constraint(self, y):
+        for i in range(self.num_couriers):
+            for j in range(self.num_items + 1):
                 self.solver.add(z3.Not(y[i][j][j]))
-                
-        # Add symmetry breaking constraints
-        for i in range(self.m_couriers - 1):
-            # Force couriers to be used in order (if courier i+1 is used, courier i must be used)
+
+    def add_symmetry_breaking_constraints(self, x):
+        for i in range(self.num_couriers - 1):
             self.solver.add(z3.Implies(
-                z3.Or([x[i+1][j] for j in range(self.n_items)]),
-                z3.Or([x[i][j] for j in range(self.n_items)])
+                z3.Or([x[i+1][j] for j in range(self.num_items)]),
+                z3.Or([x[i][j] for j in range(self.num_items)])
             ))
-        
-        # Add symmetry breaking constraints based on courier loads
-        # First, sort courier load limits in descending order
         sorted_load_limits = sorted(enumerate(self.courier_load_limits), 
-                                  key=lambda x: x[1], reverse=True)
-
-        # Create variables for actual loads of each courier
-        courier_loads = [z3.Int(f'load_{i}') for i in range(self.m_couriers)]
-
-        # Calculate actual load for each courier
-        for i in range(self.m_couriers):
-            self.solver.add(courier_loads[i] == 
-                z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
-                        for j in range(self.n_items)]))
-
-        # Add load ordering constraints
-        for i in range(self.m_couriers - 1):
-            # If two consecutive couriers have equal capacity limits
-            if sorted_load_limits[i][1] == sorted_load_limits[i+1][1]:
-                # Add lexicographic ordering between their assignments
-                courier1_idx = sorted_load_limits[i][0]
-                courier2_idx = sorted_load_limits[i+1][0]
-                
-                # Ensure the first courier's load is greater than or equal to the second
+                                    key=lambda x: x[1], reverse=True)
+        courier_loads = [z3.Int(f'load_{i}') for i in range(self.num_couriers)]
+        for i in range(self.num_couriers):
+            load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
+                               for j in range(self.num_items)])
+            self.solver.add(courier_loads[i] == load_sum)
+        for i in range(self.num_couriers - 1):
+            courier1_idx = sorted_load_limits[i][0]
+            courier2_idx = sorted_load_limits[i+1][0]
+            if self.courier_load_limits[courier1_idx] == self.courier_load_limits[courier2_idx]:
                 self.solver.add(courier_loads[courier1_idx] >= courier_loads[courier2_idx])
-                
-                # If loads are equal, enforce lexicographic ordering on assignments
                 load_equal = (courier_loads[courier1_idx] == courier_loads[courier2_idx])
-                for j in range(self.n_items):
+                for j in range(self.num_items):
                     self.solver.add(z3.Implies(
                         z3.And(load_equal,
-                              z3.And([x[courier1_idx][k] == x[courier2_idx][k] 
-                                     for k in range(j)])),
+                               z3.And([x[courier1_idx][k] == x[courier2_idx][k] 
+                                      for k in range(j)])),
                         z3.Or(z3.And(x[courier1_idx][j], z3.Not(x[courier2_idx][j])),
                              z3.And([x[courier1_idx][k] == x[courier2_idx][k] 
-                                    for k in range(j, self.n_items)]))
+                                    for k in range(j, self.num_items)]))
                     ))
             else:
-                # If capacities are different, just ensure loads follow the same order
-                courier1_idx = sorted_load_limits[i][0]
-                courier2_idx = sorted_load_limits[i+1][0]
                 self.solver.add(courier_loads[courier1_idx] >= courier_loads[courier2_idx])
-        
-        # Add bound constraint
+
+    def add_bound_constraints(self, max_distance):
         self.solver.add(max_distance <= self.UB)
-        
-        return x, y, max_distance, None  # Return None for objective since we're not using minimize()
+        self.solver.add(max_distance >= self.LB)
 
     def save_solution_by_model(self, input_file, m, n, model_name, time_limit=300, result=None):
-        # Determine the output file path
         instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
         output_dir = "res/SMT"
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, f"{instance_number}.json")
-        
-        # Prepare the solution dictionary
         if result is None or result.solution is None:
-            # Default solution if no result or solution found
             solution = {
                 "objective": None,
                 "x": [[0 for _ in range(n)] for _ in range(m)],
@@ -275,206 +227,173 @@ class SMTMultipleCouriersSolver:
             solution = result.solution
             optimal = (result.status.name == 'OPTIMAL_SOLUTION')
             objective = result.objective if result.objective is not None else None
-
-        # Create a dictionary to store solution details
-        solution_data = {
-            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
-        }
-
-        # Try to extract 'y' from solution if it exists
+        solution_data = {"y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]}
         if hasattr(solution, "y"):
-            # Convert Z3 Boolean expressions to Python booleans
-            solution_data["y"] = [[[1 if is_true(y_val) else 0 
-                                   for y_val in row] 
-                                   for row in courier] 
-                                   for courier in solution.y]
-
-        # Prepare the solver-specific solution dictionary
+            solution_data["y"] = [[[1 if is_true(y_val) else 0 for y_val in row] for row in courier] for courier in solution.y]
         solver_solution_dict = {
-            "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
+            "time": time_limit if not optimal else math.floor(result.statistics['solveTime'].total_seconds()),
             "optimal": optimal,
             "obj": objective,
             "sol": []
         }
-
-        # Populate the solution routes
         if hasattr(solution, "y"):
             for courier in range(m):
                 route = []
-                current_location = n  # Start at the origin (assuming last location is the origin)
+                current_location = n
                 while True:
                     next_location = None
                     for j2 in range(n+1):
                         if solution_data["y"][courier][current_location][j2] == 1:
                             next_location = j2
                             break
-
                     if next_location is None or next_location == n:
-                        break  # No further movement or return to origin
-
+                        break
                     route.append(next_location + 1)
                     current_location = next_location
-                
                 solver_solution_dict["sol"].append(route)
         else:
             solver_solution_dict["sol"] = []
-
-        # Read existing solutions or create new dictionary
         try:
             with open(output_file, 'r') as infile:
                 existing_solutions = json.load(infile)
         except (FileNotFoundError, json.JSONDecodeError):
             existing_solutions = {}
-
-        # Add or update the current solver's solution
         existing_solutions[model_name] = solver_solution_dict
-
-        # Write updated solutions back to the file
         with open(output_file, 'w') as outfile:
             json.dump(existing_solutions, outfile, indent=4)
         return output_file
 
-    def solve(self, timeout_ms=None):
+    def solve(self, timeout_ms):
         start_time = time.time()
-        
+        self.set_timeout(timeout_ms)
+        x, y, max_distance = self.create_smt_model()
+        best_solution, best_objective = self.find_best_solution(start_time, x, y, max_distance)
+        result_obj = self.create_result_object(best_solution, best_objective, start_time)
+        return result_obj
+
+    def set_timeout(self, timeout_ms):
         if timeout_ms is not None:
-            self.solver.set("timeout", minutes_to_milliseconds(5))
-        
-        model_construction_start = time.time()
-        x, y, max_distance, _ = self.create_smt_model()
-        model_construction_time = time.time() - model_construction_start
-        print(f"Model construction time: {model_construction_time:.2f} seconds")
-        
-        class Result:
-            def __init__(self):
-                self.solution = None
-                self.status = None
-                self.objective = None
-                self.statistics = {}
-        
-        class Status:
-            def __init__(self, name):
-                self.name = name
-        
-        result_obj = Result()
+            self.solver.set("timeout", timeout_ms)
+
+    def find_best_solution(self, start_time, x, y, max_distance):
+        print(f"\n***Now entering find_best_solution***\n")
         best_solution = None
         best_objective = float('inf')
-        
-        while time.time() - start_time < minutes_to_milliseconds(5):
-            result = self.solver.check()
+        time_limit = 300  # 5 minutes in seconds
+
+        while True:
+            # Check if time limit has been reached
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            remaining_time = time_limit - elapsed_time
             
+            print(f"\rElapsed: {elapsed_time:.1f}s, Remaining: {remaining_time:.1f}s", end='', flush=True)
+            
+            if elapsed_time >= time_limit:
+                print("\nTime limit reached!")
+                break
+
+            # Set remaining time for solver
+            solver_timeout = int(remaining_time * 1000)  # Convert to milliseconds
+            self.solver.set("timeout", solver_timeout)
+            print(f"\nSetting solver timeout to: {solver_timeout/1000}manus")
+            
+            result = self.solver.check()
+
             if result == z3.sat:
                 model = self.solver.model()
                 current_objective = model.evaluate(max_distance).as_long()
                 
-                # Save this solution if it's better than what we have
-                if current_objective < best_objective:
-                    class Solution:
-                        def __init__(self):
-                            self.x = None
-                            self.y = None
+                print(f"\nFound solution with objective: {current_objective}")
                 
-                    solution = Solution()
-                    solution.x = [[model.evaluate(x[i][j]) for j in range(self.n_items)]
-                                for i in range(self.m_couriers)]
-                    solution.y = [[[model.evaluate(y[i][j][k]) for k in range(self.n_items + 1)]
-                                 for j in range(self.n_items + 1)]
-                                for i in range(self.m_couriers)]
-                    
-                    best_solution = solution
-                    best_objective = current_objective
-                    
-                    # Add constraint to find better solution
-                    self.solver.add(max_distance < current_objective)
-                else:
-                    # If we can't improve further, we found the optimal
-                    result_obj.status = Status('OPTIMAL_SOLUTION')
+                # Save this solution
+                solution = self.extract_solution(model, x, y)
+                best_solution = solution
+                best_objective = current_objective
+                
+                # Add constraint for next iteration to find better solution
+                self.solver.add(max_distance < current_objective)
+                
+                # Check if we've reached the lower bound (optimal solution)
+                if current_objective <= self.LB:
+                    print("\nReached lower bound - solution is optimal!")
                     break
-            else:
-                # If no more solutions exist, the last one was optimal
-                if best_solution is not None:
-                    result_obj.status = Status('OPTIMAL_SOLUTION')
+            else:  # z3.unsat or z3.unknown
+                print(f"\nSolver result: {result}")
                 break
+
+        return best_solution, best_objective
+
+    def extract_solution(self, model, x, y):
+        solution = Solution(
+            x=[[model.evaluate(x[i][j]) for j in range(self.num_items)] for i in range(self.num_couriers)],
+            y=[[[model.evaluate(y[i][j][k]) for k in range(self.num_items + 1)] for j in range(self.num_items + 1)] for i in range(self.num_couriers)]
+        )
+        return solution
+
+    def create_result_object(self, best_solution, best_objective, start_time):
+        result_obj = Result()
+        solve_time = time.time() - start_time
         
-        # Time's up or optimal found
-        if best_solution is not None:
+        if best_solution is None:
+            result_obj.status = Status.INFEASIBLE
+            print("No solution found")
+        else:
             result_obj.solution = best_solution
             result_obj.objective = best_objective
-            if result_obj.status is None:  # If we didn't prove optimality
-                result_obj.status = Status('FEASIBLE_SOLUTION')
+            result_obj.statistics = {'solveTime': timedelta(seconds=math.floor(solve_time))}
             
-            solve_time = math.floor(time.time() - start_time)
-            result_obj.statistics = {'solveTime': timedelta(seconds=solve_time)}
-            
-            if result_obj.status.name == 'OPTIMAL_SOLUTION':
-                print("Found optimal solution")
+            # Check if we hit the time limit
+            if solve_time >= minutes_to_milliseconds(5) / 1000:
+                result_obj.status = Status.FEASIBLE_SOLUTION
+                print("Found feasible solution (time limit reached)")
             else:
-                print("Found feasible solution (timeout reached)")
-        else:
-            result_obj.status = Status('INFEASIBLE')
-            print("No solution found")
+                result_obj.status = Status.OPTIMAL_SOLUTION
+                print("Found optimal solution")
         
         return result_obj
 
-def seconds_to_milliseconds(seconds:int):
-    return seconds * 1000
-def minutes_to_milliseconds(minutes:int):
-    return minutes * 60 * 1000
 def main():
     os.makedirs("res/SMT", exist_ok=True)
-    
-    for i in range(1, 11):
+    for i in range(1, 22):
         file_path = f'instances/inst{i:02d}.dat'
         print(f"\nProcessing instance {file_path}")
-        
         try:
             start_time = time.time()
             solver = SMTMultipleCouriersSolver(file_path)
-
-            timeout = minutes_to_milliseconds(5)  # 5 minutes (300000 milliseconds)
-            
-            # Print initial status
-            print("Solving... ", end='', flush=True)
-            
-            # Start progress tracking in a separate thread
+            timeout = TIMEOUT_TIME  # 5 minutes (300000 milliseconds)
+            print("\tSolving... ", end='', flush=False)
             def print_progress():
                 while True:
                     elapsed = time.time() - start_time
-                    if elapsed >= 300:  # Stop at timeout
+                    if elapsed >= timeout:
                         break
-                    print(f"\rSolving... {elapsed:.1f}s", end='', flush=True)
-                    time.sleep(1)  # Update every second
-            
+                    print(f"\rSolving... {elapsed:.1f}s", end='', flush=False)
+                    time.sleep(1)
             import threading
             progress_thread = threading.Thread(target=print_progress)
-            progress_thread.daemon = True  # Thread will be killed when main program exits
+            progress_thread.daemon = True
             progress_thread.start()
-            
-            # Solve the instance
             result = solver.solve(timeout_ms=timeout)
-            
-            # Print final status
             elapsed_time = time.time() - start_time
             print(f"\rCompleted in {elapsed_time:.1f}s")
-            
-            # Print meaningful solution information
             if result.status.name == 'OPTIMAL_SOLUTION':
                 print(f"Status: Optimal solution found")
                 print(f"Objective value: {result.objective}")
+            elif result.status.name == 'FEASIBLE':
+                print(f"Status: Sub-optimal solution found")
+                print(f"Objective value: {result.objective}")
             else:
-                print(f"Status: No optimal solution found within time limit")
-            
-            # Save solution
+                print(f"Status: No solution found within time limit")
             output_file = solver.save_solution_by_model(
                 input_file=file_path,
-                m=solver.m_couriers,
-                n=solver.n_items,
+                m=solver.num_couriers,
+                n=solver.num_items,
                 model_name="z3_smt_symbrk",
                 time_limit=300,
                 result=result
             )
             print(f"Solution saved to {output_file}")
-            
         except Exception as e:
             print(f"Error processing instance {file_path}: {e}")
             traceback.print_exc()
