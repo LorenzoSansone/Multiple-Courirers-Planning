@@ -17,76 +17,94 @@ int: UB; %upper bound
 int: min_dist;
 int: max_dist;
 
+% Pre-processing
+int: depot = n+1;
+set of int: COURIERS = 1..m;
+set of int: ITEMS = 1..n;
+set of int: POSITIONS = 1..n+2;
+set of int: NODES = 1..n+1;
+
+% Decision Variables
+array[ITEMS] of var COURIERS: x;  % courier assignments
+array[COURIERS, POSITIONS] of var NODES: path;  % routing
+array[COURIERS] of var min_dist..max_dist: y;  % courier distances
 var LB..UB: cost;
 
-% DECISION VARIABLES
-% y[i] is the total distance travelled by courier i
-array[1..m] of var min_dist..max_dist: y;
+% Implied Variables to strengthen the model
+array[COURIERS] of var 0..sum(s): load;  % load per courier
+array[COURIERS] of var bool: used;  % whether courier is used
 
-% x[i] contains the index j of the courier assigned to item i. 
-array[1..n] of var 1..m: x; 
+% Load Calculation and Capacity Constraints
+constraint forall(i in COURIERS)(
+    load[i] = sum(j in ITEMS)(bool2int(x[j] = i) * s[j]) /\
+    load[i] <= l[i]
+);
 
-%path[i,k] = j means courier i goes to point j as the k-th point in the tour
-array[1..m, 1..n+2] of var 1..n+1: path;
+% Courier Usage Definition
+constraint forall(i in COURIERS)(
+    used[i] = exists(j in ITEMS)(x[j] = i)
+);
 
+% Path Constraints
+constraint forall(i in COURIERS)(
+    path[i,1] = depot /\
+    path[i,n+2] = depot
+);
 
-%CONSTRAINTS 
+% Link Assignment and Routing
+constraint forall(i in COURIERS, j in 2..n+1)(
+    path[i,j] != depot -> x[path[i,j]] = i
+);
 
-%C1: Courier don't exceed their max load
-constraint bin_packing_capa(l, x, s);
+% Each item delivered exactly once
+constraint alldifferent_except(array1d(path), {depot});
 
-%C2: Courier deliver only the own items but it doesn't guarantee that all the packages that are assigned to a courier are delivered by him
-constraint forall(i in 1..m)(
-    forall (j in 2..n+1 where path[i,j] != n+1)(
-      x[path[i,j]] == i
+% All assigned items must be delivered
+constraint forall(j in ITEMS)(
+    exists(i in COURIERS, k in 2..n+1)(
+        path[i,k] = j /\ x[j] = i
     )
 );
 
-%C3: A package (is carried by only one courier only one time) and is delivered one time
-constraint alldifferent_except(path, {n+1});
-
-%C4 - Couriers Start and End at the Deposit
-constraint forall(i in 1..m) (
-  path[i,1] = n+1 /\ path[i,n+2] = n+1
+% Implied Constraints
+constraint forall(i in COURIERS)(
+    used[i] -> path[i,2] != depot
 );
 
-%C5 - Checks if all the packages that are assigned to a courier are delivered by him
-constraint forall(j in 1..n)(
-        exists(i in 2..n+1)(
-            path[x[j], i] == j
+% Strong Symmetry Breaking
+constraint symmetry_breaking_constraint(
+    forall(i in 1..m-1)(
+        load[i] >= load[i+1]
+    )
+);
+
+constraint symmetry_breaking_constraint(
+    forall(i in COURIERS)(
+        forall(j in 2..n+1)(
+            (path[i,j] = depot) -> 
+            forall(k in j+1..n+1)(path[i,k] = depot)
         )
-    );
-
-%IMPLIED
-
-%I1
-constraint forall(i in 1..m)(
-        exists(j in 1..n)(x[j] == i) -> path[i,2] != n+1
-    );
-
-%I2
-constraint forall(i in 1..m)(
-        not exists(j in 1..n)(x[j] == i) -> not exists(k in 2..n+1)(path[i,k] != n+1)
-    );
-
-%SYMMETRY
-
-%S1 - Couriers can't go back to the base to take other packages and starts immediatly
-constraint symmetry_breaking_constraint (forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
+    )
 );
 
-
-%%%%%%%% Objective function
-constraint
-    forall(i in 1..m) (
-        y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
-    );
+% Distance Calculation
+constraint forall(i in COURIERS)(
+    y[i] = sum(j in 1..n+1)(
+        D[path[i,j], path[i,j+1]]
+    )
+);
 
 constraint cost = max(y);
-  
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, dom_w_deg, indomain_min)  
-      :: restart_luby(100)
-      :: relax_and_reconstruct(array1d(path), 85)
-      minimize cost;
+
+% Objective Bounds
+constraint forall(i in COURIERS)(
+    used[i] -> y[i] >= 2 * min([ D[depot,j] | j in ITEMS where x[j]=i ])
+);
+
+% Search Annotation
+solve 
+    :: int_search([x[i] | i in ITEMS], first_fail, indomain_min)
+    :: int_search([path[i,j] | i in COURIERS, j in POSITIONS], dom_w_deg, indomain_min)
+    :: restart_luby(100)
+    :: relax_and_reconstruct(array1d(path), 85)
+minimize cost;
