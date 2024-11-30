@@ -89,6 +89,7 @@ class SMTMultipleCouriersSolver:
         self.add_subtour_elimination_constraints(y)
         self.calculate_distance_and_objective(courier_distances, y, max_distance)
         self.add_no_self_loops_constraint(y)
+        self.add_symmetry_breaking_constraints(x)
         self.add_bound_constraints(max_distance)
         return x, y, max_distance
 
@@ -171,6 +172,37 @@ class SMTMultipleCouriersSolver:
         for i in range(self.num_couriers):
             for j in range(self.num_items + 1):
                 self.solver.add(z3.Not(y[i][j][j]))
+
+    def add_symmetry_breaking_constraints(self, x):
+        for i in range(self.num_couriers - 1):
+            self.solver.add(z3.Implies(
+                z3.Or([x[i+1][j] for j in range(self.num_items)]),
+                z3.Or([x[i][j] for j in range(self.num_items)])
+            ))
+        sorted_load_limits = sorted(enumerate(self.courier_load_limits), 
+                                    key=lambda x: x[1], reverse=True)
+        courier_loads = [z3.Int(f'load_{i}') for i in range(self.num_couriers)]
+        for i in range(self.num_couriers):
+            load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
+                               for j in range(self.num_items)])
+            self.solver.add(courier_loads[i] == load_sum)
+        for i in range(self.num_couriers - 1):
+            courier1_idx = sorted_load_limits[i][0]
+            courier2_idx = sorted_load_limits[i+1][0]
+            if self.courier_load_limits[courier1_idx] == self.courier_load_limits[courier2_idx]:
+                self.solver.add(courier_loads[courier1_idx] >= courier_loads[courier2_idx])
+                load_equal = (courier_loads[courier1_idx] == courier_loads[courier2_idx])
+                for j in range(self.num_items):
+                    self.solver.add(z3.Implies(
+                        z3.And(load_equal,
+                               z3.And([x[courier1_idx][k] == x[courier2_idx][k] 
+                                      for k in range(j)])),
+                        z3.Or(z3.And(x[courier1_idx][j], z3.Not(x[courier2_idx][j])),
+                             z3.And([x[courier1_idx][k] == x[courier2_idx][k] 
+                                    for k in range(j, self.num_items)]))
+                    ))
+            else:
+                self.solver.add(courier_loads[courier1_idx] >= courier_loads[courier2_idx])
 
     def add_bound_constraints(self, max_distance):
         self.solver.add(max_distance <= self.UB)
@@ -357,7 +389,7 @@ def main():
                 input_file=file_path,
                 m=solver.num_couriers,
                 n=solver.num_items,
-                model_name="z3_smt_base",
+                model_name="z3_smt_symbrk",
                 time_limit=300,
                 result=result
             )

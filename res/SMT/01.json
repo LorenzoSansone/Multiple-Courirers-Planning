@@ -1,4 +1,21 @@
 {
+    "z3_smt_symbrk": {
+        "time": 0,
+        "optimal": true,
+        "obj": 14,
+        "sol": [
+            [
+                4,
+                3,
+                1
+            ],
+            [
+                2,
+                5,
+                6
+            ]
+        ]
+    },
     "z3_smt_base": {
         "time": 0,
         "optimal": true,
