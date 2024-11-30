@@ -1,46 +1,16 @@
 import z3
-import json
-import os
-import sys
-import time
-import numpy as np
-import traceback
-import math
-from datetime import timedelta
 from z3 import is_true
-from dataclasses import dataclass
-from enum import Enum
-
-def seconds_to_milliseconds(seconds: int):
-    return seconds * 1000
-
-def minutes_to_milliseconds(minutes: int):
-    return minutes * 60 * 1000
-
-TIMEOUT_TIME = minutes_to_milliseconds(5)  # 5 minutes in milliseconds
-
-class Status(Enum):
-    OPTIMAL_SOLUTION = "OPTIMAL_SOLUTION"
-    FEASIBLE_SOLUTION = "FEASIBLE_SOLUTION"
-    INFEASIBLE = "INFEASIBLE"
-
-@dataclass
-class Solution:
-    x: list
-    y: list
-
-@dataclass
-class Result:
-    solution: Solution = None
-    status: Status = None
-    objective: int = None
-    statistics: dict = None
-
-class SMTMultipleCouriersSolver:
-    def __init__(self, input_file):
+import numpy as np
+import time
+from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
+from datetime import timedelta
+import math, os, json
+class Z3_SMT_SymBrk_Solver: # name: z3_smt_symbrk
+    def __init__(self, input_file, timeout_time):
         self.parse_input(input_file)
         self.solver = z3.Solver()
-        self.solver.set("timeout", TIMEOUT_TIME)
+        self.timeout_time = timeout_time
+        self.solver.set("timeout", timeout_time)
         self.LB, self.UB = self.find_boundaries_hybrid()
 
     def parse_input(self, input_file):
@@ -208,7 +178,7 @@ class SMTMultipleCouriersSolver:
         self.solver.add(max_distance <= self.UB)
         self.solver.add(max_distance >= self.LB)
 
-    def save_solution_by_model(self, input_file, m, n, model_name, time_limit=300, result=None):
+    def save_solution_by_model(self, input_file, m, n, model_name, time_limit, result=None):
         instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
         output_dir = "res/SMT"
         os.makedirs(output_dir, exist_ok=True)
@@ -263,23 +233,26 @@ class SMTMultipleCouriersSolver:
             json.dump(existing_solutions, outfile, indent=4)
         return output_file
 
+    def set_timeout(self, timeout_ms):
+        if timeout_ms is not None:
+            self.solver.set("timeout", timeout_ms)
+
     def solve(self, timeout_ms):
+    # Start the timer before creating the SMT model
         start_time = time.time()
+        
         self.set_timeout(timeout_ms)
         x, y, max_distance = self.create_smt_model()
         best_solution, best_objective = self.find_best_solution(start_time, x, y, max_distance)
         result_obj = self.create_result_object(best_solution, best_objective, start_time)
+            
         return result_obj
-
-    def set_timeout(self, timeout_ms):
-        if timeout_ms is not None:
-            self.solver.set("timeout", timeout_ms)
 
     def find_best_solution(self, start_time, x, y, max_distance):
         print(f"\n***Now entering find_best_solution***\n")
         best_solution = None
         best_objective = float('inf')
-        time_limit = 300  # 5 minutes in seconds
+        time_limit = milliseconds_to_seconds(self.timeout_time)  # 5 minutes in seconds
 
         while True:
             # Check if time limit has been reached
@@ -296,7 +269,7 @@ class SMTMultipleCouriersSolver:
             # Set remaining time for solver
             solver_timeout = int(remaining_time * 1000)  # Convert to milliseconds
             self.solver.set("timeout", solver_timeout)
-            print(f"\nSetting solver timeout to: {solver_timeout/1000}manus")
+            print(f"\nSetting solver timeout to: {solver_timeout/1000:.2f}s")
             
             result = self.solver.check()
 
@@ -323,7 +296,6 @@ class SMTMultipleCouriersSolver:
                 break
 
         return best_solution, best_objective
-
     def extract_solution(self, model, x, y):
         solution = Solution(
             x=[[model.evaluate(x[i][j]) for j in range(self.num_items)] for i in range(self.num_couriers)],
@@ -353,50 +325,3 @@ class SMTMultipleCouriersSolver:
         
         return result_obj
 
-def main():
-    os.makedirs("res/SMT", exist_ok=True)
-    for i in range(1, 22):
-        file_path = f'instances/inst{i:02d}.dat'
-        print(f"\nProcessing instance {file_path}")
-        try:
-            start_time = time.time()
-            solver = SMTMultipleCouriersSolver(file_path)
-            timeout = TIMEOUT_TIME  # 5 minutes (300000 milliseconds)
-            print("\tSolving... ", end='', flush=False)
-            def print_progress():
-                while True:
-                    elapsed = time.time() - start_time
-                    if elapsed >= timeout:
-                        break
-                    print(f"\rSolving... {elapsed:.1f}s", end='', flush=False)
-                    time.sleep(1)
-            import threading
-            progress_thread = threading.Thread(target=print_progress)
-            progress_thread.daemon = True
-            progress_thread.start()
-            result = solver.solve(timeout_ms=timeout)
-            elapsed_time = time.time() - start_time
-            print(f"\rCompleted in {elapsed_time:.1f}s")
-            if result.status.name == 'OPTIMAL_SOLUTION':
-                print(f"Status: Optimal solution found")
-                print(f"Objective value: {result.objective}")
-            elif result.status.name == 'FEASIBLE':
-                print(f"Status: Sub-optimal solution found")
-                print(f"Objective value: {result.objective}")
-            else:
-                print(f"Status: No solution found within time limit")
-            output_file = solver.save_solution_by_model(
-                input_file=file_path,
-                m=solver.num_couriers,
-                n=solver.num_items,
-                model_name="z3_smt_symbrk",
-                time_limit=300,
-                result=result
-            )
-            print(f"Solution saved to {output_file}")
-        except Exception as e:
-            print(f"Error processing instance {file_path}: {e}")
-            traceback.print_exc()
-
-if __name__ == "__main__":
-    main()
