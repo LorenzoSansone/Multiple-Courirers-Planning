@@ -38,6 +38,7 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
 
     deposit = n #if we count from 0
     max_load = sum(s)
+    D_max = np.matrix(D).max()
 
     max_dist = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
     #VARIABLES
@@ -52,7 +53,10 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
 
     # courier_dists_i = it represents binary representation of actual dist by each courier
-    courier_dists = [[Bool(f"cd_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
+    c_dist_tot = [[Bool(f"cd_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
+    
+    #  partial_dist 
+    c_dist_par = [[[Bool(f"cp_{courier}_{step}_{bit}" for bit in range(num_bits(D_max)))] for step in range(n+2)] for courier in range(m)]
 
     #Binary conversion of s
     s_max = max(s)
@@ -92,12 +96,12 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
 
     #4: Every courier has a maximum load capacity to respect
     for i in range(m):
-        #s.add(cond_sum_bin(a[i], s_bin, courier_loads[i], f"compute_courier_load_{i}"))
+        s.add(cond_sum_bin(s_b, courier_weights[i], courier_loads[i], f"def_courier_load_{i}"))
         s.add(geq(l_b[i],courier_loads[i]))
     
     #5: Compute the distance of every courier
-    for i in range(m):
-        s.add(cond_sum_bin(courier_weights[i], s_b, courier_dists[i], f"compute_courier_load_{i}"))
+    #for i in range(m):
+    #    s.add(cond_sum_bin(D_b[i],courier_weights[i], courier_dists[i], f"def_courier_dists_{i}"))
 
     #5: All couriers must start as soon as possible
     #1 is the first step
@@ -114,6 +118,11 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
             s.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
     
 
+    ##Objective function
+    for courier in range(m):
+        for step in range(1,n+1): #n+2
+            for package in range(n):
+                s.add(Implies(path[courier][package][step], c_dist_par[courier][package][step+1]))
 
 
     if simm_constr == True:
@@ -123,42 +132,6 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     end_time = time.time()
     
     return ""
-
-
-def enable(l,en):
-    return [And(i,en) for i in l]
-
-#inputs: list of n binary encodings and a list of n bools used for masking
-#output: encoding of sum(i in 1..n){elems[i]*mask[i]}
-def masked_sum_n(elems, mask, res1):
-
-    constr = []
-
-    res = [BoolVal(False) for i in range(len(res1))]
-    res_temp = [Bool(f"temp_{i}") for i in range(len(res1))]
-    for i in range(len(elems)):
-        constr.append(sum_bin(res, enable(elems[i], mask[i]),res_temp))
-        res = res_temp
-       
-    res1 = res_temp
-        #res1 = res
-    return And(constr)
-
-"""
-def masked_sum_n(elems, mask, res1):
-
-    constr = []
-
-    res = [BoolVal(False) for i in range(len(res1))]
-    res_temp = [Bool(f"temp_{i}") for i in range(len(res1))]
-    for i in range(len(elems)):
-        print("----------------",i)
-        constr.append(sum_bin(res, enable(elems[i], mask[i]),res_temp))
-        res = res_temp
-    res1 = res_temp
-        #res1 = res
-    return constr
-"""
 
 if __name__ == "__main__":
 
@@ -182,46 +155,53 @@ if __name__ == "__main__":
     s = Solver()
     max_load = 100
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
-    x = [[Bool(f"x_{i}_{j}") for j in range(3)] for i in range(2)]
-    mask = [Bool(f"m_{i}") for i in range(2)]
+    x = [[Bool(f"x_{i}_{j}") for j in range(3)] for i in range(3)]
+    mask = [Bool(f"m_{i}") for i in range(3)]
     res = [Bool(f"r_{i}") for i in range(3)]
+
+
+    #res_temp =  [[BoolVal(False) for i in range(len(res1))]] + [[Bool(f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(elems))]
+
     
     # path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
     #x = [Bool(f"x1"),Bool(f"x1")]
     
-    s.add(mask[0]  == True)
-    s.add(mask[1]  == True)
-    #s.add(mask[2]  == True)
+    s.add(mask[0]  == False)
+    s.add(mask[1]  == False)
+    s.add(mask[2]  == False)
 
-    s.add(x[0][0]  == True)
+    s.add(x[0][0]  == False)
     s.add(x[0][1]  == False)
-    s.add(x[0][2]  == False)
+    s.add(x[0][2]  == True)
+    
     
     s.add(x[1][0]  == False)
     s.add(x[1][1]  == True)
-    s.add(x[1][2]  == False)
-    """
+    s.add(x[1][2]  == True)
+    
+    
     s.add(x[2][0]  == False)
     s.add(x[2][1]  == False)
-    s.add(x[2][2]  == False)
-    """
-    #s.add(y_var == True)
+    s.add(x[2][2]  == True)
+    
+    s.add(cond_sum_bin(x,mask, res, "sum1"))
+    
+    #s.add(full_adder(x[0], x[1], res, name = ""))
     #sum_bin(x, y, res, name= "", mask = True):
-    #s.add(sum_bin(x[0], x[1], res, name = "", mask = BoolVal(False)))
-    s.add(conditional_sum_K_bin(mask, x, res, name = ""))
+    #s.add(sum_bin(x[0], x[1], res, name = ""))
+    #s.add(conditiona_sum_K_bin(mask, x, res, name = ""))
     
     if s.check() == sat:
         m = s.model()
-        print(m)
-        """        for var in res:
-           
+        #print(m)
+        for var in res:  
+            #f str(res) == "r_1" or str(res) == "r_0" or str(res) == "r_2":
             print("Var: ", var, "Value:", m[var])
-        """
-
+        
         
     else:
         print(s.check())
-
+    
     """
     for courier in range(m):
         for step in range(n+2):
