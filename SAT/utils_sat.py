@@ -176,7 +176,7 @@ def sum_one_bit(x, y, c_in, res, c_res):
 def pad_bool(x, length):
     return [BoolVal(False)] * (length - len(x)) + x
 
-def sum_bin(x, y, res, name= "", mask = BoolVal(True)):
+def sum_bin(x, y, res, name= ""):
     """
       The constraints for full adder. x + y = res
       :param x:   binary inputs
@@ -194,10 +194,9 @@ def sum_bin(x, y, res, name= "", mask = BoolVal(True)):
     constr = []
 
     for i in range(max_len):
-        #print("---",i,"---")
         constr.append(sum_one_bit(x= x[max_len-i-1], y = y[max_len-i-1], c_in= c[max_len - i], res= res[max_len - i - 1], c_res= c[max_len - i - 1]))
     constr.append(Not(c[0]))
-    #constr.append(mask)
+  
     return And(constr)
 
 def cond_sum_bin(name = ""):
@@ -217,6 +216,65 @@ def max_var(list_var_bits, max_var):
     geq_list = And([geq(max_var, var_bits) for var_bits in list_var_bits])
 
     return And(equal_number, geq_list)
+
+#####à
+
+def one_bit_full_adder(a, b, c_in, s, c_out):
+  """
+      The constraints needed to encode the 1bit full adder. a + b + c_in = s with c_out
+      :param a:
+      :param b: 
+      :param c_in:    carry in
+      :param s:       result
+      :param c_out:   carry out  
+  """
+  xor_ab = Xor(a, b)
+  constr_1 = s == Xor(xor_ab, c_in)
+  constr_2 = c_out == Or(And(xor_ab, c_in), And(a, b))
+  return And(constr_1, constr_2)
+
+def full_adder(a, b, d, name= ""):
+  """
+      The constraints needed to encode the complete full adder. a + b = d
+      :param a:   binary encoded inputs
+      :param b:   binary encoded inputs
+      :param d:   binary encoded result
+      :param name:  unique string to disambiguate the carry in/out slack variables
+  """
+  if len(a)==len(b):
+    n = len(a)
+  elif  (len(a)>len(b)):
+    n = len(a)
+    b = [BoolVal(False)] * (len(a) - len(b)) + b  
+  else:
+    n = len(b)
+    a = [BoolVal(False)] * (len(b) - len(a)) + a
+
+  c = [Bool(f"carry_{name}_{i}") for i in range(n)] + [BoolVal(False)]
+
+  constr = []
+
+  for i in range(n):
+    constr.append(one_bit_full_adder(a= a[n-i-1], b= b[n-i-1], c_in= c[n - i], s= d[n - i - 1], c_out= c[n - i - 1]))
+  constr.append(Not(c[0]))
+  return And(constr)
+
+######à
+
+
+def mask_bins(list_bin,mask_value):
+    return [And(i,mask_value) for i in list_bin]
+
+def cond_sum_bin(num_list, mask, res, name = ""):
+    constr = []
+
+    res_temp =  [[BoolVal(False) for _ in range(len(res))]] + [[Bool(f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(num_list))]
+    for i in range(len(num_list)):
+        constr.append(sum_bin(res_temp[i], mask_bins(num_list[i], mask[i]), res_temp[i+1], name + f"_{i}"))
+       
+    constr.append(eq_bin(res_temp[i+1],res))
+
+    return And(constr)
 
 def linear_search(solver):
     pass
