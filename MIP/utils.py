@@ -10,7 +10,9 @@ def read_input(file_path):
     D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
     locations = n + 1
     return m, n, l, s, D, locations
-def save_solution_by_model(input_file, m, n, model_name, time_limit=300, result=None):
+
+
+def save_solution_by_solver(input_file, m, n, model_name, time_limit=300, result=None):
     # Determine the output file path
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
     output_dir = "res/MIP"
@@ -20,59 +22,39 @@ def save_solution_by_model(input_file, m, n, model_name, time_limit=300, result=
     
     # Prepare the solution dictionary
     if result is None or result.solution is None:
-        # Default solution if no result or solution found
-        solution = {
-            "objective": None,
-            "x": [[0 for _ in range(n)] for _ in range(m)],
-            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
-            "tour_distance": [0 for _ in range(m)],
-            "max_dist": None
+        solution_dict = {
+            "time": time_limit,
+            "optimal": False,
+            "obj": None,
+            "sol": []
         }
-        optimal = False
-        objective = None
     else:
-        solution = result.solution
-        optimal = (result.status.name == 'OPTIMAL_SOLUTION')
-        objective = result.objective if result.objective is not None else None
-
-    # Create a dictionary to store solution details
-    solution_data = {
-        "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
-    }
-
-    # Try to extract 'y' from solution if it exists
-    if hasattr(solution, "y"):
-        solution_data["y"] = solution.y
-
-    # Prepare the solver-specific solution dictionary
-    solver_solution_dict = {
-        "time": time_limit if result.status.name != 'OPTIMAL_SOLUTION' else math.floor(result.statistics['solveTime'].total_seconds()),
-        "optimal": optimal,
-        "obj": objective,
-        "sol": []
-    }
-
-    # Populate the solution routes
-    if hasattr(solution, "y"):
+        # Extract routes from y matrix
+        routes = []
         for courier in range(m):
             route = []
-            current_location = n  # Start at the origin (assuming last location is the origin)
+            current_location = n  # Start at origin
             while True:
                 next_location = None
                 for j2 in range(n+1):
-                    if solution_data["y"][courier][current_location][j2] == 1:
+                    if result.solution.y[courier][current_location][j2] == 1:
                         next_location = j2
                         break
 
                 if next_location is None or next_location == n:
-                    break  # No further movement or return to origin
+                    break
 
-                route.append(next_location + 1)
+                route.append(next_location + 1)  # +1 to match 1-based indexing
                 current_location = next_location
             
-            solver_solution_dict["sol"].append(route)
-    else:
-        solver_solution_dict["sol"] = []
+            routes.append(route)
+
+        solution_dict = {
+            "time": math.floor(result.statistics['solveTime'].total_seconds()),
+            "optimal": result.status.name == 'OPTIMAL_SOLUTION',
+            "obj": result.objective,
+            "sol": routes
+        }
 
     # Read existing solutions or create new dictionary
     try:
@@ -81,97 +63,15 @@ def save_solution_by_model(input_file, m, n, model_name, time_limit=300, result=
     except (FileNotFoundError, json.JSONDecodeError):
         existing_solutions = {}
 
-    # Add or update the current solver's solution
-    existing_solutions[model_name] = solver_solution_dict
+    # Add or update the current model's solution
+    existing_solutions[model_name] = solution_dict
 
     # Write updated solutions back to the file
     with open(output_file, 'w') as outfile:
         json.dump(existing_solutions, outfile, indent=4)
 
-    print(f"Solution saved to {output_file}")
     return output_file
 
-
-def save_solution_by_solver(input_file, m, n, solver_name, time_limit=300, result=None):
-    # Determine the output file path
-    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
-    output_dir = "res/MIP"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = os.path.join(output_dir, f"{instance_number}.json")
-    
-    # Prepare the solution dictionary
-    if result is None or result.solution is None:
-        # Default solution if no result or solution found
-        solution = {
-            "objective": None,
-            "x": [[0 for _ in range(n)] for _ in range(m)],
-            "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)],
-            "tour_distance": [0 for _ in range(m)],
-            "max_dist": None
-        }
-        optimal = False
-        objective = None
-    else:
-        solution = result.solution
-        optimal = (result.status.name == 'OPTIMAL_SOLUTION')
-        objective = result.objective if result.objective is not None else None
-
-    # Create a dictionary to store solution details
-    solution_data = {
-        "y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]
-    }
-
-    # Try to extract 'y' from solution if it exists
-    if hasattr(solution, "y"):
-        solution_data["y"] = solution.y
-
-    # Prepare the solver-specific solution dictionary
-    solver_solution_dict = {
-        "time": math.floor(result.statistics['solveTime'].total_seconds()) if result.status.name == 'OPTIMAL_SOLUTION' else time_limit,
-        "optimal": optimal,
-        "obj": objective,
-        "sol": []
-    }
-
-    # Populate the solution routes
-    if hasattr(solution, "y"):
-        for courier in range(m):
-            route = []
-            current_location = n  # Start at the origin (assuming last location is the origin)
-            while True:
-                next_location = None
-                for j2 in range(n+1):
-                    if solution_data["y"][courier][current_location][j2] == 1:
-                        next_location = j2
-                        break
-
-                if next_location is None or next_location == n:
-                    break  # No further movement or return to origin
-
-                route.append(next_location + 1)
-                current_location = next_location
-            
-            solver_solution_dict["sol"].append(route)
-    else:
-        solver_solution_dict["sol"] = []
-
-    # Read existing solutions or create new dictionary
-    try:
-        with open(output_file, 'r') as infile:
-            existing_solutions = json.load(infile)
-    except (FileNotFoundError, json.JSONDecodeError):
-        existing_solutions = {}
-
-    # Add or update the current solver's solution
-    existing_solutions[solver_name] = solver_solution_dict
-
-    # Write updated solutions back to the file
-    with open(output_file, 'w') as outfile:
-        json.dump(existing_solutions, outfile, indent=4)
-
-    print(f"Solution saved to {output_file}")
-    return output_file
 def check_load_sizes(x, s, m, n, l):
     load_sizes = [0] * m
     for courier in range(m):

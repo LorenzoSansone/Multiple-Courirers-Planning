@@ -1,5 +1,38 @@
 {
-    "gurobi": {
+    "gurobi_base_bounded_second": {
+        "time": 0,
+        "optimal": true,
+        "obj": 220,
+        "sol": [
+            [
+                8
+            ],
+            [
+                1
+            ],
+            [
+                9,
+                4
+            ],
+            [
+                3
+            ],
+            [
+                5,
+                6
+            ],
+            [
+                2
+            ],
+            [
+                7
+            ],
+            [
+                10
+            ]
+        ]
+    },
+    "gurobi_base_bounded_penaltyterm": {
         "time": 0,
         "optimal": true,
         "obj": 220,
@@ -29,6 +62,39 @@
             ],
             [
                 2
+            ]
+        ]
+    },
+    "gurobi_base_bounded_penaltyterm_symbrk": {
+        "time": 0,
+        "optimal": true,
+        "obj": 220,
+        "sol": [
+            [
+                1,
+                4
+            ],
+            [
+                6,
+                2
+            ],
+            [
+                9
+            ],
+            [
+                5
+            ],
+            [
+                7
+            ],
+            [
+                3
+            ],
+            [
+                8
+            ],
+            [
+                10
             ]
         ]
     }

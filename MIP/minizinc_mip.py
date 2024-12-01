@@ -1,38 +1,62 @@
 from minizinc import Instance, Model, Solver
 import utils as utils
 import datetime
-ALL_MODELS = [  #'base_bounded', 
-                'base_bounded_penaltyterm', 
-                #'base_bounded_penaltyterm_symbrk'
+import os
+ALL_MODELS = [  'gurobi_base_bounded_second', 
+                'gurobi_base_bounded_penaltyterm', 
+                'gurobi_base_bounded_penaltyterm_symbrk'
                 ]
-ALL_SOLVERS = [
-                'gurobi',
-                #'gecode',
-                #'chuffed',
-                #'cplex'
-]
-if __name__ == "__main__":
+import argparse
+import os
+import time
+from minizinc import Instance, Model, Solver
+import utils as utils
+import datetime
+import json
+
+def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Run MiniZinc solver on a range of instances.")
+    parser.add_argument("start", type=int, help="Start of the instance range (inclusive).")
+    parser.add_argument("end", type=int, help="End of the instance range (inclusive).")
+    parser.add_argument("--model", type=str, choices=ALL_MODELS, help="Name of the model to use. If not specified, solves for all models.")
+    args = parser.parse_args()
+
+    # Ensure output directory exists
+    os.makedirs("res/MIP", exist_ok=True)
+    
+    # Use either the specified model or all models
+    models_to_solve = [args.model] if args.model else ALL_MODELS
     time_limit = 300  # Time limit of 5 minutes
-    for mod in ALL_MODELS:
-        print(f"MODEL: {mod}")
-        for i in range(14, 22):
+
+    print(f"Solving for models: {models_to_solve}")
+    for model in models_to_solve:
+        print(f"MODEL: {model}")
+        for i in range(args.start, args.end + 1):
             file_path = f'instances/inst{i:02d}.dat'
-            chosen_model = mod
+            print(f"\nProcessing instance {file_path}")
+            start_time = time.time()
+
             # Read instance data
             m, n, l, s, D, locations = utils.read_input(file_path)
+            
             # Calculate bounds
             min_dist, max_dist, LB1, UB1 = utils.find_boundaries_standard(m, n, l, s, D)
             LB2, UB2 = utils.find_boundaries_hybrid(m, n, l, s, D)
-            print(f"\nInstance: inst{i:02d} | LB: {LB1}, UB: {UB1} | Range: {UB1-LB1} (find_boundaries_standard())")
+            print(f"Instance: inst{i:02d} | LB: {LB1}, UB: {UB1} | Range: {UB1-LB1} (find_boundaries_standard())")
             print(f"Instance: inst{i:02d} | LB: {LB2}, UB: {UB2} | Range: {UB2-LB2} (find_boundaries_hybrid())")        
+            
             # Take the biggest lower bound and the smallest upper bound
             LB = max(LB1, LB2)
             UB = min(UB1, UB2) 
+
             # Load the MiniZinc model
-            model = Model(f"MIP/{chosen_model}.mzn")
-            solver_name = "gurobi"
+            mzn_path = f"MIP/{model}.mzn"
+            print(f"Loading model from: {mzn_path}")
+            model_instance = Model(mzn_path)
+            solver_name = 'gurobi'
             solver = Solver.lookup(solver_name)
-            instance = Instance(solver, model)
+            instance = Instance(solver, model_instance)
             
             # Set parameters for the instance
             for param in ["m", "n", "l", "s", "D", "locations", "LB", "UB"]:
@@ -40,17 +64,29 @@ if __name__ == "__main__":
             
             # Solve the model with timeout
             try:
-                print(f"Solving instance: inst{i:02d}.dat | Model: {chosen_model}.mzn | Solver: {solver_name}")
+                print(f"\tSolving... ", end='', flush=True)
                 result = instance.solve(timeout=datetime.timedelta(seconds=time_limit))
-                print(f"Solved instance: {file_path} | Objective: {result.objective if result.objective else 'No solution'} | Optimal: {result.status.name == 'OPTIMAL_SOLUTION'}")
-                if result.solution is not None:  # Check if a solution exists
-                    # utils.debug(result['x'], result['y'], m, n, s, l, D) # test/debug function
+                elapsed_time = time.time() - start_time
+
+                print(f"\rCompleted in {elapsed_time:.1f}s")
+                print(f"Status: {result.status.name}")
+                
+                if result.solution is not None:
                     print(utils.verify_solution(result['x'], result['y'], l, s, D, n, m, locations))
             except Exception as e:
                 print(f"Error solving instance: inst{i:02d}.dat | {str(e)}")
                 continue
+
             # Save the solution to file
-            instance_number = utils.get_instance_number(file_path)
-            inst_i = f"inst{i:02d}" 
-            output_file = utils.save_solution_by_solver(time_limit = time_limit, result = result, input_file = f"inst{instance_number}.dat", m=m, n=n, solver_name = solver_name)
-            #output_file = utils.save_solution_by_model(input_file = f"inst{instance_number}.dat", m = m, n = n, model_name = chosen_model, time_limit = time_limit, result = result)
+            output_file = utils.save_solution_by_solver(
+                input_file=f"inst{i:02d}.dat",
+                m=m,
+                n=n,
+                model_name = model,
+                time_limit=time_limit,
+                result=result
+            )
+            print(f"Solution saved to {output_file}")
+
+if __name__ == "__main__":
+    main()
