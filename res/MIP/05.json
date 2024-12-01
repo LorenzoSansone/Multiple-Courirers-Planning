@@ -32,5 +32,11 @@
         "optimal": false,
         "obj": null,
         "sol": []
+    },
+    "cluster-first_route-second": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
     }
 }

@@ -12,10 +12,10 @@ from dataclasses import dataclass
 from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
 from Z3_SMT_Base_Solver import Z3_SMT_Base_Solver
 from Z3_SMT_SymBrk_Solver import Z3_SMT_SymBrk_Solver
-
+from Z3_SMT_SymBrk_ImplConstr_Solver import Z3_SMT_SymBrk_ImplConstr_Solver
 TIMEOUT_TIME = minutes_to_milliseconds(5)
 
-models = ['z3_smt_symbrk', 'z3_smt_base']
+models = ['z3_smt_symbrk', 'z3_smt_base', 'z3_smt_symbrk_implconstr']
 
 def main():
     # Parse command-line arguments
@@ -42,6 +42,7 @@ def main():
             match model:
                 case "z3_smt_symbrk": solver = Z3_SMT_SymBrk_Solver(file_path, TIMEOUT_TIME)
                 case "z3_smt_base": solver = Z3_SMT_Base_Solver(file_path, TIMEOUT_TIME)
+                case "z3_smt_symbrk_implconstr": solver = Z3_SMT_SymBrk_ImplConstr_Solver(file_path, TIMEOUT_TIME)
                 case _: raise ValueError(f"Invalid model name: {model}")
 
             # Solve the problem

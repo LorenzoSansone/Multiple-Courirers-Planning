@@ -195,7 +195,7 @@ def find_boundaries_standard(m, n, l, s, D):
 
 def find_boundaries_hybrid(m: int, n: int, l: list, s: list, D: list):
     """
-    Calculate bounds for MCP returning single LB and UB
+    Calculate bounds for MCP returning LB and UB
     Args:
         m: number of couriers
         n: number of items
@@ -206,36 +206,29 @@ def find_boundaries_hybrid(m: int, n: int, l: list, s: list, D: list):
         Tuple of (LB, UB)
     """
     distances = np.array(D)
+    origin = n  # Origin is at index n
     
-    # Lower Bound: Maximum round-trip
-    min_dist_dep_list = []
-    for i in range(n):
-        min_dist_dep_list.append(distances[n, i] + distances[i, n])
-    LB = max(min_dist_dep_list)
+    # Lower Bound: Maximum round-trip distance for any single item
+    LB = max(distances[origin, i] + distances[i, origin] for i in range(n))
     
-    # Upper Bound: Enhanced nearest neighbor
-    current = n  # Start at origin
-    unvisited = set(range(n))
-    UB = 0
+    # Calculate S: maximum distance to leave each delivery point
+    S = []
+    for j in range(n):  # for each delivery point
+        max_step = max(distances[j, k] for k in range(n))  # max distance to any other point
+        S.append(max_step)
     
-    while unvisited:
-        # Find nearest unvisited point
-        if len(unvisited) == 1:
-            next_point = unvisited.pop()
-        else:
-            next_point = min(unvisited, 
-                           key=lambda x: distances[current, x])
-            unvisited.remove(next_point)
-        
-        # Add distance to next point
-        UB += distances[current, next_point]
-        current = next_point
+    # Sort S in descending order
+    S.sort(reverse=True)
     
-    # Return to origin
-    UB += distances[current, n]
-    UB = int(UB)
+    # Calculate components for upper bound
+    max_dist_from_origin = max(distances[origin, k] for k in range(n))
+    max_dist_to_origin = max(distances[k, origin] for k in range(n))
     
-    return LB, UB
+    # Upper bound with implied constraint (using m+1 to n)
+    # We sum the largest distances for remaining items that must be delivered by the last courier
+    UB = sum(S[m:n]) + max_dist_from_origin + max_dist_to_origin
+    
+    return LB, int(UB)
 def debug(x,y,m,n,s,l,D):
     picked_up_objects(x, m, n)
     # Check load sizes

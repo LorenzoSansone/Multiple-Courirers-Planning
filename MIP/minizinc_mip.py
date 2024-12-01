@@ -4,7 +4,8 @@ import datetime
 import os
 ALL_MODELS = [  'gurobi_base_bounded_second', 
                 'gurobi_base_bounded_penaltyterm', 
-                'gurobi_base_bounded_penaltyterm_symbrk'
+                'gurobi_base_bounded_penaltyterm_symbrk',
+                'cluster-first_route-second'
                 ]
 import argparse
 import os
@@ -48,7 +49,7 @@ def main():
             
             # Take the biggest lower bound and the smallest upper bound
             LB = max(LB1, LB2)
-            UB = min(UB1, UB2) 
+            UB = min(UB1, UB2)
 
             # Load the MiniZinc model
             mzn_path = f"MIP/{model}.mzn"
@@ -56,12 +57,25 @@ def main():
             model_instance = Model(mzn_path)
             solver_name = 'gurobi'
             solver = Solver.lookup(solver_name)
+            
+            # Create a new instance for each iteration
             instance = Instance(solver, model_instance)
             
-            # Set parameters for the instance
-            for param in ["m", "n", "l", "s", "D", "locations", "LB", "UB"]:
-                instance[param] = locals()[param]
+            # Set all parameters first
+            instance["m"] = m
+            instance["n"] = n
+            instance["l"] = l
+            instance["s"] = s
+            instance["D"] = D
+            instance["locations"] = locations
+            instance["LB"] = LB
+            instance["UB"] = UB
             
+            # Initialize prev_x only once per instance
+            if model == 'cluster-first_route-second':
+                instance["prev_x"] = [[0 for _ in range(n)] for _ in range(m)]
+                instance["new_solution"] = True
+
             # Solve the model with timeout
             try:
                 print(f"\tSolving... ", end='', flush=True)
