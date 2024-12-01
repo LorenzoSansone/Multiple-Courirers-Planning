@@ -46,6 +46,9 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     # path[i][j][k] = T if the courier i delivers the package j at the k-th step 
     path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
     
+    #courier_stops
+    courier_stops = [[[Bool(f"s_{courier}_{package1}_{package2}") for package1 in range(n+1)] for package2 in range(n+1)] for courier in range(m)]
+    
     # courier_weights[i][j] = T if the courier i take the package  j
     courier_weights = [[Bool(f"w_{courier}_{package}")for package in range(n)] for courier in range(m)]
 
@@ -118,7 +121,19 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
             s.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
     
 
-    ##Objective function
+    for courier in range(m):
+        for step in range(n+1):
+            for package_start in range(n+1):
+                for package_end in range(n+1):
+                    s.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
+                                  courier_stops[courier][package_start][package_end]) )
+    
+    for courier in range(m):
+        for package_start in range(n+1):
+            for package_end in range(n+1):
+                s.add(Implies(courier_stops[courier][package_start][package_end], eq_bin(D_b[package_start][package_end],)))
+
+    #Objective function
     for courier in range(m):
         for step in range(1,n+1): #n+2
             for package in range(n):
@@ -134,6 +149,7 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     return ""
 
 if __name__ == "__main__":
+
 
     first_instance = 1
     last_instance = 1
@@ -155,17 +171,30 @@ if __name__ == "__main__":
     s = Solver()
     max_load = 100
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
-    x = [[Bool(f"x_{i}_{j}") for j in range(3)] for i in range(3)]
-    mask = [Bool(f"m_{i}") for i in range(3)]
-    res = [Bool(f"r_{i}") for i in range(3)]
-
-
+    """
+    res = [Bool("x1"), Bool("x2"), Bool("x3")]
+    
+    
+    d_temp = [[BoolVal(False), BoolVal(False), BoolVal(True)],
+              [BoolVal(False), BoolVal(False), BoolVal(True)]]
+    
+    var_temp =[BoolVal(False), BoolVal(True)]
+    
+    s.add(Implies(var_temp[0],eq_bin(d_temp[0],res)))
+    s.add(Implies(var_temp[1],eq_bin(d_temp[1],res)))
+    """
+    
     #res_temp =  [[BoolVal(False) for i in range(len(res1))]] + [[Bool(f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(elems))]
 
     
     # path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
     #x = [Bool(f"x1"),Bool(f"x1")]
-    
+
+    """
+    #TEST SUM
+    x = [[Bool(f"x_{i}_{j}") for j in range(3)] for i in range(3)]
+    mask = [Bool(f"m_{i}") for i in range(3)]
+    res = [Bool(f"r_{i}") for i in range(3)]
     s.add(mask[0]  == False)
     s.add(mask[1]  == False)
     s.add(mask[2]  == False)
@@ -185,7 +214,7 @@ if __name__ == "__main__":
     s.add(x[2][2]  == True)
     
     s.add(cond_sum_bin(x,mask, res, "sum1"))
-    
+    """
     #s.add(full_adder(x[0], x[1], res, name = ""))
     #sum_bin(x, y, res, name= "", mask = True):
     #s.add(sum_bin(x[0], x[1], res, name = ""))

@@ -217,51 +217,6 @@ def max_var(list_var_bits, max_var):
 
     return And(equal_number, geq_list)
 
-#####à
-
-def one_bit_full_adder(a, b, c_in, s, c_out):
-  """
-      The constraints needed to encode the 1bit full adder. a + b + c_in = s with c_out
-      :param a:
-      :param b: 
-      :param c_in:    carry in
-      :param s:       result
-      :param c_out:   carry out  
-  """
-  xor_ab = Xor(a, b)
-  constr_1 = s == Xor(xor_ab, c_in)
-  constr_2 = c_out == Or(And(xor_ab, c_in), And(a, b))
-  return And(constr_1, constr_2)
-
-def full_adder(a, b, d, name= ""):
-  """
-      The constraints needed to encode the complete full adder. a + b = d
-      :param a:   binary encoded inputs
-      :param b:   binary encoded inputs
-      :param d:   binary encoded result
-      :param name:  unique string to disambiguate the carry in/out slack variables
-  """
-  if len(a)==len(b):
-    n = len(a)
-  elif  (len(a)>len(b)):
-    n = len(a)
-    b = [BoolVal(False)] * (len(a) - len(b)) + b  
-  else:
-    n = len(b)
-    a = [BoolVal(False)] * (len(b) - len(a)) + a
-
-  c = [Bool(f"carry_{name}_{i}") for i in range(n)] + [BoolVal(False)]
-
-  constr = []
-
-  for i in range(n):
-    constr.append(one_bit_full_adder(a= a[n-i-1], b= b[n-i-1], c_in= c[n - i], s= d[n - i - 1], c_out= c[n - i - 1]))
-  constr.append(Not(c[0]))
-  return And(constr)
-
-######à
-
-
 def mask_bins(list_bin,mask_value):
     return [And(i,mask_value) for i in list_bin]
 
