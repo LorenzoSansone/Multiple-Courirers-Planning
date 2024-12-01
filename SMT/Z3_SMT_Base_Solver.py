@@ -146,7 +146,7 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
         self.solver.add(max_distance <= self.UB)
         self.solver.add(max_distance >= self.LB)
 
-    def save_solution_by_model(self, input_file, m, n, model_name, time_limit=300, result=None):
+    def save_solution_by_model(self, input_file, m, n, model_name, time_limit, result=None):
         instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
         output_dir = "res/SMT"
         os.makedirs(output_dir, exist_ok=True)
@@ -201,23 +201,26 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             json.dump(existing_solutions, outfile, indent=4)
         return output_file
 
+    def set_timeout(self, timeout_ms):
+        if timeout_ms is not None:
+            self.solver.set("timeout", timeout_ms)
+
     def solve(self, timeout_ms):
+    # Start the timer before creating the SMT model
         start_time = time.time()
+        
         self.set_timeout(timeout_ms)
         x, y, max_distance = self.create_smt_model()
         best_solution, best_objective = self.find_best_solution(start_time, x, y, max_distance)
         result_obj = self.create_result_object(best_solution, best_objective, start_time)
+            
         return result_obj
-
-    def set_timeout(self, timeout_ms):
-        if timeout_ms is not None:
-            self.solver.set("timeout", timeout_ms)
 
     def find_best_solution(self, start_time, x, y, max_distance):
         print(f"\n***Now entering find_best_solution***\n")
         best_solution = None
         best_objective = float('inf')
-        time_limit = 300  # 5 minutes in seconds
+        time_limit = milliseconds_to_seconds(self.timeout_time)  # 5 minutes in seconds
 
         while True:
             # Check if time limit has been reached
@@ -234,7 +237,7 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             # Set remaining time for solver
             solver_timeout = int(remaining_time * 1000)  # Convert to milliseconds
             self.solver.set("timeout", solver_timeout)
-            print(f"\nSetting solver timeout to: {solver_timeout/1000}s")
+            print(f"\nSetting solver timeout to: {solver_timeout/1000:.2f}s")
             
             result = self.solver.check()
 
@@ -261,7 +264,6 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
                 break
 
         return best_solution, best_objective
-
     def extract_solution(self, model, x, y):
         solution = Solution(
             x=[[model.evaluate(x[i][j]) for j in range(self.num_items)] for i in range(self.num_couriers)],
@@ -290,3 +292,4 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
                 print("Found optimal solution")
         
         return result_obj
+
