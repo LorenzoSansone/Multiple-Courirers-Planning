@@ -31,6 +31,13 @@ def save_solution(sat_model, m, n, output_file):
 
     print(f"Solution saved to {output_file}")
 
+
+def print_matrix(matrix):
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            print(matrix[i][j], end = " ")
+        print()
+
 def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     start_time = time.time()
 
@@ -40,7 +47,13 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     max_load = sum(s)
     D_max = np.matrix(D).max()
 
+    print("deposit",n)
+    print("max_load",max_load)
+    print("D_max",D_max)
+
     max_dist = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+
+    print("max_dist",max_dist)
     #VARIABLES
 
     # path[i][j][k] = T if the courier i delivers the package j at the k-th step 
@@ -56,11 +69,11 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
 
     # courier_dists_i = it represents binary representation of actual dist by each courier
-    c_dist_tot = [[Bool(f"cd_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
-    
-    #  partial_dist 
-    c_dist_par = [[[Bool(f"cp_{courier}_{step}_{bit}") for bit in range(num_bits(D_max))] for step in range(n+1)] for courier in range(m)]
+    c_dist_tot = [[Bool(f"cdt_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
 
+    #  partial_dist 
+    c_dist_par = [[[Bool(f"cpt_{courier}_{step}_{bit}") for bit in range(num_bits(D_max))] for step in range(n+1)] for courier in range(m)]
+    
     #max var
     max_dist_b = [Bool(f"max_d_{bit}") for bit in range(num_bits(max_dist))]
 
@@ -75,9 +88,9 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     #Binary conversion of D
     D_max = np.matrix(D).max()
     D_b = [[int_to_binary(D[i][j], num_bits(D_max)) for j in range(n+1)] for i in range(n+1)]
+
     
     #-----CONSTRAINTS-----
-
     # Binding the weight and path
     for courier in range(m):
         for step in range(n+2):
@@ -87,12 +100,12 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     #1: the courier delivers exactly one package at each step
     for courier in range(m):
         for step in range(n+2):
-            solver.add(exactly_one_he([path[courier][package][step] for package in range(n+1)], "one_p_s"))
+            solver.add(exactly_one_he([path[courier][package][step] for package in range(n+1)], f"one_p_s_{m}_{step}"))
     
     #2: Each package is carried only once
     for package in range(n): #not consider n+1 (deposit)
         #s.add(exactly_one_he(path[courier][package][:]))
-        solver.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)], "one_t"))
+        solver.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)], f"one_t_{package}"))
 
     #3: Couriers start and end at the deposit
     for courier in range(m):
@@ -131,6 +144,10 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     
     solver.add(max_var(c_dist_tot, max_dist_b))
     
+    upper_bound = 500
+    upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
+
+    solver.add(geq(upper_bound_b,max_dist_b))
     """
     for courier in range(m):
         for step in range(n+1):
@@ -157,20 +174,19 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     return solver
 
 if __name__ == "__main__":
-
-
     first_instance = 1
     last_instance = 1
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
     mode_file_error = "a"
-    
+
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
+        print(m, n, l, s, D)
         s = mcp_sat(m, n, l, s, D)
 
         if s.check() == sat:
@@ -178,7 +194,7 @@ if __name__ == "__main__":
         else:
             print(s.check())
 
-    
+    """
     n = 3
     m = 1
     D = [[0,3,7,6],
@@ -204,7 +220,7 @@ if __name__ == "__main__":
     #max var
     max_dist_b = [Bool(f"max_d_{bit}") for bit in range(num_bits(max_dist))]
 
-
+    """
     """
     for courier in range(m):
         for step in range(n+1):
@@ -223,6 +239,7 @@ if __name__ == "__main__":
         for j in range(n+2):
             print(path[0][i][j], end = " ")
         print()
+    """
     """
     s.add(path[0][n][0] == True)
     s.add(path[0][0][0] == False)
@@ -248,7 +265,7 @@ if __name__ == "__main__":
     s.add(path[0][1][4] == False)
     s.add(path[0][2][4] == False)
     s.add(path[0][n][4] == True)
-    
+    """
 
     """
     print(c_dist_par[0][0])
@@ -313,7 +330,7 @@ if __name__ == "__main__":
     #sum_bin(x, y, res, name= "", mask = True):
     #s.add(sum_bin(x[0], x[1], res, name = ""))
     #s.add(conditiona_sum_K_bin(mask, x, res, name = ""))
-    
+    """
     if s.check() == sat:
         m = s.model()
         
@@ -332,7 +349,7 @@ if __name__ == "__main__":
         
     else:
         print(s.check())
-    
+    """
     """
     for courier in range(m):
         for step in range(n+2):
