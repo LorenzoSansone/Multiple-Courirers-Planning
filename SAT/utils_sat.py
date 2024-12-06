@@ -199,10 +199,6 @@ def sum_bin(x, y, res, name= ""):
   
     return And(constr)
 
-def cond_sum_bin(name = ""):
-    pass
-
-
 def eq_bin(x, y):                                        
     max_len = max(len(x), len(y))
     x = pad_bool(x, max_len)
@@ -223,7 +219,7 @@ def mask_bins(list_bin,mask_value):
 def cond_sum_bin(num_list, mask, res, name = ""):
     constr = []
 
-    res_temp =  [[BoolVal(False) for _ in range(len(res))]] + [[Bool(f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(num_list))]
+    res_temp =  [[BoolVal(False) for _ in range(len(res))]] + [[Bool(name + f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(num_list))]
     for i in range(len(num_list)):
         constr.append(sum_bin(res_temp[i], mask_bins(num_list[i], mask[i]), res_temp[i+1], name + f"_{i}"))
        

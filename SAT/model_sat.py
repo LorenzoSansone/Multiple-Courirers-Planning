@@ -51,9 +51,19 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     print("max_load",max_load)
     print("D_max",D_max)
 
-    max_dist = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+    
 
+    ########MAX DIST
+    #max_dist = 50#D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+    matrix_D = np.array(D)
+    flat = matrix_D.flatten()
+    flat.sort()
+    flat = flat[::-1]
+    max_dist = sum([flat[i] for i in range(n)])
     print("max_dist",max_dist)
+    ########
+
+    
     #VARIABLES
 
     # path[i][j][k] = T if the courier i delivers the package j at the k-th step 
@@ -86,7 +96,6 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     l_b = [int_to_binary(l_value, num_bits(l_max)) for l_value in l]
 
     #Binary conversion of D
-    D_max = np.matrix(D).max()
     D_b = [[int_to_binary(D[i][j], num_bits(D_max)) for j in range(n+1)] for i in range(n+1)]
 
     
@@ -98,80 +107,89 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
                 solver.add(Implies(path[courier][package][step], courier_weights[courier][package]))
 
     #1: the courier delivers exactly one package at each step
+    
     for courier in range(m):
         for step in range(n+2):
-            solver.add(exactly_one_he([path[courier][package][step] for package in range(n+1)], f"one_p_s_{m}_{step}"))
+            solver.add(exactly_one_he([path[courier][package][step] for package in range(n+1)], f"one_p_s_{courier}_{step}"))
     
     #2: Each package is carried only once
-    for package in range(n): #not consider n+1 (deposit)
-        #s.add(exactly_one_he(path[courier][package][:]))
-        solver.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)], f"one_t_{package}"))
 
+    for package in range(n): #not consider n+1 (deposit)
+        solver.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)], f"one_t_{package}"))
+    
+    for package in range(n):
+        solver.add(exactly_one_he([courier_weights[courier][package] for courier in range(m)], f"one_t_w_{package}"))
+    
     #3: Couriers start and end at the deposit
+    
     for courier in range(m):
         solver.add(path[courier][deposit][0] == True)
         solver.add(path[courier][deposit][n+1] == True) #n+1 means n+2 because we count from zero
 
     #4: Every courier has a maximum load capacity to respect
-    for i in range(m):
-        solver.add(cond_sum_bin(s_b, courier_weights[i], courier_loads[i], f"def_courier_load_{i}"))
-        solver.add(geq(l_b[i],courier_loads[i]))
+    for courier in range(m):
+        solver.add(cond_sum_bin(s_b, courier_weights[courier], courier_loads[courier], f"courier_load_{courier}"))
+        solver.add(geq(l_b[courier],courier_loads[courier]))
     
-    
+    #solver.add(courier_weights[0][4] == True)
+    #solver.add(courier_weights[1][0] == True)
+
     #5: All couriers must start as soon as possible
     #1 is the first step
     #range(n) because they have to pick one package and not choose the deposit (n+1)
+    
     for courier in range(m):
-        solver.add(at_least_one_he([path[courier][i][1] for i in range(n)]))
-
+        solver.add(at_least_one_he([path[courier][package][1] for package in range(n)]))
+    
     #6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
     # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
     # it also means that the courier can come back to the deposit if he has to deliver other packagages
+    """
     for courier in range(m):
         for step in range(1,n):
             solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
-    
+    """
     #Objective function
+    """
     for courier in range(m):
         for step in range(n+1):
             for package_start in range(n+1):
                 for package_end in range(n+1):
                     solver.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
                                   eq_bin(D_b[package_start][package_end],c_dist_par[courier][step])))
-    
+    """
+    """
     for i in range(m):
         solver.add(cond_sum_bin(c_dist_par[i], [BoolVal(True) for _ in range(n+1)], c_dist_tot[i], f"def_courier_dist_{i}"))
-    
+    """
+    """
     solver.add(max_var(c_dist_tot, max_dist_b))
+    """
+    #solver.add(path[0][0][0] == True)
+    #solver.add(path[1][6][0] == True)
     
     upper_bound = 500
     upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
 
-    solver.add(geq(upper_bound_b,max_dist_b))
-    """
-    for courier in range(m):
-        for step in range(n+1):
-            for package_start in range(n+1):
-                for package_end in range(n+1):
-                    s.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
-                                  courier_stops[courier][package_start][package_end]) )
-    
-    for courier in range(m):
-        for package_start in range(n+1):
-            for package_end in range(n+1):
-                s.add(Implies(courier_stops[courier][package_start][package_end], eq_bin(D_b[package_start][package_end])))
-    """
-    
-    #Objective function
-  
-    
+    #solver.add(geq(upper_bound_b,max_dist_b))
+      
     if simm_constr == True:
         pass
     if search == "linear":
         pass
     end_time = time.time()
     
-    return solver
+    return solver, path, courier_weights, courier_loads
+
+def print_matrix(matrix, model, title = "--------"):
+    print(title)
+    for i in range(len(matrix)):
+        for j in range(len(matrix[0])):
+            if model[matrix[i][j]] == True:
+                print('\033[92m' + f"{matrix[i][j]}:1" + '\033[0m', end = " ")
+            else:
+                print(f"{matrix[i][j]}:0", end = " ")
+        print()
 
 if __name__ == "__main__":
     first_instance = 1
@@ -187,10 +205,16 @@ if __name__ == "__main__":
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
         print(m, n, l, s, D)
-        s = mcp_sat(m, n, l, s, D)
+        s, path,courier_weights,courier_loads = mcp_sat(m, n, l, s, D)
 
         if s.check() == sat:
             m = s.model()
+            print(s.check())
+            print_matrix(path[0], m, "------PATH-----")
+            print_matrix(path[1], m, "------PATH-----")
+            print_matrix(courier_weights,m, "-----COURIER_WEIGHTS-----")
+            print_matrix(courier_loads,m, "-----courier_loads-----")
+            
         else:
             print(s.check())
 
