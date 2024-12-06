@@ -51,10 +51,8 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     print("max_load",max_load)
     print("D_max",D_max)
 
-    
-
     ########MAX DIST
-    #max_dist = 50#D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+   
     matrix_D = np.array(D)
     flat = matrix_D.flatten()
     flat.sort()
@@ -131,9 +129,6 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
         solver.add(cond_sum_bin(s_b, courier_weights[courier], courier_loads[courier], f"courier_load_{courier}"))
         solver.add(geq(l_b[courier],courier_loads[courier]))
     
-    #solver.add(courier_weights[0][4] == True)
-    #solver.add(courier_weights[1][0] == True)
-
     #5: All couriers must start as soon as possible
     #1 is the first step
     #range(n) because they have to pick one package and not choose the deposit (n+1)
@@ -144,42 +139,66 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     #6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
     # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
     # it also means that the courier can come back to the deposit if he has to deliver other packagages
-    """
     for courier in range(m):
         for step in range(1,n):
             solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
-    """
+    
     #Objective function
-    """
     for courier in range(m):
         for step in range(n+1):
             for package_start in range(n+1):
                 for package_end in range(n+1):
                     solver.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
                                   eq_bin(D_b[package_start][package_end],c_dist_par[courier][step])))
-    """
-    """
+    
     for i in range(m):
         solver.add(cond_sum_bin(c_dist_par[i], [BoolVal(True) for _ in range(n+1)], c_dist_tot[i], f"def_courier_dist_{i}"))
-    """
-    """
-    solver.add(max_var(c_dist_tot, max_dist_b))
-    """
-    #solver.add(path[0][0][0] == True)
-    #solver.add(path[1][6][0] == True)
     
-    upper_bound = 500
-    upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
-
-    #solver.add(geq(upper_bound_b,max_dist_b))
-      
+    #Get the max distance
+    solver.add(max_var(c_dist_tot, max_dist_b))
+ 
     if simm_constr == True:
         pass
     if search == "linear":
-        pass
+        satisfiable = True
+        last_model_sat = None
+        upper_bound = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+
+        while satisfiable:
+            upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
+
+            solver.push()
+
+            solver.add(geq(upper_bound_b,max_dist_b))
+            if solver.check() == sat:
+                last_model_sat = solver.model()
+                
+                #m = solver.model()
+                #print(binary_to_int([m[val_bin] for val_bin in max_dist_b]))                
+            else:
+                model = last_model_sat
+                return last_model_sat, path, max_dist_b
+            solver.pop()
+
+            upper_bound = upper_bound - 1
+
     end_time = time.time()
     
-    return solver, path, courier_weights, courier_loads
+    return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
+
+def process_model(model, path_b, max_dist_b, m, n):
+    res_path = []
+    for courier in range(m):
+        courier_packages = []
+        for j in range(len(path_b[courier][0])):
+            for i in range(len(path_b[courier])):
+                if model[path_b[courier][i][j]] == True and i!=n:
+                    courier_packages.append(i+1)
+        res_path.append(courier_packages)
+        obj_value =  binary_to_int([model[val_bin] for val_bin in max_dist_b])    
+
+    return res_path,obj_value
+
 
 def print_matrix(matrix, model, title = "--------"):
     print(title)
@@ -204,211 +223,13 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        print(m, n, l, s, D)
-        s, path,courier_weights,courier_loads = mcp_sat(m, n, l, s, D)
-
-        if s.check() == sat:
-            m = s.model()
-            print(s.check())
-            print_matrix(path[0], m, "------PATH-----")
-            print_matrix(path[1], m, "------PATH-----")
-            print_matrix(courier_weights,m, "-----COURIER_WEIGHTS-----")
-            print_matrix(courier_loads,m, "-----courier_loads-----")
-            
-        else:
-            print(s.check())
-
-    """
-    n = 3
-    m = 1
-    D = [[0,3,7,6],
-         [3,0,5,5],
-         [2,8,0,3],
-         [1,2,7,0]]
-    
-    
-    max_load = 100
-    max_dist =  D[n][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
-    s = Solver()
-    #courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
-    D_max = np.matrix(D).max()
-    
-    D_b = [[int_to_binary(D[i][j], num_bits(D_max)) for j in range(n+1)] for i in range(n+1)]
-    path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
-    
-    c_dist_tot = [[Bool(f"cd_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
-    
-    #  partial_dist 
-    c_dist_par = [[[Bool(f"cp_{courier}_{step}_{bit}") for bit in range(num_bits(D_max))] for step in range(n+1)] for courier in range(m)]
-
-    #max var
-    max_dist_b = [Bool(f"max_d_{bit}") for bit in range(num_bits(max_dist))]
-
-    """
-    """
-    for courier in range(m):
-        for step in range(n+1):
-            for package_start in range(n+1):
-                for package_end in range(n+1):
-                    s.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
-                                  eq_bin(D_b[package_start][package_end],c_dist_par[courier][step])))
-    
-    for i in range(m):
-        s.add(cond_sum_bin(c_dist_par[i], [BoolVal(True) for _ in range(n+1)], c_dist_tot[i], f"def_courier_load_{i}"))
-    
-    s.add(max_var(c_dist_tot, max_dist_b))
-    """
-    """
-    for i in range(n+1):
-        for j in range(n+2):
-            print(path[0][i][j], end = " ")
-        print()
-    """
-    """
-    s.add(path[0][n][0] == True)
-    s.add(path[0][0][0] == False)
-    s.add(path[0][1][0] == False)
-    s.add(path[0][2][0] == False)
-
-    s.add(path[0][n][1] == False)
-    s.add(path[0][2][1] == False)
-    s.add(path[0][1][1] == False)
-    s.add(path[0][0][1] == True)
-
-    s.add(path[0][1][2] == False)
-    s.add(path[0][0][2] == False)
-    s.add(path[0][2][2] == True)
-    s.add(path[0][n][2] == False)
-
-    s.add(path[0][1][3] == True)
-    s.add(path[0][0][3] == False)
-    s.add(path[0][2][3] == False)
-    s.add(path[0][n][3] == False)
-
-    s.add(path[0][0][4] == False)
-    s.add(path[0][1][4] == False)
-    s.add(path[0][2][4] == False)
-    s.add(path[0][n][4] == True)
-    """
-
-    """
-    print(c_dist_par[0][0])
-    print(c_dist_par[0][1])
-    print(c_dist_par[0][2])
-    print(c_dist_par[0][3])
-    """ 
-    """
-    s.add(path[0][n][0] == True)
-    s.add( eq_bin(D_b[package_start][package_end],c_dist_par[0][package_start]))
-    s.add( eq_bin(D_b[package_start][package_end],c_dist_par[0][package_start]))
-    s.add( eq_bin(D_b[package_start][package_end],c_dist_par[0][package_start]))
-    s.add( eq_bin(D_b[package_start][package_end],c_dist_par[0][package_start]))
-    """
- 
-
-    """
-    res = [Bool("x1"), Bool("x2"), Bool("x3")]
-    
-    
-    d_temp = [[BoolVal(False), BoolVal(False), BoolVal(True)],
-              [BoolVal(False), BoolVal(False), BoolVal(True)]]
-    
-    var_temp =[BoolVal(False), BoolVal(True)]
-    
-    s.add(Implies(var_temp[0],eq_bin(d_temp[0],res)))
-    s.add(Implies(var_temp[1],eq_bin(d_temp[1],res)))
-    """
-    
-    #res_temp =  [[BoolVal(False) for i in range(len(res1))]] + [[Bool(f"res_t_{i}_{j}") for j in range(len(res))] for i in range(len(elems))]
-
-    
-    # path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
-    #x = [Bool(f"x1"),Bool(f"x1")]
-
-    """
-    #TEST SUM
-    x = [[Bool(f"x_{i}_{j}") for j in range(3)] for i in range(3)]
-    mask = [Bool(f"m_{i}") for i in range(3)]
-    res = [Bool(f"r_{i}") for i in range(3)]
-    s.add(mask[0]  == False)
-    s.add(mask[1]  == False)
-    s.add(mask[2]  == False)
-
-    s.add(x[0][0]  == False)
-    s.add(x[0][1]  == False)
-    s.add(x[0][2]  == True)
-    
-    
-    s.add(x[1][0]  == False)
-    s.add(x[1][1]  == True)
-    s.add(x[1][2]  == True)
-    
-    
-    s.add(x[2][0]  == False)
-    s.add(x[2][1]  == False)
-    s.add(x[2][2]  == True)
-    
-    s.add(cond_sum_bin(x,mask, res, "sum1"))
-    """
-    #s.add(full_adder(x[0], x[1], res, name = ""))
-    #sum_bin(x, y, res, name= "", mask = True):
-    #s.add(sum_bin(x[0], x[1], res, name = ""))
-    #s.add(conditiona_sum_K_bin(mask, x, res, name = ""))
-    """
-    if s.check() == sat:
-        m = s.model()
+        model, path_b, max_dist_b = mcp_sat(m, n, l, s, D)
         
+        print_matrix(path_b[0], model, "------PATH-----")
+        print_matrix(path_b[1], model, "------PATH-----")
         
-        for list_var in c_dist_par[0]:  
-            for var in list_var:
-            #f str(res) == "r_1" or str(res) == "r_0" or str(res) == "r_2":
-                #print("Var: ", var, "Value:", m[var], end = " ")
-                print(m[var], end = " ")
-            print()
-        print("---")
-        for bit in max_dist_b:
-            print(m[bit], end = " ")
-        
-        
-        
-    else:
-        print(s.check())
-    """
-    """
-    for courier in range(m):
-        for step in range(n+2):
-            s.add(at_most_one_he(path[courier][:][step]))
-    
+        path, obj_value = process_model(model, path_b, max_dist_b,m,n)
 
-    if s.check() == sat:
-        print(s.model())
-    else:
-        print(s.check())
-    """
-    """
-    x = [Bool("x_0")]
-    y = [Bool("y_0"),Bool("y_1")]
-    #y = [Bool("y_0"),Bool("y_1"),Bool("y_2")]
-    res = [Bool("res_0")]
-
-    s = Solver()
-    s.add(x[0] == True)
-    s.add(y[0] == True)
-
-    #s.add(x[1] == False)
-    s.add(y[1] == False)
-
-    #s.add(y[2] == False)
-   
-    
-    s.add(geq(y,x))
-
-    if s.check() == sat:
-        print(s.model())
-    else:
-        print(s.check())
-    """
-
-    
-
+        print(path)
+        print(obj_value)
         

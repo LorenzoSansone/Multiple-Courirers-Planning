@@ -132,6 +132,16 @@ def int_to_binary(x, digits):
 
     return res
 
+def binary_to_int(val):
+    """
+    :param val: array of binary variabled to be converted to an integer
+    :return: integer value
+    """
+    number = 0
+    for i in range(len(val)):
+        if val[i]:
+            number += 2 ** (len(val) - 1 - i)
+    return number
 
 def geq(x,y):
     """Encoding of x >= y"""
