@@ -166,12 +166,14 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
 
         while satisfiable:
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
-
+            print("UPPER",upper_bound)
             solver.push()
 
-            solver.add(geq(upper_bound_b,max_dist_b))
+            solver.add(greater(upper_bound_b,max_dist_b))
             if solver.check() == sat:
-                last_model_sat = solver.model()
+                model = solver.model()
+                last_model_sat = model
+                upper_bound =  binary_to_int([model[val_bin] for val_bin in max_dist_b])
                 
                 #m = solver.model()
                 #print(binary_to_int([m[val_bin] for val_bin in max_dist_b]))                
@@ -180,7 +182,7 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
                 return last_model_sat, path, max_dist_b
             solver.pop()
 
-            upper_bound = upper_bound - 1
+            #upper_bound = upper_bound - 1
 
     end_time = time.time()
     

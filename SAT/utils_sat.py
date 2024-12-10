@@ -151,8 +151,8 @@ def geq(x,y):
         max_len = max(len(x), len(y))
         x = pad_bool(x, max_len)
         y = pad_bool(y, max_len)
-        print("x",x)
-        print("y",y)
+        #print("x",x)
+        #print("y",y)
         #raise ValueError("Both lists must have the same length.")
     
     if len(x) == 1:
@@ -161,6 +161,28 @@ def geq(x,y):
         return Or(And(Not(y[0]), x[0]),
                   And(x[0]==y[0], geq(x[1:], y[1:])))
     
+def greater(x,y):
+    if len(x) != len(y):
+        max_len = max(len(x), len(y))
+        x = pad_bool(x, max_len)
+        y = pad_bool(y, max_len)
+        print(x)
+        print(y)
+    
+    if len(x) == 1:
+        return And(Not(y[0]), x[0])
+    else:
+        return Or(And(Not(y[0]), x[0]),
+                  And(x[0]==y[0], greater(x[1:], y[1:])))
+    """
+    if len(x) == 1:
+        return And(Not(y[0]), x[0])
+    else:
+        return Or(And(Not(y[0]), x[0]),And(greater(x[1:], y[1:])))
+    """
+    
+
+
 
 def sum_one_bit(x, y, c_in, res, c_res):
   print("x:",x)
