@@ -5,31 +5,34 @@ import time
 from z3 import *
 import numpy as np
 
-def save_solution(sat_model, m, n, output_file):
+def save_solution(name_sol, output_directory, output_file, data):
     solution = {
-        "glucose3": {
-            "time": None,  # SAT does not have a time metric like Gurobi's runtime
-            "optimal": True,  # Assuming a solution was found
-            "obj": None,  # SAT does not directly optimize an objective
-            "sol": []  # Solution route for each courier
+        name_sol: {
+            "time": data[0],  
+            "optimal": data[1],  
+            "obj": data[2], 
+            "sol": data[3] 
         }
     }
 
-    for i in range(m):
-        route = []
-        for j in range(n):
-            if sat_model[i * n + j] > 0:  # If the literal is positive, it's part of the solution
-                route.append(j + 1)  # Convert 0-based index to 1-based index
-        solution["glucose3"]["sol"].append(route)
+    output_path_file = output_directory + "/" + output_file + ".json"
+    #print(output_path_file)
+    #print(solution)
 
-    output_dir = "res/SAT"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    with open(output_file, 'w') as outfile:
-        json.dump(solution, outfile, indent=4)
-
-    print(f"Solution saved to {output_file}")
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    
+    data = {}
+    if os.path.isfile(output_path_file):
+        with open(output_path_file, 'r') as file:
+            data = json.load(file)
+            
+    data.update(solution)
+    
+    # write the solution to the output file
+    with open(output_path_file, 'w') as outfile:
+        json.dump(data, outfile, indent=4)
+    
 
 
 def print_matrix(matrix):
@@ -38,7 +41,7 @@ def print_matrix(matrix):
             print(matrix[i][j], end = " ")
         print()
 
-def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
+def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
     start_time = time.time()
 
     solver = Solver()
@@ -157,32 +160,70 @@ def mcp_sat(m, n, l, s, D, simm_constr = False, search = "linear"):
     #Get the max distance
     solver.add(max_var(c_dist_tot, max_dist_b))
  
-    if simm_constr == True:
+    if symm_constr == True:
         pass
+
+
     if search == "linear":
         satisfiable = True
         last_model_sat = None
+
+        #First upper bound
         upper_bound = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+
+
+        while satisfiable:
+
+            #Convert upper bound
+            upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
+
+            #print("UPPER",upper_bound)
+            
+            solver.push()
+
+            #Add constraint 
+            solver.add(greater(upper_bound_b,max_dist_b))
+
+            #Check satisfiability
+            if solver.check() == sat:
+                model = solver.model()
+                last_model_sat = model
+                upper_bound =  binary_to_int([model[val_bin] for val_bin in max_dist_b])
+                               
+            else:
+                model = last_model_sat
+                return last_model_sat, path, max_dist_b
+            solver.pop()
+    if search == "binary":
+        satisfiable = True
+        last_model_sat = None
+
+        upper_bound = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
+        lower_bound = 0
 
         while satisfiable:
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
-            print("UPPER",upper_bound)
+            lower_bound_b = int_to_binary(lower_bound, num_bits(lower_bound))
+            
+            middle_bound = (upper_bound - lower_bound) // 2
+            middle_bound_b = int_to_binary(middle_bound, num_bits(middle_bound))
+            
+            
             solver.push()
 
             solver.add(greater(upper_bound_b,max_dist_b))
+            solver.add(greater(max_dist_b,lower_bound_b))
+
             if solver.check() == sat:
                 model = solver.model()
                 last_model_sat = model
                 upper_bound =  binary_to_int([model[val_bin] for val_bin in max_dist_b])
                 
-                #m = solver.model()
-                #print(binary_to_int([m[val_bin] for val_bin in max_dist_b]))                
-            else:
-                model = last_model_sat
-                return last_model_sat, path, max_dist_b
+            elif solver.check() == unsat:
+                model = solver.model()
+                lower_bound = middle_bound
             solver.pop()
 
-            #upper_bound = upper_bound - 1
 
     end_time = time.time()
     
@@ -212,6 +253,21 @@ def print_matrix(matrix, model, title = "--------"):
                 print(f"{matrix[i][j]}:0", end = " ")
         print()
 
+def get_name_test(search_strategy,symm_break_constr):
+    res_name = ""
+    if search_strategy == "linear":
+        res_name = res_name + "LNS"
+
+    if search_strategy == "binary":
+        res_name = res_name + "BNS"
+    
+    if symm_break_constr == True:
+        res_name = res_name + "_SYB"
+    
+    return res_name
+
+
+
 if __name__ == "__main__":
     first_instance = 1
     last_instance = 1
@@ -219,6 +275,11 @@ if __name__ == "__main__":
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
     mode_file_error = "a"
+    output_directory = "../res/SAT"
+
+    # Hyperparameter
+    search_strategy = "linear"
+    symm_break_constr = False
 
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
@@ -227,11 +288,14 @@ if __name__ == "__main__":
         m, n, l, s, D = read_instance(data_path)
         model, path_b, max_dist_b = mcp_sat(m, n, l, s, D)
         
-        print_matrix(path_b[0], model, "------PATH-----")
-        print_matrix(path_b[1], model, "------PATH-----")
+        #print_matrix(path_b[0], model, "------PATH-----")
+        #print_matrix(path_b[1], model, "------PATH-----")
         
         path, obj_value = process_model(model, path_b, max_dist_b,m,n)
+        data = [300, False, obj_value, path]
+        sol_name = get_name_test(search_strategy,symm_break_constr)
+        save_solution(sol_name, output_directory, f"{i:02d}",data)
 
-        print(path)
-        print(obj_value)
+        #print(path)
+        #print(obj_value)
         
