@@ -74,7 +74,9 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
     courier_stops = [[[Bool(f"s_{courier}_{package1}_{package2}") for package1 in range(n+1)] for package2 in range(n+1)] for courier in range(m)]
     
     # courier_weights[i][j] = T if the courier i take the package  j
-    courier_weights = [[Bool(f"w_{courier}_{package}")for package in range(n)] for courier in range(m)]
+    courier_weights = [[Bool(f"w_{courier}_{package}") for package in range(n)] for courier in range(m)]
+
+    #c_weights_tot = [[Bool(f"wt_{courier}_{bin}") for ] for courier in range(m)]
 
     # courier_loads_i = it represents binary representation of actual load carried by each courier
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
@@ -161,7 +163,19 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
     solver.add(max_var(c_dist_tot, max_dist_b))
  
     if symm_constr == True:
-        pass
+        print("BUG")
+        l_sorted = [(l[i],i) for i in range(len(l))]
+        l_sorted.sort(key = lambda x: x[0], reverse= True)
+        print(l_sorted)
+        for i in range(m-1):
+            if l_sorted[i][0] == l_sorted[i+1][0]:
+                print(l_sorted[i][0],"==",l_sorted[i+1][0])
+                
+            else:
+                print(l_sorted[i][0],">=",l_sorted[i+1][0])
+                solver.add(geq(courier_loads[l_sorted[i][1]],courier_loads[l_sorted[i+1][1]]))
+
+        
 
 
     if search == "linear":
@@ -194,6 +208,7 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
                 model = last_model_sat
                 return last_model_sat, path, max_dist_b
             solver.pop()
+
     if search == "binary":
         satisfiable = True
         last_model_sat = None
@@ -269,8 +284,8 @@ def get_name_test(search_strategy,symm_break_constr):
 
 
 if __name__ == "__main__":
-    first_instance = 1
-    last_instance = 1
+    first_instance = 2
+    last_instance = 2
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -279,14 +294,14 @@ if __name__ == "__main__":
 
     # Hyperparameter
     search_strategy = "linear"
-    symm_break_constr = False
+    symm_break_constr = True
 
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        model, path_b, max_dist_b = mcp_sat(m, n, l, s, D)
+        model, path_b, max_dist_b = mcp_sat(m, n, l, s, D,  symm_constr = symm_break_constr, search = search_strategy)
         
         #print_matrix(path_b[0], model, "------PATH-----")
         #print_matrix(path_b[1], model, "------PATH-----")
