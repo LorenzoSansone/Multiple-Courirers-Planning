@@ -214,35 +214,48 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
         last_model_sat = None
 
         upper_bound = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
-        lower_bound = 0
+        lower_bound = max([D[deposit][i] + D[i][deposit] for i in range(n-1)])
 
         while satisfiable:
+            print("LB",lower_bound, " UB",upper_bound, end = " ")
+            if (upper_bound - lower_bound) <= 1:
+                satisfiable = False
+            if (upper_bound - lower_bound) == 1:
+                middle_bound = lower_bound
+            else:
+                middle_bound = (upper_bound + lower_bound) // 2
+            print("MB",middle_bound, end = " ")
+            
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
             lower_bound_b = int_to_binary(lower_bound, num_bits(lower_bound))
             
-            middle_bound = (upper_bound - lower_bound) // 2
+            #middle_bound = (upper_bound - lower_bound) // 2
             middle_bound_b = int_to_binary(middle_bound, num_bits(middle_bound))
             
             
             solver.push()
 
-            solver.add(greater(upper_bound_b,max_dist_b))
-            solver.add(greater(max_dist_b,lower_bound_b))
+            solver.add(eq_bin(max_dist_b,middle_bound_b))
+            #solver.add(greater(upper_bound_b,max_dist_b))
+            #solver.add(greater(max_dist_b,lower_bound_b))
 
             if solver.check() == sat:
                 model = solver.model()
                 last_model_sat = model
-                upper_bound =  binary_to_int([model[val_bin] for val_bin in max_dist_b])
-                
+                upper_bound = middle_bound #binary_to_int([model[val_bin] for val_bin in max_dist_b])
+                print(" sat")
             elif solver.check() == unsat:
-                model = solver.model()
+                #model = solver.model()
                 lower_bound = middle_bound
+                print(" unsat")
             solver.pop()
+
+        return last_model_sat, path, max_dist_b
 
 
     end_time = time.time()
     
-    return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
+   #return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
 
 def process_model(model, path_b, max_dist_b, m, n):
     res_path = []
@@ -284,8 +297,8 @@ def get_name_test(search_strategy,symm_break_constr):
 
 
 if __name__ == "__main__":
-    first_instance = 2
-    last_instance = 2
+    first_instance = 1
+    last_instance = 1
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -293,8 +306,8 @@ if __name__ == "__main__":
     output_directory = "../res/SAT"
 
     # Hyperparameter
-    search_strategy = "linear"
-    symm_break_constr = True
+    search_strategy = "binary"
+    symm_break_constr = False
 
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
