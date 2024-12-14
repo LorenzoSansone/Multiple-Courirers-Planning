@@ -229,20 +229,16 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
             lower_bound_b = int_to_binary(lower_bound, num_bits(lower_bound))
             
-            #middle_bound = (upper_bound - lower_bound) // 2
             middle_bound_b = int_to_binary(middle_bound, num_bits(middle_bound))
-            
             
             solver.push()
 
-            solver.add(eq_bin(max_dist_b,middle_bound_b))
-            #solver.add(greater(upper_bound_b,max_dist_b))
-            #solver.add(greater(max_dist_b,lower_bound_b))
+            solver.add(geq(middle_bound_b,max_dist_b))
 
             if solver.check() == sat:
                 model = solver.model()
                 last_model_sat = model
-                upper_bound = middle_bound #binary_to_int([model[val_bin] for val_bin in max_dist_b])
+                upper_bound = binary_to_int([model[val_bin] for val_bin in max_dist_b])
                 print(" sat")
             elif solver.check() == unsat:
                 #model = solver.model()
@@ -297,8 +293,8 @@ def get_name_test(search_strategy,symm_break_constr):
 
 
 if __name__ == "__main__":
-    first_instance = 1
-    last_instance = 1
+    first_instance = 2
+    last_instance = 2
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
