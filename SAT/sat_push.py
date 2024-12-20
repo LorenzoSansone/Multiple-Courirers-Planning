@@ -3,63 +3,85 @@ from z3 import *
 
 import math
 import re
-n = 2
-path_b = [[0,1,0],
-          [0,1,1],
-          [1,0,1],
-          [1,1,1]]
-list_res = []
+import multiprocessing
+import signal
+import multiprocessing
+import time
 
-for j in range(len(path_b[0])):
+def compute_solution(list_shared):
+    """
+    A function that continuously computes some solution until terminated.
+    """
+    iteration = 0
+    try:
+        while True:
+            iteration += 1
+            print(f"Iteration {iteration}: Computing...")
+            time.sleep(0.5)  # Simulate computation time
+            list_shared = [Solver(),iteration, [[[1]]]]
+    except KeyboardInterrupt:
+        print("Computation interrupted.")
+    finally:
+        print(f"Computation terminated after {iteration} iterations.")
 
-    for i in range(len(path_b)):
-        list_res.append(path_b[i][j])
-        print(path_b[i][j], end = " ")
+def clock_function(duration, compute_process,p2_pid):
+    print(f"Clock started: Allowing computation for {duration} seconds.")
+    start = time.time()
+    sat = True
+    while sat:
+        if time.time()-start > duration:
+            sat= False
+    #time.sleep(duration)
+    #os.kill(p2_pid, signal.SIGTERM)
+    compute_process.terminate()  # Terminate the computation process
+    print("Clock expired: Terminated computation process.")
 
-    print()
+if __name__ == "__main__":
+    # Duration for which the computation should run
+    with multiprocessing.Manager() as manager:#manager = multiprocessing.Manager()
+        list_shared = manager.list()
+        # Shared dictionary to stor
 
-"""
-x = Int('x')
-y = Int('y')
+        computation_duration = 5  # seconds
+    
+        # Create a process for the computation
+        compute_process = multiprocessing.Process(target=compute_solution, args = (list_shared,))
+        compute_process.start()
 
-s = Solver()
-print (s)
-
-s.add(x > 10, y == x + 2)
-print (s)
-print ("Solving constraints in the solver s ...")
-print (s.check())
-
-###########
-print ("1)Create a new scope...")
-s.push()
-
-s.add(y < 11)
-print (s)
-print ("Solving updated set of constraints...")
-print (s.check())
-
-print ("Restoring state...")
-s.pop()
-print (s)
-print ("Solving restored set of constraints...")
-print (s.check())
-########
-
-print ("2)Create a new scope...")
-s.push()
-
-s.add(y < 14)
-print (s)
-print ("Solving updated set of constraints...")
-print (s.check())
+        time.sleep(5)
+        compute_process.terminate()
+        print(list_shared)
 
 
-print ("Restoring state...")
-s.pop()
-print (s)
-print ("Solving restored set of constraints...")
-print (s.check())
-print(s.model().evaluate(y))
-print(s.model()[y])
-"""
+
+
+
+
+    #clock = multiprocessing.Process(target=clock_function, args=(5,compute_process,p2_pid))
+
+    # Start the computation process
+    #clock.start()
+
+
+
+    # Start the clock function in the main proces
+
+    # Wait for the computation process to fully terminate
+    #compute_process.join()
+    #clock.join()
+
+    print("Main program completed.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+

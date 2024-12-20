@@ -293,8 +293,8 @@ def get_name_test(search_strategy,symm_break_constr):
 
 
 if __name__ == "__main__":
-    first_instance = 2
-    last_instance = 2
+    first_instance = 13
+    last_instance = 13
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -316,6 +316,7 @@ if __name__ == "__main__":
         #print_matrix(path_b[1], model, "------PATH-----")
         
         path, obj_value = process_model(model, path_b, max_dist_b,m,n)
+        print("Final obj",obj_value)
         data = [300, False, obj_value, path]
         sol_name = get_name_test(search_strategy,symm_break_constr)
         save_solution(sol_name, output_directory, f"{i:02d}",data)
