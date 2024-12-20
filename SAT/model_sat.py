@@ -4,6 +4,8 @@ from utils_sat import *
 import time
 from z3 import *
 import numpy as np
+import multiprocessing
+
 
 def save_solution(name_sol, output_directory, output_file, data):
     solution = {
@@ -163,10 +165,10 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
     solver.add(max_var(c_dist_tot, max_dist_b))
  
     if symm_constr == True:
-        print("BUG")
+        #print("BUG")
         l_sorted = [(l[i],i) for i in range(len(l))]
         l_sorted.sort(key = lambda x: x[0], reverse= True)
-        print(l_sorted)
+        #print(l_sorted)
         for i in range(m-1):
             if l_sorted[i][0] == l_sorted[i+1][0]:
                 print(l_sorted[i][0],"==",l_sorted[i+1][0])

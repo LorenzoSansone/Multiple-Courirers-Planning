@@ -18,7 +18,7 @@ def compute_solution(list_shared):
             iteration += 1
             print(f"Iteration {iteration}: Computing...")
             time.sleep(0.5)  # Simulate computation time
-            list_shared = [Solver(),iteration, [[[1]]]]
+            list_shared["it"] = [iteration, [[[[[1]]]]]]
     except KeyboardInterrupt:
         print("Computation interrupted.")
     finally:
@@ -38,19 +38,20 @@ def clock_function(duration, compute_process,p2_pid):
 
 if __name__ == "__main__":
     # Duration for which the computation should run
-    with multiprocessing.Manager() as manager:#manager = multiprocessing.Manager()
-        list_shared = manager.list()
-        # Shared dictionary to stor
+    for i in range(5):
+        with multiprocessing.Manager() as manager:#manager = multiprocessing.Manager()
+            list_shared = manager.dict()
+            # Shared dictionary to stor
+            list_shared["it"] = "ciao"
+            computation_duration = 5  # seconds
+        
+            # Create a process for the computation
+            compute_process = multiprocessing.Process(target=compute_solution, args = (list_shared,))
+            compute_process.start()
 
-        computation_duration = 5  # seconds
-    
-        # Create a process for the computation
-        compute_process = multiprocessing.Process(target=compute_solution, args = (list_shared,))
-        compute_process.start()
-
-        time.sleep(5)
-        compute_process.terminate()
-        print(list_shared)
+            time.sleep(computation_duration)
+            compute_process.terminate()
+            print(list_shared)
 
 
 
