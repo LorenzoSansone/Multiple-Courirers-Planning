@@ -1,7 +1,7 @@
 {
     "LNS": {
-        "time": 44,
-        "optimal": true,
+        "time": 20,
+        "optimal": false,
         "obj": 226,
         "sol": [
             [

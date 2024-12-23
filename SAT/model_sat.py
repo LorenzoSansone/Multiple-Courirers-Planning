@@ -302,8 +302,13 @@ def get_name_test(search_strategy,symm_break_constr):
     
     return res_name
 
-def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_execution = 300):
+def check_solution(time_exe, opt, obj, path, time_execution):
+    if opt == False:
+        return time_execution, opt, obj, path
+    return time_exe, opt, obj, path
 
+def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_execution = 300):
+    #st_time = time.time()
     with mp.Manager() as manager:
         shared_res = manager.dict()
         shared_res["res"] = [time_execution, False, None, []]#[300, opt, obj_value, path]
@@ -312,15 +317,13 @@ def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_e
         mcp_sat_process.start()
         time.sleep(time_execution)
         mcp_sat_process.terminate()
+        
         print("END solve problem with data:",shared_res)
         time_exe, opt, obj, path = shared_res["res"]
+        time_exe, opt, obj, path = check_solution(time_exe, opt, obj, path, time_execution)
 
     return time_exe, opt, obj, path
     #return path, obj_value
-
-    
-
-
 
 if __name__ == "__main__":
     first_instance = 2
@@ -334,7 +337,7 @@ if __name__ == "__main__":
     # Hyperparameter
     search_strategy = "linear"
     symm_break_constr = False
-    time_execution = 100
+    time_execution = 20
 
     mp.set_start_method("spawn")
 
@@ -343,18 +346,11 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        #model, path_b, max_dist_b = mcp_sat(m, n, l, s, D,  symm_constr = symm_break_constr, search = search_strategy)
-        
-        #print_matrix(path_b[0], model, "------PATH-----")
-        #print_matrix(path_b[1], model, "------PATH-----")
-        
-        #path, obj_value = process_model(model, path_b, max_dist_b,m,n)
+      
         data = solve_problem(m, n, l, s, D, symm_constr = symm_break_constr, search = search_strategy, time_execution = time_execution)
         print("Final data",data)
-        #data = [300, False, obj_value, path]
+
         sol_name = get_name_test(search_strategy,symm_break_constr)
         save_solution(sol_name, output_directory, f"{i:02d}",data)
 
-        #print(path)
-        #print(obj_value)
         
