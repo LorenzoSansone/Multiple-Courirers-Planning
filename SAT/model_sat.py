@@ -320,10 +320,9 @@ def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_e
         
         print("END solve problem with data:",shared_res)
         time_exe, opt, obj, path = shared_res["res"]
-        time_exe, opt, obj, path = check_solution(time_exe, opt, obj, path, time_execution)
+        #time_exe, opt, obj, path = check_solution(time_exe, opt, obj, path, time_execution)
 
     return time_exe, opt, obj, path
-    #return path, obj_value
 
 if __name__ == "__main__":
     first_instance = 2
