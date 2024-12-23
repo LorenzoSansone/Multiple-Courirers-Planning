@@ -18,7 +18,10 @@ def compute_solution(list_shared):
             iteration += 1
             print(f"Iteration {iteration}: Computing...")
             time.sleep(0.5)  # Simulate computation time
-            list_shared["it"] = [iteration, [[[[[1]]]]]]
+            s = Solver()
+            x = Bool("x")
+            s.add(x == True)
+            list_shared["it"] = [s.to_smt2(),iteration, [[[[[1]]]]]]
     except KeyboardInterrupt:
         print("Computation interrupted.")
     finally:
@@ -38,12 +41,13 @@ def clock_function(duration, compute_process,p2_pid):
 
 if __name__ == "__main__":
     # Duration for which the computation should run
-    for i in range(5):
+    for i in range(1):
         with multiprocessing.Manager() as manager:#manager = multiprocessing.Manager()
+            print(multiprocessing.get_start_method())
             list_shared = manager.dict()
             # Shared dictionary to stor
             list_shared["it"] = "ciao"
-            computation_duration = 5  # seconds
+            computation_duration = 2  # seconds
         
             # Create a process for the computation
             compute_process = multiprocessing.Process(target=compute_solution, args = (list_shared,))
@@ -52,6 +56,9 @@ if __name__ == "__main__":
             time.sleep(computation_duration)
             compute_process.terminate()
             print(list_shared)
+            serialized_solver = list_shared["it"][0]
+            solver = Solver()
+            solver.from_string(serialized_solver)
 
 
 

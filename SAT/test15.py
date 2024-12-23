@@ -1,4 +1,5 @@
 from itertools import combinations
+import multiprocessing
 from z3 import *
 import time
 import math
@@ -41,7 +42,7 @@ def read_instance(file_path):
             distances.append(row)
     return m, n, l, s, distances
 
-def problem(m, n, l, s, D):
+def problem(m, n, l, s, D, list_shared):
         
         matrix_D = np.array(D)
         flat = matrix_D.flatten()
@@ -60,8 +61,8 @@ def problem(m, n, l, s, D):
         print([path[0][package][0] for package in range(n+1)])
         solver.add(path[0][0][0] == True)
         solver.add(path[1][3][0] == True)
-        
-        return solver, path
+        list_shared["res"] = solver.sexpr()
+        #return solver, path
 
 def print_matrix(matrix, model, title = "--------"):
     print(title)
@@ -88,15 +89,29 @@ if __name__ == "__main__":
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        s,path = problem(m, n, l, s, D )
+        with multiprocessing.Manager() as manager:
+            list_shared = manager.dict()
+            list_shared["it"] = "ciao"
+            compute_process = multiprocessing.Process(target=problem, args = (m, n, l, s, D ,list_shared,))
+            compute_process.start()
 
-        if s.check() == sat:
-            m = s.model()
-            print(s.check())
-            print_matrix(path[0], m, "------PATH-----")
-            print_matrix(path[1], m, "------PATH-----")
-        else:
-            print(s.check())
+            time.sleep(5)
+            compute_process.terminate()
+            #s,path = problem(m, n, l, s, D ,list_shared)
+            
+            s_ser = list_shared["res"][0]
+            path = list_shared["res"][1]
+            s = Solver()
+            s.from_string(s_ser)
+            #solver.from_string(serialized_solver)
+            if s.check() == sat:
+                m = s.model()
+                print(s.check())
+                print_matrix(path[0], m, "------PATH-----")
+                print_matrix(path[1], m, "------PATH-----")
+            else:
+                print(s.check())
+            
         
     
 

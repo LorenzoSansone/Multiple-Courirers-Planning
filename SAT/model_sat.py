@@ -4,8 +4,7 @@ from utils_sat import *
 import time
 from z3 import *
 import numpy as np
-import multiprocessing
-
+import multiprocessing as mp
 
 def save_solution(name_sol, output_directory, output_file, data):
     solution = {
@@ -43,9 +42,8 @@ def print_matrix(matrix):
             print(matrix[i][j], end = " ")
         print()
 
-def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
+def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     start_time = time.time()
-
     solver = Solver()
 
     deposit = n #if we count from 0
@@ -181,19 +179,17 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
 
 
     if search == "linear":
+        print("START LINEAR")
         satisfiable = True
         last_model_sat = None
 
         #First upper bound
         upper_bound = D[deposit][0] + sum([D[i][i+1] for i in range(len(D[0])-1)])
 
-
         while satisfiable:
-
+            print("Linear UB",upper_bound)
             #Convert upper bound
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
-
-            #print("UPPER",upper_bound)
             
             solver.push()
 
@@ -202,14 +198,30 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
 
             #Check satisfiability
             if solver.check() == sat:
+                
                 model = solver.model()
                 last_model_sat = model
                 upper_bound =  binary_to_int([model[val_bin] for val_bin in max_dist_b])
+
+                #Save result on shared variable
+                path_res, obj_value = process_model(model, path, max_dist_b,m,n)
+                print("PATH",path_res)
+                shared_res["res"] = [shared_res["res"][0], shared_res["res"][1], obj_value, path_res]
+                print("DATA Linear mid SAT:", shared_res["res"])
                                
             else:
+
+                #Save result
+                if shared_res["res"][2] != None and shared_res["res"][3]:
+                    #shared_res["res"] = [int(time.time() - start_time), True, shared_res["res"][2], shared_res["res"][3]]
+                    shared_res["res"] = [int(time.time() - start_time), True, shared_res["res"][2], shared_res["res"][3]]
+                    print("DAT Linear mid UNSAT:",shared_res["res"])
+                satisfiable = False
+
                 model = last_model_sat
-                return last_model_sat, path, max_dist_b
+                #return last_model_sat, path, max_dist_b
             solver.pop()
+            print("END LINEAR")
 
     if search == "binary":
         satisfiable = True
@@ -250,8 +262,6 @@ def mcp_sat(m, n, l, s, D, symm_constr = False, search = "linear"):
 
         return last_model_sat, path, max_dist_b
 
-
-    end_time = time.time()
     
    #return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
 
@@ -292,11 +302,29 @@ def get_name_test(search_strategy,symm_break_constr):
     
     return res_name
 
+def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_execution = 300):
+
+    with mp.Manager() as manager:
+        shared_res = manager.dict()
+        shared_res["res"] = [time_execution, False, None, []]#[300, opt, obj_value, path]
+        print("START solve problem with data:",shared_res)
+        mcp_sat_process = mp.Process(target = mcp_sat, args=(m, n, l, s, D, shared_res, symm_constr, search))
+        mcp_sat_process.start()
+        time.sleep(time_execution)
+        mcp_sat_process.terminate()
+        print("END solve problem with data:",shared_res)
+        time_exe, opt, obj, path = shared_res["res"]
+
+    return time_exe, opt, obj, path
+    #return path, obj_value
+
+    
+
 
 
 if __name__ == "__main__":
-    first_instance = 13
-    last_instance = 13
+    first_instance = 2
+    last_instance = 2
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -304,22 +332,26 @@ if __name__ == "__main__":
     output_directory = "../res/SAT"
 
     # Hyperparameter
-    search_strategy = "binary"
+    search_strategy = "linear"
     symm_break_constr = False
+    time_execution = 100
+
+    mp.set_start_method("spawn")
 
     for i in range(first_instance, last_instance+1):
         file_path = f'instances/inst{i:02d}.dat'
         inst_i = f"inst{i:02d}" 
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
-        model, path_b, max_dist_b = mcp_sat(m, n, l, s, D,  symm_constr = symm_break_constr, search = search_strategy)
+        #model, path_b, max_dist_b = mcp_sat(m, n, l, s, D,  symm_constr = symm_break_constr, search = search_strategy)
         
         #print_matrix(path_b[0], model, "------PATH-----")
         #print_matrix(path_b[1], model, "------PATH-----")
         
-        path, obj_value = process_model(model, path_b, max_dist_b,m,n)
-        print("Final obj",obj_value)
-        data = [300, False, obj_value, path]
+        #path, obj_value = process_model(model, path_b, max_dist_b,m,n)
+        data = solve_problem(m, n, l, s, D, symm_constr = symm_break_constr, search = search_strategy, time_execution = time_execution)
+        print("Final data",data)
+        #data = [300, False, obj_value, path]
         sol_name = get_name_test(search_strategy,symm_break_constr)
         save_solution(sol_name, output_directory, f"{i:02d}",data)
 
