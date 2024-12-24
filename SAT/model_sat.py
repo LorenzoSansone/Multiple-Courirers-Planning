@@ -254,13 +254,21 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                 last_model_sat = model
                 upper_bound = binary_to_int([model[val_bin] for val_bin in max_dist_b])
                 print(" sat")
+
+                #Save result on shared variable
+                path_res, obj_value = process_model(model, path, max_dist_b, m, n)
+                shared_res["res"] = [shared_res["res"][0], shared_res["res"][1], obj_value, path_res]
+
+
             elif solver.check() == unsat:
                 #model = solver.model()
                 lower_bound = middle_bound
                 print(" unsat")
             solver.pop()
 
-        return last_model_sat, path, max_dist_b
+        if shared_res["res"][2] != None and shared_res["res"][3]:
+            shared_res["res"] = [int(time.time() - start_time), True, shared_res["res"][2], shared_res["res"][3]]
+            print("DAT Binary mid UNSAT:",shared_res["res"])
 
     
    #return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
@@ -325,8 +333,8 @@ def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_e
     return time_exe, opt, obj, path
 
 if __name__ == "__main__":
-    first_instance = 2
-    last_instance = 2
+    first_instance = 1
+    last_instance = 1
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -334,9 +342,9 @@ if __name__ == "__main__":
     output_directory = "../res/SAT"
 
     # Hyperparameter
-    search_strategy = "linear"
+    search_strategy = "binary"
     symm_break_constr = False
-    time_execution = 20
+    time_execution = 10
 
     mp.set_start_method("spawn")
 
