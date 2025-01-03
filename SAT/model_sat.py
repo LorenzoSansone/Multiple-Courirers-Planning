@@ -141,13 +141,6 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     for courier in range(m):
         solver.add(at_least_one_he([path[courier][package][1] for package in range(n)]))
     
-    #6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
-    # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
-    # it also means that the courier can come back to the deposit if he has to deliver other packagages
-    for courier in range(m):
-        for step in range(1,n):
-            solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
-    
     #Objective function
     for courier in range(m):
         for step in range(n+1):
@@ -163,17 +156,26 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     solver.add(max_var(c_dist_tot, max_dist_b))
  
     if symm_constr == True:
-        #print("BUG")
+        
         l_sorted = [(l[i],i) for i in range(len(l))]
         l_sorted.sort(key = lambda x: x[0], reverse= True)
-        #print(l_sorted)
+
         for i in range(m-1):
             if l_sorted[i][0] == l_sorted[i+1][0]:
                 print(l_sorted[i][0],"==",l_sorted[i+1][0])
+                solver.add(lex_leq(courier_loads[l_sorted[i][1]], courier_loads[l_sorted[i+1][1]]))
                 
             else:
                 print(l_sorted[i][0],">=",l_sorted[i+1][0])
                 solver.add(geq(courier_loads[l_sorted[i][1]],courier_loads[l_sorted[i+1][1]]))
+        
+        #6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
+        # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
+        # it also means that the courier can come back to the deposit if he has to deliver other packagages
+        for courier in range(m):
+            for step in range(1,n):
+                solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
+        
 
         
 

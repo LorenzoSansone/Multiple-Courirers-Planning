@@ -259,5 +259,22 @@ def cond_sum_bin(num_list, mask, res, name = ""):
 
     return And(constr)
 
+def lex_leq(x,y):
+    constr = []
+
+    #x[0] <= y[0]
+    constr.append(Or(Not(x[0]), y[0]))
+    
+    #x <= y lex
+    for i in range(1,len(x)):
+        #Each sub-sequent, all previous bits must be equal and the current bit  in x must be <= to the corresponding bit in y
+        constr.append(Implies(And([x[j] == y[j] for j in range(i)]), Or(Not(x[i]), y[i])))
+    
+    return And(constr)
+
+
+
+
+
 def linear_search(solver):
     pass
