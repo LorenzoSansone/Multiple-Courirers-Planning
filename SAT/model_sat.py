@@ -358,8 +358,8 @@ class SaveFileTxt():
 
 
 if __name__ == "__main__":
-    first_instance = 2
-    last_instance = 2
+    first_instance = 1
+    last_instance = 21
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
@@ -371,12 +371,12 @@ if __name__ == "__main__":
               ["linear", False],
               ["binary", True],
               ["binary", False]]
-    configs = [["linear",False]]
+    #configs = [["linear",False]]
     for config in configs:
         # Hyperparameter
         search_strategy = config[0]
         symm_break_constr = config[1]
-        time_execution = 5
+        time_execution = 300
 
 
         for i in range(first_instance, last_instance+1):

@@ -1,5 +1,7 @@
 import json
 import os
+
+from prettytable import PrettyTable
 from utils_sat import *
 import time
 from z3 import *
@@ -15,8 +17,35 @@ def print_matrix(matrix, model, title = "--------"):
                 print(f"{matrix[i][j]}:0", end = " ")
         print()
 
+def load_data(output_directory, output_file):
+    output_path_file = output_directory + "/" + output_file + ".json"
+    data = {}
+    if os.path.isfile(output_path_file):
+        with open(output_path_file, 'r') as file:
+            data = json.load(file)
+    return data
+        
 if __name__ == "__main__":
+    output_directory = "../res/SAT"
+    first_instance = 1
+    last_instance = 21   
+    tableRes = PrettyTable(["Inst", "LNS_SYB", "LNS", "BNS_SYB", "BNS"])
+
+    for i in range(first_instance,last_instance +1):
+        data = load_data(output_directory,f"{i:02d}")
+        print(data)
+        tableRes.add_row([f"{i:02d}",
+                          str(data["LNS_SYB"]["obj"]),
+                          str(data["LNS"]["obj"]),
+                          str(data["BNS_SYB"]["obj"]),
+                          str(data["BNS"]["obj"])])
+    print(tableRes)
+     
+    
+    print()
+    #tableRes.add_row
     #l = [190, 185, 185, 190, 195, 185]
+    """
     l = [190,190]
     n = 3
     m = len(l)
@@ -71,4 +100,5 @@ if __name__ == "__main__":
         print_matrix(courier_loads,solver.model())
     if solver.check() == unsat:
         print("UNSAT")
+    """
     
