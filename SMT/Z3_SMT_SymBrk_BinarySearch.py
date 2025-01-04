@@ -5,7 +5,7 @@ import time
 from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
 from datetime import timedelta
 import math, os, json
-class Z3_SMT_Base_Solver: # name: z3_smt_base
+class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
     def __init__(self, input_file, timeout_time):
         self.parse_input(input_file)
         self.solver = z3.Solver()
@@ -47,36 +47,31 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
         return int(LB), int(UB)
 
     def create_smt_model(self):
-        print("Creating SMT model...")
+        print("Starting create_smt_model")
+        
+        # Create all variables first
         x = self.create_assignment_variables()
-        print("Assignment variables created.")
         y = self.create_routing_variables()
-        print("Routing variables created.")
         courier_distances = self.create_distance_variables()
-        print("Distance variables created.")
         max_distance = z3.Int('max_distance')
-        print("Max distance variable created.")
         
-        self.add_load_constraints(x)
-        print("Load constraints added.")
-        self.add_item_assignment_constraints(x)
-        print("Item assignment constraints added.")
+        # Collect all constraints
+        all_constraints = []
+        
+        # Add constraints in batches
+        all_constraints.extend(self.add_load_constraints(x))
+        all_constraints.extend(self.add_item_assignment_constraints(x))
         self.link_assignment_and_routing(x, y)
-        print("Assignment and routing linked.")
-        self.add_depot_constraints(x, y)
-        print("Depot constraints added.")
-        self.add_flow_conservation_constraints(y)
-        print("Flow conservation constraints added.")
-        self.add_subtour_elimination_constraints(y)
-        print("Subtour elimination constraints added.")
+        all_constraints.extend(self.add_depot_constraints(x, y))
+        all_constraints.extend(self.add_flow_conservation_constraints(y))
+        all_constraints.extend(self.add_subtour_elimination_constraints(y))
         self.calculate_distance_and_objective(courier_distances, y, max_distance)
-        print("Distance and objective calculated.")
-        self.add_no_self_loops_constraint(y)
-        print("No self-loops constraint added.")
-        self.add_bound_constraints(max_distance)
-        print("Bound constraints added.")
+        all_constraints.extend(self.add_symmetry_breaking_constraints(x))
+        all_constraints.extend(self.add_bound_constraints(max_distance))
         
-        print("SMT model creation complete.")
+        # Add all constraints at once
+        self.solver.add(z3.And(all_constraints))
+        print("Constraints added")
         return x, y, max_distance
 
     def create_assignment_variables(self):
@@ -84,69 +79,101 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
                 for i in range(self.num_couriers)]
 
     def create_routing_variables(self):
-        return [[[z3.Bool(f'route_{i}_{j}_{k}') 
-                  for k in range(self.num_items + 1)]  
-                  for j in range(self.num_items + 1)]
-                  for i in range(self.num_couriers)]
+        # Instead of triple nested list comprehension
+        y = {}  # Use dictionary for sparse representation
+        for i in range(self.num_couriers):
+            for j in range(self.num_items + 1):
+                for k in range(self.num_items + 1):
+                    if j != k:  # Only create necessary variables
+                        y[i,j,k] = z3.Bool(f'route_{i}_{j}_{k}')
+        return y
 
     def create_distance_variables(self):
         return [z3.Int(f'distance_{i}') for i in range(self.num_couriers)]
 
     def add_load_constraints(self, x):
+        constraints = []
         for i in range(self.num_couriers):
-            load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) for j in range(self.num_items)])
-            self.solver.add(load_sum <= self.courier_load_limits[i])
+            load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
+                          for j in range(self.num_items)])
+            constraints.append(load_sum <= self.courier_load_limits[i])
+        self.solver.add(z3.And(constraints))  # Add all constraints at once
+        return constraints
 
     def add_item_assignment_constraints(self, x):
+        constraints = []
         for j in range(self.num_items):
-            self.solver.add(z3.Sum([z3.If(x[i][j], 1, 0) for i in range(self.num_couriers)]) == 1)
+            constraints.append(z3.Sum([z3.If(x[i][j], 1, 0) for i in range(self.num_couriers)]) == 1)
+        return constraints  # Return the constraints instead of adding them directly
 
     def link_assignment_and_routing(self, x, y):
         for i in range(self.num_couriers):
             for j in range(self.num_items):
+                # Create lists of valid y variables for each constraint
+                incoming = [y[i,k,j] for k in range(self.num_items + 1) if k != j]
+                outgoing = [y[i,j,k] for k in range(self.num_items + 1) if k != j]
+                
                 self.solver.add(z3.Implies(x[i][j],
-                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)]) == 1))
+                    z3.Sum([z3.If(y_val, 1, 0) for y_val in incoming]) == 1))
                 self.solver.add(z3.Implies(x[i][j],
-                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)]) == 1))
+                    z3.Sum([z3.If(y_val, 1, 0) for y_val in outgoing]) == 1))
                 self.solver.add(z3.Implies(z3.Not(x[i][j]),
-                    z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)]) == 0))
+                    z3.Sum([z3.If(y_val, 1, 0) for y_val in incoming]) == 0))
                 self.solver.add(z3.Implies(z3.Not(x[i][j]),
-                    z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)]) == 0))
+                    z3.Sum([z3.If(y_val, 1, 0) for y_val in outgoing]) == 0))
 
     def add_depot_constraints(self, x, y):
+        constraints = []
         depot = self.num_items  # depot index
         for i in range(self.num_couriers):
             courier_used = z3.Or([x[i][j] for j in range(self.num_items)])
-            self.solver.add(z3.Sum([z3.If(y[i][depot][j], 1, 0) for j in range(self.num_items)]) == 
-                           z3.If(courier_used, 1, 0))
-            self.solver.add(z3.Sum([z3.If(y[i][j][depot], 1, 0) for j in range(self.num_items)]) == 
-                           z3.If(courier_used, 1, 0))
+            constraints.append(
+                z3.Sum([z3.If(y[i,depot,j], 1, 0) for j in range(self.num_items)]) == 
+                z3.If(courier_used, 1, 0))
+            constraints.append(
+                z3.Sum([z3.If(y[i,j,depot], 1, 0) for j in range(self.num_items)]) == 
+                z3.If(courier_used, 1, 0))
+        return constraints
 
     def add_flow_conservation_constraints(self, y):
+        constraints = []
         for i in range(self.num_couriers):
             for j in range(self.num_items + 1):
-                incoming = z3.Sum([z3.If(y[i][k][j], 1, 0) for k in range(self.num_items + 1)])
-                outgoing = z3.Sum([z3.If(y[i][j][k], 1, 0) for k in range(self.num_items + 1)])
-                self.solver.add(incoming == outgoing)
+                # Access y using tuple keys (i,k,j) instead of nested indexing
+                incoming = z3.Sum([z3.If(y[i,k,j], 1, 0) 
+                                 for k in range(self.num_items + 1) if k != j])
+                outgoing = z3.Sum([z3.If(y[i,j,k], 1, 0) 
+                                 for k in range(self.num_items + 1) if k != j])
+                constraints.append(incoming == outgoing)
+        return constraints
 
     def add_subtour_elimination_constraints(self, y):
+        # This creates O(n³) constraints for n items
         u = [[z3.Int(f'u_{i}_{j}') for j in range(self.num_items + 1)] 
              for i in range(self.num_couriers)]
         depot = self.num_items
+        constraints = []
+        
         for i in range(self.num_couriers):
-            self.solver.add(u[i][depot] == 0)
+            constraints.append(u[i][depot] == 0)
             for j in range(self.num_items):
-                self.solver.add(u[i][j] >= 1)
-                self.solver.add(u[i][j] <= self.num_items)
+                constraints.append(u[i][j] >= 1)
+                constraints.append(u[i][j] <= self.num_items)
                 for k in range(self.num_items):
                     if j != k:
-                        self.solver.add(z3.Implies(y[i][j][k], u[i][k] >= u[i][j] + 1))
+                        # Use dictionary access with tuple key instead of nested indexing
+                        constraints.append(z3.Implies(y[i,j,k], u[i][k] >= u[i][j] + 1))
+        
+        self.solver.add(z3.And(constraints))
+        return constraints
 
     def calculate_distance_and_objective(self, courier_distances, y, max_distance):
         for i in range(self.num_couriers):
-            dist_terms = [z3.If(y[i][j][k], self.distance_matrix[j][k], 0)
+            # Use dictionary access with tuple keys
+            dist_terms = [z3.If(y[i,j,k], self.distance_matrix[j][k], 0)
                           for j in range(self.num_items + 1)
-                          for k in range(self.num_items + 1)]
+                          for k in range(self.num_items + 1)
+                          if j != k]  # Only consider valid routes
             self.solver.add(courier_distances[i] == z3.Sum(dist_terms))
             self.solver.add(courier_distances[i] <= max_distance)
 
@@ -159,9 +186,36 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             for j in range(self.num_items + 1):
                 self.solver.add(z3.Not(y[i][j][j]))
 
+    def add_symmetry_breaking_constraints(self, x):
+        constraints = []
+        # Basic courier ordering
+        for i in range(self.num_couriers - 1):
+            constraints.append(
+                z3.Implies(
+                    z3.Or([x[i+1][j] for j in range(self.num_items)]),
+                    z3.Or([x[i][j] for j in range(self.num_items)])
+                )
+            )
+        
+        # Load-based ordering (simplified)
+        courier_loads = [
+            z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
+                    for j in range(self.num_items)])
+            for i in range(self.num_couriers)
+        ]
+        
+        for i in range(self.num_couriers - 1):
+            constraints.append(courier_loads[i] >= courier_loads[i+1])
+        
+        self.solver.add(z3.And(constraints))
+        return constraints
+
     def add_bound_constraints(self, max_distance):
-        self.solver.add(max_distance <= self.UB)
-        self.solver.add(max_distance >= self.LB)
+        constraints = []
+        constraints.append(max_distance <= self.UB)
+        constraints.append(max_distance >= self.LB)
+        self.solver.add(z3.And(constraints))
+        return constraints  # Return the constraints
 
     def save_solution_by_model(self, input_file, m, n, model_name, time_limit, result=None):
         instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
@@ -223,103 +277,100 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             self.solver.set("timeout", timeout_ms)
 
     def solve(self, timeout_ms):
-        print("Starting solve process...")
+        print("Starting solve function")
         start_time = time.time()
-        
-        print("Creating SMT model...")
-        x, y, max_distance = self.create_smt_model()
-        print("SMT model created.")
+        print(f"Start time set: {start_time}")
         
         self.set_timeout(timeout_ms)
-        print(f"Timeout set to {timeout_ms} ms.")
+        print(f"Timeout set to: {timeout_ms}ms")
+        
+        x, y, max_distance = self.create_smt_model()
+        print("SMT model created")
         
         best_solution, best_objective = self.find_best_solution(start_time, x, y, max_distance)
-        print("Best solution found.")
+        print(f"Best solution found with objective: {best_objective}")
         
         result_obj = self.create_result_object(best_solution, best_objective, start_time)
-        print("Result object created.")
+        print(f"Result object created with status: {result_obj.status}")
         
-        print("Solve process complete.")
         return result_obj
 
     def find_best_solution(self, start_time, x, y, max_distance):
-        print("\n=== Starting find_best_solution ===")
+        print("\n=== Starting Binary Search Optimization ===")
         print(f"Initial LB: {self.LB}, UB: {self.UB}")
         
         best_solution = None
-        best_objective = float('inf')
-        time_limit = milliseconds_to_seconds(self.timeout_time)
-        iteration = 1
-
-        while True:
-            print(f"\n--- Iteration {iteration} ---")
+        print("Best solution initialized to None")
+        
+        best_objective = self.UB
+        print(f"Best objective initialized to UB: {self.UB}")
+        
+        low = self.LB
+        high = self.UB
+        print(f"Search range initialized: [{low}, {high}]")
+        
+        while low <= high:
+            print(f"\nCurrent search range: [{low}, {high}]")
             
-            # Time tracking
-            current_time = time.time()
-            elapsed_time = current_time - start_time
-            remaining_time = time_limit - elapsed_time
+            elapsed_time = time.time() - start_time
+            print(f"Elapsed time: {elapsed_time:.2f}s")
             
-            print(f"Time status:")
-            print(f"- Elapsed: {elapsed_time:.1f}s")
-            print(f"- Remaining: {remaining_time:.1f}s")
-            print(f"- Time limit: {time_limit:.1f}s")
-            
-            if elapsed_time >= time_limit:
+            if elapsed_time >= milliseconds_to_seconds(self.timeout_time):
                 print("❌ Time limit reached - stopping search")
                 break
-
-            # Update solver timeout
-            solver_timeout = int(remaining_time * 1000)
-            if solver_timeout <= 0:
-                print("❌ No time remaining for solver")
-                break
+                
+            mid = (low + high) // 2
+            print(f"\n--- Trying objective value: {mid} ---")
             
-            self.solver.set("timeout", solver_timeout)
-            print(f"Set solver timeout to: {solver_timeout/1000:.2f}s")
+            self.solver.push()
+            print("Solver state saved")
             
-            # Check solution
-            print("\nChecking for solution...")
+            self.solver.add(max_distance <= mid)
+            print(f"Added constraint: max_distance <= {mid}")
+            print("Solver check called")
             result = self.solver.check()
             print(f"Solver result: {result}")
-
+            
             if result == z3.sat:
-                print("🎯 Found solution")
+                print("Solution found")
                 model = self.solver.model()
-                print("Model created")
-                current_objective = model.evaluate(max_distance).as_long()
-                print(f"- Current objective: {current_objective}")
-                print(f"- Previous best: {best_objective}")
+                print("Model extracted")
                 
-                # Save solution
                 solution = self.extract_solution(model, x, y)
-                print("Solution extracted")
-                best_solution = solution
-                best_objective = current_objective
-                print("Best objective updated")
-                # Add constraint for next iteration
-                print(f"Adding constraint: max_distance < {current_objective}")
-                self.solver.add(max_distance < current_objective)
+                print("Solution extracted from model")
                 
-                # Check optimality
-                if current_objective <= self.LB:
-                    print("🎯 Reached lower bound - solution is optimal!")
-                    break
+                best_solution = solution
+                best_objective = mid
+                print(f"✅ Updated best solution with objective: {mid}")
+                
+                high = mid - 1
+                print(f"Updated high bound to: {high}")
             else:
-                print(f"❌ No better solution found (result: {result})")
-                break
-
-            iteration += 1
-
-        print("\n=== find_best_solution complete ===")
+                print("❌ No solution found at this value")
+                low = mid + 1
+                print(f"Updated low bound to: {low}")
+            
+            self.solver.pop()
+            print("Solver state restored")
+        
+        print("\n=== Binary Search complete ===")
         print(f"Final best objective: {best_objective}")
         print(f"Solution found: {'Yes' if best_solution is not None else 'No'}")
         
         return best_solution, best_objective
+
     def extract_solution(self, model, x, y):
-        solution = Solution(
-            x=[[model.evaluate(x[i][j]) for j in range(self.num_items)] for i in range(self.num_couriers)],
-            y=[[[model.evaluate(y[i][j][k]) for k in range(self.num_items + 1)] for j in range(self.num_items + 1)] for i in range(self.num_couriers)]
-        )
+        # x remains the same as it's a nested list
+        x_sol = [[model.evaluate(x[i][j]) for j in range(self.num_items)] 
+                 for i in range(self.num_couriers)]
+        
+        # Create a nested list for y from the dictionary representation
+        y_sol = [[[model.evaluate(y.get((i,j,k), z3.BoolVal(False))) 
+                   for k in range(self.num_items + 1)]
+                  for j in range(self.num_items + 1)]
+                 for i in range(self.num_couriers)]
+        
+        solution = Solution(x=x_sol, y=y_sol)
         return solution
 
     def create_result_object(self, best_solution, best_objective, start_time):
@@ -343,4 +394,14 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
                 print("Found optimal solution")
         
         return result_obj
+
+    def add_constraints_in_batches(self, constraint_generator, batch_size=1000):
+        constraints = []
+        for constraint in constraint_generator:
+            constraints.append(constraint)
+            if len(constraints) >= batch_size:
+                self.solver.add(z3.And(constraints))
+                constraints = []
+        if constraints:
+            self.solver.add(z3.And(constraints))
 

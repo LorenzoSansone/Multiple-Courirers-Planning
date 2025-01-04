@@ -1,12 +1,22 @@
-FROM minizinc/minizinc:latest
+# Use Python 3.8 as base (compatible with your dependencies)
+FROM python:3.10.4
 
-WORKDIR /projectMCP
+# Install MiniZinc
+RUN apt-get update && apt-get install -y \
+    minizinc \
+    && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first (for better caching)
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy project files
 COPY . .
 
-RUN apt-get update && \
-    apt-get install -y python3 && \
-    apt-get install -y python3-pip && \
-    python3 -m pip install -r requirements.txt
-
-CMD python3 cp_solver.py
+# Default command (you can override this when running the container)
+# CMD ["python", "main.py"]
