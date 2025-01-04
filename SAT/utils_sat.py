@@ -69,7 +69,7 @@ def at_most_one_he(bool_vars, name):
     if len(bool_vars) <= 4:
         return And(at_most_one_np(bool_vars))
     y = Bool(f"y_{name}")
-    return And(And(at_most_one_np(bool_vars[:3] + [y])), And(at_most_one_he(bool_vars[3:] + [Not(y)], name+"_")))
+    return And(And(at_most_one_np(bool_vars[:3] + [y])), And(at_most_one_he(bool_vars[3:] + [Not(y)], name + "_")))
 
 def exactly_one_he(bool_vars, name):
     return And(at_most_one_he(bool_vars, name), at_least_one_he(bool_vars))
