@@ -19,8 +19,6 @@ def save_solution(name_sol, output_directory, output_file, data):
     }
 
     output_path_file = output_directory + "/" + output_file + ".json"
-    #print(output_path_file)
-    #print(solution)
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
@@ -35,8 +33,6 @@ def save_solution(name_sol, output_directory, output_file, data):
     # write the solution to the output file
     with open(output_path_file, 'w') as outfile:
         json.dump(data, outfile, indent=4)
-    
-
 
 def print_matrix(matrix):
     for i in range(len(matrix)):
@@ -55,31 +51,20 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     max_load = sum(s) #max theoretical load for one courier
     D_max = np.matrix(D).max() #Max distance on matrix
 
-    #print("deposit",n)
-    #print("max_load",max_load)
-    #print("D_max",D_max)
-
     #Maximum theoretical distance that a courier can run 
     matrix_D = np.array(D)
     flat = matrix_D.flatten()
     flat.sort()
     flat = flat[::-1]
     max_dist = sum([flat[i] for i in range(n)]) #Sum the gretest distances on the matrix
-    #print("max_dist",max_dist)
-
     
     #-----VARIABLES-----
 
     # path[i][j][k] = T if the courier i delivers the package j at the k-th step 
     path = [[[Bool(f"p_{courier}_{package}_{step}") for step in range(n+2)] for package in range(n+1)] for courier in range(m)]
     
-    #courier_stops
-    #courier_stops = [[[Bool(f"s_{courier}_{package1}_{package2}") for package1 in range(n+1)] for package2 in range(n+1)] for courier in range(m)]
-    
     # courier_weights[i][j] = T if the courier i take the package  j
     courier_weights = [[Bool(f"w_{courier}_{package}") for package in range(n)] for courier in range(m)]
-
-    #c_weights_tot = [[Bool(f"wt_{courier}_{bin}") for ] for courier in range(m)]
 
     # courier_loads_i = it represents binary representation of actual load carried by each courier
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
@@ -144,6 +129,13 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     for courier in range(m):
         solver.add(at_least_one_he([path[courier][package][1] for package in range(n)]))
     
+    #C6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
+        # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
+        # it also means that the courier can come back to the deposit if he has to deliver other packagages
+        for courier in range(m):
+            for step in range(1,n):
+                solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
+
     #Objective function
     for courier in range(m):
         for step in range(n+1):
@@ -175,12 +167,7 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                 #print(l_sorted[i][0],">=",l_sorted[i+1][0])
                 solver.add(geq(courier_loads[l_sorted[i][1]],courier_loads[l_sorted[i+1][1]]))
                 
-        #S3: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
-        # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
-        # it also means that the courier can come back to the deposit if he has to deliver other packagages
-        for courier in range(m):
-            for step in range(1,n):
-                solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
+        
 
     if search == "linear":
         print("START LINEAR")
@@ -339,23 +326,6 @@ def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_e
         time_exe, opt, obj, path = shared_res["res"]
 
     return time_exe, opt, obj, path
-
-"""
-class SaveFileTxt():
-    def __init__(self, path_save, name_file):
-        self.path_save = path_save
-        self.name_file = name_file
-        self.tableRes = PrettyTable(["Inst","Test1", "Test2", "Test3", "Test4"]) 
-
-    def append(self,row):
-        self.tableRes.add_row(row)
-
-    def save(self):
-        file = open(self.path_save, "w")  # append mode
-        file.write(self.tableRes)
-        file.close()      
-"""
-
 
 if __name__ == "__main__":
     first_instance = 1

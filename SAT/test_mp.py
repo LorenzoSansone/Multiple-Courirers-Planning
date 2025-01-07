@@ -34,11 +34,31 @@ if __name__ == "__main__":
     for i in range(first_instance,last_instance +1):
         data = load_data(output_directory,f"{i:02d}")
         print(data)
+        if data["LNS_SYB"]["optimal"] == True:
+            str_LNS_SYB = '\033[92m' + f"{data["LNS_SYB"]["obj"]}" + '\033[0m'
+        else:
+            str_LNS_SYB = f"{data["LNS_SYB"]["obj"]}"
+
+        if data["LNS"]["optimal"] == True:
+            str_LNS = '\033[92m' + f"{data["LNS"]["obj"]}" + '\033[0m'
+        else:
+            str_LNS = f"{data["LNS"]["obj"]}"
+
+        if data["BNS_SYB"]["optimal"] == True:
+            str_BNS_SYB = '\033[92m' + f"{data["BNS_SYB"]["obj"]}" + '\033[0m'
+        else:
+            str_BNS_SYB= f"{data["BNS_SYB"]["obj"]}"
+
+        if data["BNS"]["optimal"] == True:
+            str_BNS = '\033[92m' + f"{data["BNS"]["obj"]}" + '\033[0m'
+        else:
+            str_BNS = f"{data["BNS"]["obj"]}"    
+      
         tableRes.add_row([f"{i:02d}",
-                          str(data["LNS_SYB"]["obj"]),
-                          str(data["LNS"]["obj"]),
-                          str(data["BNS_SYB"]["obj"]),
-                          str(data["BNS"]["obj"])])
+                          str_LNS_SYB,
+                          str_LNS,
+                          str_BNS_SYB,
+                          str_BNS])
     print(tableRes)
      
     
