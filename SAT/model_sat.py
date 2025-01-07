@@ -165,8 +165,6 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                 #S2 if the load of the first courier is greater than the load of the second courier then impose an order
                 solver.add(geq(courier_loads[l_sorted[i][1]],courier_loads[l_sorted[i+1][1]]))
                 
-        
-
     if search == "linear":
         print("START LINEAR")
         satisfiable = True
