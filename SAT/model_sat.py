@@ -132,9 +132,9 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     #C6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
         # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
         # it also means that the courier can come back to the deposit if he has to deliver other packagages
-        for courier in range(m):
-            for step in range(1,n):
-                solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
+    for courier in range(m):
+        for step in range(1,n):
+            solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
 
     #Objective function
     for courier in range(m):
@@ -156,15 +156,13 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
         l_sorted.sort(key = lambda x: x[0], reverse= True)
 
         for i in range(m-1):
-
             if l_sorted[i][0] == l_sorted[i+1][0]:
 
                 #S1 if the load of two couriers are equal then define the lexicographical order
                 solver.add(lex_leq(courier_weights[l_sorted[i][1]], courier_weights[l_sorted[i+1][1]]))
 
             else:
-                #S2 if the load of the first courier is greater than the load of the second courier then impose an 
-                #print(l_sorted[i][0],">=",l_sorted[i+1][0])
+                #S2 if the load of the first courier is greater than the load of the second courier then impose an order
                 solver.add(geq(courier_loads[l_sorted[i][1]],courier_loads[l_sorted[i+1][1]]))
                 
         
