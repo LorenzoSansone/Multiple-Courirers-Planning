@@ -61,26 +61,30 @@ def find_boundaries_standard(m, n, l, s, D):
     distances = np.array(D)
     min_dist_dep_list = []
     
+    #Define LB
     for i in range(n):
         min_dist_dep_list.append(distances[n,i] + distances[i,n])
     LB = max(min_dist_dep_list)
 
+    #Define UB
     UB = distances[n,0]
     for i in range(n):
         UB = UB + distances[i,i+1]
     UB = int(UB)
+
     return 0, UB, LB, UB 
 
 def find_boundaries_advanced(m, n, l, s, D):
     distances = np.array(D)
     min_dist_dep_list = []
 
+    #Define LB
     for i in range(n):
         dist_one = distances[n,i] + distances[i,n]
         min_dist_dep_list.append(dist_one)
-
     LB = max(min_dist_dep_list)
-    
+
+    #Define UB
     UB = distances[n,0]
     for i in range(n):
         UB = UB + distances[i,i+1]
@@ -195,6 +199,19 @@ def save_solution(title, res, data_path, save_path, timeLimit):
     print(f"Solution saved to {output_file}")
     return output_file
 
+def get_name_test(model, params = "standard", solver = "gecode"):
+    name_test = ""
+    if model == "CP_base.mzn":
+        name_test = "BS"
+    elif model == "CP_heu_LNS.mzn":
+        name_test = ""
+
+    if solver == "gecode":
+        name_test = name_test + "Gec"
+    elif solver == "chuffed":
+        name_test = name_test + "Chuf"
+    return name_test
+
 
 
 if __name__ == "__main__":    
@@ -212,7 +229,7 @@ if __name__ == "__main__":
     selectParams = "standard"
 
     tableRes = PrettyTable(["Instance"] + models_params_path_list) 
-    tableRes.title = "MODEL LB UB STANDARD GECODE"
+    tableRes.title = "MODEL " + solver + " " + selectParams
     save_file(file_name_save, mode_save ,str(tableRes))
     print("START")
     #for i in range(first_instance, last_instance+1):
@@ -220,25 +237,27 @@ if __name__ == "__main__":
         print(i)
         timeLimit = 300
 
-        ################ SET PARAMETERS ################
+        ################ READ INSTANCES ################
         inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
         data_path = f"../instances_dzn/{inst_i}.dzn"
         m, n, l, s, D = read_instance(data_path)
         
-        #START PRE-SOLVING
-        
+        #START PRE-SOLVING: Compute additional parameters of the models (UB, LB, ...)
         start_pre_solving = time.time()
         if selectParams == "standard":
             min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
             max_pack = n
-        else:
+        elif selectParams == "advanced":
             min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
         end_pre_solving = time.time()
         #END PRE-SOLVING
+
         delta_pre_solving = end_pre_solving - start_pre_solving
         
+        #Subtract the pre-solving time from time limit
         timeLimit = int(timeLimit - delta_pre_solving)
-        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " P:" + str(timeLimit) +")"]
+
+        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " T:" + str(timeLimit) +")"]
   
         params = {"m":m, 
                   "n":n,
@@ -250,29 +269,26 @@ if __name__ == "__main__":
                   "min_dist":min_dist,
                   "max_dist":max_dist}
         
-        
-        ################################
-        
         ################ MODEL ################
         for model_path in models_params_path_list:
+            title_json_test = get_name_test(model_path, selectParams )
             title_json = model_path.replace(".mzn","")
 
             if selectParams != "standard":
                 title_json = title_json + "_adv"
             if model_path == "model_path_opt.mzn":
                 params.update({"max_pack": max_pack})
-            save_solution_path = f"." 
+            
+            save_solution_path = f"."#f"res/CP" 
             res = None
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
-                print("1)",e.args)
-                print("2",e.__cause__)
-                print("3",res)
-
+    
                 row_table.append(str("Error"))
                 save_file(file_name_error, mode_save_error ,str(e))
             else:
+                """
                 if res.objective is not None and isinstance(res.objective, int):
                     flag = "" 
                     if res.status is Status.OPTIMAL_SOLUTION:
@@ -280,7 +296,8 @@ if __name__ == "__main__":
                     row_table.append(str(res.objective) + flag)
                 else:
                     row_table.append(str(res.status))
-                save_solution(title_json,res, data_path, save_solution_path, timeLimit)
+                """
+                save_solution(title_json_test,res, data_path, save_solution_path, timeLimit)
 
         tableRes.add_row(row_table) 
         print(f"Instance: {inst_i}", row_table)
@@ -295,62 +312,6 @@ if __name__ == "__main__":
 
     ################################
     
-    
-    """
-    for i in range(first_instance, last_instance+1):
-        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
-        print(f"Instance: {inst_i}")
-        data_path = f"instances_dnz/{inst_i}.dzn"
-
-        m, n, l, s, D = read_instance(data_path)
-        LB, UB = find_LB_UB(m, n, l, s, D)
-        print(f"LB:{LB} UB:{UB}")
-        print("")
-        #res_model = find_LB_model("CP/UB_model.dzn",data_path,timeLimit)
-
-        #res_model = asyncio.run(find_LB_model("CP/UB_model.dzn",data_path,timeLimit))
-        #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.dzn",data_path,timeLimit))
-    """
-    """
-    nest_asyncio.apply()
-
-    data_path = f"instances_dnz/inst00.dzn"
-    
-    m, n, l, s, D = read_instance(data_path)
-    LB, UB = find_LB_UB(m, n, l, s, D)
-    res_model = asyncio.run(solve_mcp("CP/CP.mzn",data_path,timeLimit))
-    #res_model = asyncio.run(find_LB_model("CP/UB_model.mzn",data_path,timeLimit))
-    #res_model_s = asyncio.run(find_LB_model("CP/UB_model_s.mzn",data_path,timeLimit))
-    print(data_path)
-    print("---------")
-    print("ANALYTICAL")
-    print(f"LB: {LB}")
-    print(f"UB: {UB}")
-    print("---------")
-    print("MODEL")
-    print(res_model)
-
-    print("---------")
-    print("MODEL FAST")
-    #print(res_model_s)
-
-    """
-  
-    """
-    model_path = "CP/UB_model.mzn"
-    timeLimit = 10  #seconds
-    first_instance = 0
-    last_instance = 3
-
-    for i in range(first_instance, last_instance+1):
-        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
-        print(f"Instance: {inst_i}")
-        data_path = f"instances_dnz/{inst_i}.dzn"
-        nest_asyncio.apply()
-        res = asyncio.run(solve_mcp(model_path, data_path, timeLimit))
-        print(f"Solution: {res.objective}, status: {res.status}, time: {math.floor(res.statistics['solveTime'].total_seconds()) if res.objective is not None else timeLimit}")
-        save_solution(res, data_path, timeLimit)
-    """
-    
+        
 
     

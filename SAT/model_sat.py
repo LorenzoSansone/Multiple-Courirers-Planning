@@ -204,7 +204,7 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                 satisfiable = False
 
                 model = last_model_sat
-                #return last_model_sat, path, max_dist_b
+            
             solver.pop()
             print("END LINEAR")
 

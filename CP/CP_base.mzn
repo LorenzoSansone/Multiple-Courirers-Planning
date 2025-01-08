@@ -54,6 +54,11 @@ constraint forall(j in 1..n)(
         )
     );
  
+%C6 - Couriers can't go back to the base to take other packages and starts immediatly
+constraint symmetry_breaking_constraint (forall(i in 1..m)(
+    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
+);
+
 %%%%%%%% Objective function
 constraint
     forall(i in 1..m) (
