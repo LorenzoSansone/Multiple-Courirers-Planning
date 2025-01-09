@@ -154,20 +154,28 @@ def save_solution(title, res, data_path, save_path, timeLimit):
     number = match.group(1)
     #output = f"{number}"
     output_directory = save_path #"res/CP"
-    # prepare the solution dictionary
-    if res.objective is None:
+
+    if res is None:
         time = timeLimit
         optimal = False
         obj = None
         sol = []
     else:
-        if res.statistics['solveTime'] is None:
+        # prepare the solution dictionary
+        if res.objective is None:
             time = timeLimit
+            optimal = False
+            obj = None
+            sol = []
         else:
-            time = math.floor(res.statistics['solveTime'].total_seconds())
-        optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
-        obj = res['objective']
-        sol = output_path_prepare(res['path'])  
+            if res.statistics['solveTime'] is None:
+                time = timeLimit
+            else:
+                time = math.floor(res.statistics['solveTime'].total_seconds())
+            optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
+            obj = res['objective']
+            sol = output_path_prepare(res['path'])  
+    
     solution_dict = {
         title: {
             "time": time,
@@ -183,13 +191,11 @@ def save_solution(title, res, data_path, save_path, timeLimit):
     
     output_file = output_directory + "/" + number + ".json"
 
-
     data = {}
     if os.path.isfile(output_file):
         with open(output_file, 'r') as file:
                 data = json.load(file)
                 
-
     data.update(solution_dict)
     
     # write the solution to the output file
@@ -199,119 +205,147 @@ def save_solution(title, res, data_path, save_path, timeLimit):
     print(f"Solution saved to {output_file}")
     return output_file
 
-def get_name_test(model, params = "standard", solver = "gecode"):
+def get_name_test(model, boundaries = "standard", solver = "gecode"):
     name_test = ""
+    
+    #Model
     if model == "CP_base.mzn":
         name_test = "BS"
     elif model == "CP_heu_LNS.mzn":
         name_test = ""
 
+    #Boundaries
+    if boundaries == "standard":
+        name_test = name_test + ""
+    elif boundaries == "advanced":
+        name_test = name_test + "_adv"
+
+    #Solver strings
     if solver == "gecode":
-        name_test = name_test + "Gec"
+        name_test = name_test + "_Gec"
     elif solver == "chuffed":
-        name_test = name_test + "Chuf"
+        name_test = name_test + "_Chuf"
+    
     return name_test
 
 
+"""
+class SaveFileCP():
+    def __init__(self, path_save, table):
+        self.table = table
+        self.path_save = path_save
+        self.row = []
+
+    def add_row(self, row):
+
+    def save
+"""
+def process_res_table(res):
+    if res.objective is not None and isinstance(res.objective, int):
+        flag = "" 
+        if res.status is Status.OPTIMAL_SOLUTION:
+            flag = "(O)"
+        return str(res.objective) + flag
+    else:
+        return str(res.status)
+                
+
 
 if __name__ == "__main__":    
-    solver = "chuffed"
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
-    models_params_path_list = ["model_all_start_chuffed.mzn"]
+    #models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 15
-    last_instance = 15
+    first_instance = 11
+    last_instance = 11
     file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
+    save_solution_path = f"."#f"res/CP" 
+
+    configs = [["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
+               ["CP_heu_LNS_sym_impl2.mzn","standard","gecode"]
+               ]
+
+    tableRes = PrettyTable() 
+    tableRes.title = "MODEL"
+    tableRes.add_column("inst",[str(x) for x in range(first_instance, last_instance+1) if x!=14])
+
+    save_file(file_name_save, mode_save, str(tableRes))
     
-    selectParams = "standard"
+    for config in configs:
+        model_path = config[0]
+        boundaries = config[1]
+        solver = config[2]
+        str_col = []
 
-    tableRes = PrettyTable(["Instance"] + models_params_path_list) 
-    tableRes.title = "MODEL " + solver + " " + selectParams
-    save_file(file_name_save, mode_save ,str(tableRes))
-    print("START")
-    #for i in range(first_instance, last_instance+1):
-    for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
-        print(i)
-        timeLimit = 300
+        #Run a particular configuration for all instances
+        for i in [x for x in range(first_instance, last_instance+1) if x!=14]: #for i in range(first_instance, last_instance+1):
+            print(config[0], config[1], config[2], i)
+            timeLimit = 300
 
-        ################ READ INSTANCES ################
-        inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
-        data_path = f"../instances_dzn/{inst_i}.dzn"
-        m, n, l, s, D = read_instance(data_path)
-        
-        #START PRE-SOLVING: Compute additional parameters of the models (UB, LB, ...)
-        start_pre_solving = time.time()
-        if selectParams == "standard":
-            min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
-            max_pack = n
-        elif selectParams == "advanced":
-            min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
-        end_pre_solving = time.time()
-        #END PRE-SOLVING
-
-        delta_pre_solving = end_pre_solving - start_pre_solving
-        
-        #Subtract the pre-solving time from time limit
-        timeLimit = int(timeLimit - delta_pre_solving)
-
-        row_table = [inst_i + " (mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " T:" + str(timeLimit) +")"]
-  
-        params = {"m":m, 
-                  "n":n,
-                  "l":l,
-                  "s":s,
-                  "D":D,
-                  "LB":LB,
-                  "UB":UB,
-                  "min_dist":min_dist,
-                  "max_dist":max_dist}
-        
-        ################ MODEL ################
-        for model_path in models_params_path_list:
-            title_json_test = get_name_test(model_path, selectParams )
-            title_json = model_path.replace(".mzn","")
-
-            if selectParams != "standard":
-                title_json = title_json + "_adv"
-            if model_path == "model_path_opt.mzn":
-                params.update({"max_pack": max_pack})
+            #READ INSTANCES 
+            inst_i = f"inst{i:02d}" #or: inst_i = f"0{i}" if i<10 else i
+            data_path = f"../instances_dzn/{inst_i}.dzn"
+            m, n, l, s, D = read_instance(data_path)
             
-            save_solution_path = f"."#f"res/CP" 
+            #START PRE-SOLVING: Compute additional parameters of the models (UB, LB, max_dist, min_dist)
+            start_pre_solving = time.time()
+            if boundaries == "standard":
+                min_dist, max_dist, LB, UB = find_boundaries_standard(m, n, l, s, D)
+                max_pack = n
+            elif boundaries == "advanced":
+                min_dist, max_dist, LB, UB, max_pack = find_boundaries_advanced(m, n, l, s, D)
+            end_pre_solving = time.time()
+            #END PRE-SOLVING
+
+            #Compute the time of pre-solving
+            delta_pre_solving = end_pre_solving - start_pre_solving
+        
+            #Subtract the pre-solving time from time limit
+            timeLimit = int(timeLimit - delta_pre_solving)
+
+            str_row = "(mD:" +  str(min_dist) + " MD:" + str(max_dist) + " LB:" +  str(LB) + " UB:" + str(UB) + " T:" + str(timeLimit) +") "
+
+            params = {"m":m, 
+                    "n":n,
+                    "l":l,
+                    "s":s,
+                    "D":D,
+                    "LB":LB,
+                    "UB":UB,
+                    "min_dist":min_dist,
+                    "max_dist":max_dist}
+        
+            ################ MODEL ################
+            title_json_test = get_name_test(model_path, boundaries, solver)
+
+            #if model_path == "model_path_opt.mzn":
+            #    params.update({"max_pack": max_pack})
+            
             res = None
             try:
                 res = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
-    
-                row_table.append(str("Error"))
+                str_row = str_row + "Error"
                 save_file(file_name_error, mode_save_error ,str(e))
+                save_solution(title_json_test, None, data_path, save_solution_path, 300)
             else:
-                """
-                if res.objective is not None and isinstance(res.objective, int):
-                    flag = "" 
-                    if res.status is Status.OPTIMAL_SOLUTION:
-                        flag = "(O)"
-                    row_table.append(str(res.objective) + flag)
-                else:
-                    row_table.append(str(res.status))
-                """
-                save_solution(title_json_test,res, data_path, save_solution_path, timeLimit)
+                str_row = str_row + process_res_table(res)
+                save_solution(title_json_test, res, data_path, save_solution_path, 300)
+            
+            str_col.append(str_row)
 
-        tableRes.add_row(row_table) 
-        print(f"Instance: {inst_i}", row_table)
-
+        tableRes.add_column(title_json_test, str_col) 
+            
         save_file(file_name_save, mode_save ,str(tableRes))
 
+    
+
+        ################ RESULT ################
+        #save_file(file_name_save, mode_save ,str(tableRes))
         ################################
 
-    ################ RESULT ################
-    print(tableRes)
-    save_file(file_name_save, mode_save ,str(tableRes))
-
-    ################################
-    
         
 
     

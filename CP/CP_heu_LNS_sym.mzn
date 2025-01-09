@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst11.dzn";
+include "../instances_dzn/inst11.dzn";
 
 
 int: m; %num couriers
@@ -28,6 +28,11 @@ array[1..n] of var 1..m: x;
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
+
+%load[i] 
+int: max_load;
+max_load = sum([ l[i] | i in 1..m]);
+array[1..m] of var 0..max_load: load;
 
 
 %CONSTRAINTS
@@ -57,13 +62,45 @@ constraint forall(j in 1..n)(
         )
     );
 
-
-
-%SYMMETRY
-%S1 - Couriers can't go back to the base to take other packages and starts immediatly
-constraint symmetry_breaking_constraint (forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
+%C6 - Couriers can't go back to the base to take other packages and starts immediatly
+constraint forall(i in 1..m)(
+    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
+ );
+ 
+%C7 - Compute the load of each courier
+constraint forall(i in 1..m)(
+  load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
 );
+ 
+%SIMMETRY
+
+%S1
+
+%constraint symmetry_breaking_constraint(
+%    forall(i in 1..m, j in 1..m where i!=j /\ l[i] == l[j])(
+%     load[i] >= load[z]
+%    )
+%   );
+    
+
+%S1: If two couriers have the same capacity then they are symmetric,
+% to break the symmetry we impose an order (for the package they pick up) betweem them.
+constraint symmetry_breaking_constraint(
+    forall(courier1 in 1..m, courier2 in 1..m where courier1 < courier2)
+     ((l[courier1] == l[courier2]) -> (lex_less(row(path, courier1), row(path, courier2))))
+);
+
+
+
+%S2: Two couriers path are exchangeable if the maximum weight of the two is less than the minimum loading capacity
+% in that case we impose an ordering between them
+constraint symmetry_breaking_constraint(
+    forall(courier1 in 1..m, courier2 in 1..m where courier1 != courier2)
+    (
+      (l[courier1] > l[courier2]) ->
+      (load[courier1] >= load[courier2])
+));
+
 
 %%%%%%%% Objective function
 
@@ -79,3 +116,5 @@ solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;
+
+%output [show(max_load)]
