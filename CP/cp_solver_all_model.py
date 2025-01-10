@@ -127,13 +127,17 @@ def solve_model(custom_model, timeLimit ,params, solver):
   model = minizinc.Model(custom_model)
 
   gecode = minizinc.Solver.lookup(solver)
+
   # Create minizinc instance
   instance = minizinc.Instance(gecode, model)
   for k,v in params.items():
       instance[k] = v
 
   # Solve the problem
-  result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
+  if solver == "gecode":
+    result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
+  elif solver == "chuffed":
+    result = instance.solve(free_search=True,timeout=datetime.timedelta(seconds = timeLimit))
   return result
 
 def output_path_prepare(path): 
@@ -209,11 +213,18 @@ def get_name_test(model, boundaries = "standard", solver = "gecode"):
     name_test = ""
     
     #Model
+    a = "CP_heu_LNS_sym.mzn"
     if model == "CP_base.mzn":
         name_test = "BS"
-    elif model == "CP_heu_LNS.mzn":
-        name_test = ""
-
+    elif model == "CP_heu_LNS.mzn" or model == "CP_heu_chuffed.mzn":
+        name_test = "BS_HEU"
+    elif model == "CP_heu_LNS_impl.mzn" or model == "CP_heu_impl_chuffed.mzn":
+        name_test = "BS_HEU_IMPL"
+    elif model == "CP_heu_LNS_sym.mzn" or model == "CP_heu_sym_chuffed.mzn":
+        name_test = "BS_HEU_SYM"
+    elif model == "CP_heu_LNS_sym_impl.mzn" or model == "CP_heu_sym_impl_chuffed.mzn":
+        name_test = "BS_HEU_SYM_IMPL"
+    
     #Boundaries
     if boundaries == "standard":
         name_test = name_test + ""
@@ -228,18 +239,6 @@ def get_name_test(model, boundaries = "standard", solver = "gecode"):
     
     return name_test
 
-
-"""
-class SaveFileCP():
-    def __init__(self, path_save, table):
-        self.table = table
-        self.path_save = path_save
-        self.row = []
-
-    def add_row(self, row):
-
-    def save
-"""
 def process_res_table(res):
     if res.objective is not None and isinstance(res.objective, int):
         flag = "" 
@@ -249,22 +248,29 @@ def process_res_table(res):
     else:
         return str(res.status)
                 
-
-
 if __name__ == "__main__":    
     #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
     #models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 11
-    last_instance = 11
+    first_instance = 1
+    last_instance = 21
     file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
     save_solution_path = f"."#f"res/CP" 
 
-    configs = [["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
-               ["CP_heu_LNS_sym_impl2.mzn","standard","gecode"]
+    configs = [["CP_base.mzn","standard","gecode"],
+               ["CP_heu_LNS.mzn","standard","gecode"],
+               ["CP_heu_LNS_impl.mzn","standard","gecode"],
+               ["CP_heu_LNS_sym.mzn","standard","gecode"],
+               ["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
+
+               ["CP_base.mzn","standard","chuffed"],
+               ["CP_heu_chuffed.mzn","standard","chuffed"],
+               ["CP_heu_impl_chuffed.mzn","standard","chuffed"],
+               ["CP_heu_sym_chuffed.mzn","standard","chuffed"],
+               ["CP_heu_sym_impl_chuffed.mzn","standard","chuffed"]
                ]
 
     tableRes = PrettyTable() 

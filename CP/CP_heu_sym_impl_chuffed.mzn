@@ -71,15 +71,16 @@ constraint forall(i in 1..m)(
 constraint forall(i in 1..m)(
   load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
 );
- 
+
 %C8: All the couriers starts
 constraint forall(j in 1..n)(exists(i in 1..m)(x[j] == i));
-   
+
 %IMPLIED
 constraint forall(i in 1..m)(
         path[i,2] != n+1
-    );
+        );
 
+ 
 %SIMMETRY    
 
 %S1: If two couriers have the same capacity then they are symmetric,
@@ -108,8 +109,7 @@ constraint
 
 constraint cost = max(y);
   
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
+%%%%%%%% SEARCH STRATEGY %%%%%%%%%% 
 solve :: int_search(path, dom_w_deg, indomain_min)  
       :: restart_luby(100)
-      :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;

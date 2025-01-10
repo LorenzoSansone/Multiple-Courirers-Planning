@@ -3,8 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst11.dzn";
-
+%include "../instances_dzn/inst00.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -16,7 +15,6 @@ int: LB; %lower bound
 int: UB; %upper bound
 int: min_dist;
 int: max_dist;
-
 var LB..UB: cost;
 
 % DECISION VARIABLES
@@ -28,12 +26,6 @@ array[1..n] of var 1..m: x;
 
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
-
-%load[i] 
-int: max_load;
-max_load = sum([ l[i] | i in 1..m]);
-array[1..m] of var 0..max_load: load;
-
 
 %CONSTRAINTS
 
@@ -47,7 +39,7 @@ constraint forall(i in 1..m)(
     )
 );
 
-%C3: A package (is carried by only one courier only one time) and is delivered one time
+%C3: A package is carried by only one courier and is delivered one time 
 constraint alldifferent_except(path, {n+1});
 
 %C4 - Couriers Start and End at the Deposit
@@ -61,55 +53,22 @@ constraint forall(j in 1..n)(
             path[x[j], i] == j
         )
     );
-
+ 
 %C6 - Couriers can't go back to the base to take other packages and starts immediatly
 constraint forall(i in 1..m)(
     forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
- );
- 
-%C7 - Compute the load of each courier
-constraint forall(i in 1..m)(
-  load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
-);
- 
-%C8: All the couriers starts
-constraint forall(j in 1..n)(exists(i in 1..m)(x[j] == i));
-   
-%IMPLIED
-constraint forall(i in 1..m)(
-        path[i,2] != n+1
     );
 
-%SIMMETRY    
-
-%S1: If two couriers have the same capacity then they are symmetric,
-% to break the symmetry we impose an order (for the package they pick up) betweem them.
-constraint symmetry_breaking_constraint(
-    forall(courier1 in 1..m, courier2 in 1..m where courier1 < courier2)
-     ((l[courier1] == l[courier2]) -> (lex_less(row(path, courier1), row(path, courier2))))
-);
-
-%S2: Two couriers path are exchangeable if the maximum weight of the two is less than the minimum loading capacity
-% in that case we impose an ordering between them
-constraint symmetry_breaking_constraint(
-    forall(courier1 in 1..m, courier2 in 1..m where courier1 != courier2)
-    (
-      (l[courier1] > l[courier2]) ->
-      (load[courier1] >= load[courier2])
-));
-
-
 %%%%%%%% Objective function
-
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])
     );
 
 constraint cost = max(y);
-  
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
-solve :: int_search(path, dom_w_deg, indomain_min)  
-      :: restart_luby(100)
-      :: relax_and_reconstruct(array1d(path), 85)
-      minimize cost;
+
+%%%%%%%% SEARCH STRATEGY %%%%%%%%%% 
+%indomain_min -> Assign the smallest value in the domain
+%first_fail -> Choose the variable with the smallest domain
+
+solve :: int_search(path, first_fail, indomain_min) minimize cost; 

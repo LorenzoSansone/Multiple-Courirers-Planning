@@ -29,12 +29,6 @@ array[1..n] of var 1..m: x;
 %path[i,k] = j means courier i goes to point j as the k-th point in the tour
 array[1..m, 1..n+2] of var 1..n+1: path;
 
-%load[i] 
-int: max_load;
-max_load = sum([ l[i] | i in 1..m]);
-array[1..m] of var 0..max_load: load;
-
-
 %CONSTRAINTS
 
 %C1: Courier don't exceed their max load
@@ -62,45 +56,23 @@ constraint forall(j in 1..n)(
         )
     );
 
-%C6 - Couriers can't go back to the base to take other packages and starts immediatly
-constraint forall(i in 1..m)(
-    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1))
- );
- 
-%C7 - Compute the load of each courier
-constraint forall(i in 1..m)(
-  load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
-);
- 
-%C8: All the couriers starts
-constraint forall(j in 1..n)(exists(i in 1..m)(x[j] == i));
-   
 %IMPLIED
 constraint forall(i in 1..m)(
-        path[i,2] != n+1
+        if not exists(j in 1..n)(x[j] == i) then not exists(k in 2..n+1)(path[i,k] != n+1)
+        else path[i,2] != n+1
+        endif
     );
+    
 
-%SIMMETRY    
+%SYMMETRY
 
-%S1: If two couriers have the same capacity then they are symmetric,
-% to break the symmetry we impose an order (for the package they pick up) betweem them.
-constraint symmetry_breaking_constraint(
-    forall(courier1 in 1..m, courier2 in 1..m where courier1 < courier2)
-     ((l[courier1] == l[courier2]) -> (lex_less(row(path, courier1), row(path, courier2))))
+%S1 - Couriers can't go back to the base to take other packages and starts immediatly
+constraint symmetry_breaking_constraint (forall(i in 1..m)(
+    forall(j in 2..n+1)((path[i,j] == n+1) -> not exists(k in j..n+1)(path[i,k] != n+1)))
 );
-
-%S2: Two couriers path are exchangeable if the maximum weight of the two is less than the minimum loading capacity
-% in that case we impose an ordering between them
-constraint symmetry_breaking_constraint(
-    forall(courier1 in 1..m, courier2 in 1..m where courier1 != courier2)
-    (
-      (l[courier1] > l[courier2]) ->
-      (load[courier1] >= load[courier2])
-));
 
 
 %%%%%%%% Objective function
-
 constraint
     forall(i in 1..m) (
         y[i] = sum([ D[path[i, j1],path[i, j1+1] ] | j1 in 1..n+1])

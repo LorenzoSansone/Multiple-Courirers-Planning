@@ -3,7 +3,7 @@
 
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-include "../instances_dzn/inst11.dzn";
+%include "../instances_dzn/inst02.dzn";
 
 
 int: m; %num couriers
@@ -72,16 +72,7 @@ constraint forall(i in 1..m)(
   load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
 );
  
-%SIMMETRY
-
-%S1
-
-%constraint symmetry_breaking_constraint(
-%    forall(i in 1..m, j in 1..m where i!=j /\ l[i] == l[j])(
-%     load[i] >= load[z]
-%    )
-%   );
-    
+%SIMMETRY    
 
 %S1: If two couriers have the same capacity then they are symmetric,
 % to break the symmetry we impose an order (for the package they pick up) betweem them.
@@ -89,8 +80,6 @@ constraint symmetry_breaking_constraint(
     forall(courier1 in 1..m, courier2 in 1..m where courier1 < courier2)
      ((l[courier1] == l[courier2]) -> (lex_less(row(path, courier1), row(path, courier2))))
 );
-
-
 
 %S2: Two couriers path are exchangeable if the maximum weight of the two is less than the minimum loading capacity
 % in that case we impose an ordering between them
@@ -116,5 +105,3 @@ solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;
-
-%output [show(max_load)]
