@@ -135,10 +135,16 @@ def solve_model(custom_model, timeLimit ,params, solver):
 
   # Solve the problem
   if solver == "gecode":
+    start_time = time.time()
     result = instance.solve(timeout=datetime.timedelta(seconds = timeLimit))
+    end_time = time.time()
+
   elif solver == "chuffed":
-    result = instance.solve(free_search=True,timeout=datetime.timedelta(seconds = timeLimit))
-  return result
+    start_time = time.time()
+    result = instance.solve(free_search=True,timeout=datetime.timedelta(milliseconds = timeLimit * 1000))
+    end_time = time.time()
+
+  return result, int(end_time-start_time)
 
 def output_path_prepare(path): 
     path_out = []
@@ -151,6 +157,13 @@ def output_path_prepare(path):
         path_out.append(path_i_out)
     return path_out
 
+def print_res(res):
+    if res in None:
+        print(res)
+    else:
+        print(res)
+        print("-----")
+        print(res.statistics.keys())
         
 def save_solution(title, res, data_path, save_path, timeLimit):
     # extract number from data_path
@@ -158,24 +171,32 @@ def save_solution(title, res, data_path, save_path, timeLimit):
     number = match.group(1)
     #output = f"{number}"
     output_directory = save_path #"res/CP"
-
+    print("RES",res)
+    print("____-")
     if res is None:
-        time = timeLimit
+        time = 300
         optimal = False
         obj = None
         sol = []
     else:
         # prepare the solution dictionary
         if res.objective is None:
-            time = timeLimit
+            time = 300
             optimal = False
             obj = None
             sol = []
         else:
+            #print("CHIAVI",res.statistics.keys())
+            if res.status == minizinc.result.Status.OPTIMAL_SOLUTION:
+                time = timeLimit
+            else:
+                time = 300
+            """
             if res.statistics['solveTime'] is None:
                 time = timeLimit
             else:
                 time = math.floor(res.statistics['solveTime'].total_seconds())
+            """
             optimal = True if res.status == minizinc.result.Status.OPTIMAL_SOLUTION else False
             obj = res['objective']
             sol = output_path_prepare(res['path'])  
@@ -258,7 +279,7 @@ if __name__ == "__main__":
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
-    save_solution_path = f"."#f"res/CP" 
+    save_solution_path = f"../res/CP" 
 
     configs = [["CP_base.mzn","standard","gecode"],
                ["CP_heu_LNS.mzn","standard","gecode"],
@@ -272,7 +293,7 @@ if __name__ == "__main__":
                ["CP_heu_sym_chuffed.mzn","standard","chuffed"],
                ["CP_heu_sym_impl_chuffed.mzn","standard","chuffed"]
                ]
-
+    #configs = [["CP_base.mzn","standard","gecode"]]
     tableRes = PrettyTable() 
     tableRes.title = "MODEL"
     tableRes.add_column("inst",[str(x) for x in range(first_instance, last_instance+1) if x!=14])
@@ -331,14 +352,14 @@ if __name__ == "__main__":
             
             res = None
             try:
-                res = solve_model(model_path, timeLimit, params, solver)
+                res, time_exec = solve_model(model_path, timeLimit, params, solver)
             except Exception as e:
                 str_row = str_row + "Error"
                 save_file(file_name_error, mode_save_error ,str(e))
-                save_solution(title_json_test, None, data_path, save_solution_path, 300)
+                save_solution(title_json_test, None, data_path, save_solution_path, time_exec)
             else:
                 str_row = str_row + process_res_table(res)
-                save_solution(title_json_test, res, data_path, save_solution_path, 300)
+                save_solution(title_json_test, res, data_path, save_solution_path, time_exec)
             
             str_col.append(str_row)
 

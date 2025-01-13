@@ -1,0 +1,122 @@
+{
+    "BS_Gec": {
+        "time": 0,
+        "optimal": true,
+        "obj": 12,
+        "sol": [
+            [
+                3,
+                6,
+                5
+            ],
+            [
+                2,
+                4
+            ],
+            [
+                1,
+                7
+            ]
+        ]
+    },
+    "BS_HEU_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 12,
+        "sol": [
+            [
+                5,
+                4,
+                2
+            ],
+            [
+                3,
+                7
+            ],
+            [
+                6,
+                1
+            ]
+        ]
+    },
+    "BS_HEU_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 12,
+        "sol": [
+            [
+                5,
+                4,
+                2
+            ],
+            [
+                3,
+                6
+            ],
+            [
+                1,
+                7
+            ]
+        ]
+    },
+    "BS_HEU_SYM_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 12,
+        "sol": [
+            [
+                5,
+                4,
+                2
+            ],
+            [
+                3,
+                7
+            ],
+            [
+                6,
+                1
+            ]
+        ]
+    },
+    "BS_HEU_SYM_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 12,
+        "sol": [
+            [
+                5,
+                4,
+                2
+            ],
+            [
+                3,
+                6
+            ],
+            [
+                1,
+                7
+            ]
+        ]
+    },
+    "BS_Chuf": {
+        "time": 0,
+        "optimal": true,
+        "obj": 12,
+        "sol": [
+            [
+                3,
+                6,
+                5
+            ],
+            [
+                2,
+                4
+            ],
+            [
+                1,
+                7
+            ]
+        ]
+    }
+}

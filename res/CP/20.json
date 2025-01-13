@@ -1,0 +1,32 @@
+{
+    "BS_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_SYM_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_SYM_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    }
+}

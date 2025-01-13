@@ -1,0 +1,86 @@
+{
+    "BS_Gec": {
+        "time": 0,
+        "optimal": true,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    },
+    "BS_HEU_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    },
+    "BS_HEU_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    },
+    "BS_HEU_SYM_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    },
+    "BS_HEU_SYM_IMPL_Gec": {
+        "time": 300,
+        "optimal": false,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    },
+    "BS_Chuf": {
+        "time": 0,
+        "optimal": true,
+        "obj": 206,
+        "sol": [
+            [
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ]
+    }
+}
