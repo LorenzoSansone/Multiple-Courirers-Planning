@@ -28,5 +28,35 @@
         "optimal": false,
         "obj": null,
         "sol": []
+    },
+    "BS_Chuf": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_Chuf": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_IMPL_Chuf": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_SYM_Chuf": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
+    },
+    "BS_HEU_SYM_IMPL_Chuf": {
+        "time": 300,
+        "optimal": false,
+        "obj": null,
+        "sol": []
     }
 }

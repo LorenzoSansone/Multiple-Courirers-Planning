@@ -281,22 +281,22 @@ if __name__ == "__main__":
     mode_save_error = "a"
     save_solution_path = f"../res/CP" 
 
-    configs = [["CP_base.mzn","standard","gecode"],
-               ["CP_heu_LNS.mzn","standard","gecode"],
-               ["CP_heu_LNS_impl.mzn","standard","gecode"],
-               ["CP_heu_LNS_sym.mzn","standard","gecode"],
-               ["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
-
-               ["CP_base.mzn","standard","chuffed"],
-               ["CP_heu_chuffed.mzn","standard","chuffed"],
-               ["CP_heu_impl_chuffed.mzn","standard","chuffed"],
+    #configs = [["CP_base.mzn","standard","gecode"],
+    #           ["CP_heu_LNS.mzn","standard","gecode"],
+    #           ["CP_heu_LNS_impl.mzn","standard","gecode"],
+    #           ["CP_heu_LNS_sym.mzn","standard","gecode"],
+    #           ["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
+    configs = [
+               #["CP_base.mzn","standard","chuffed"],
+               #["CP_heu_chuffed.mzn","standard","chuffed"],
+               #["CP_heu_impl_chuffed.mzn","standard","chuffed"],
                ["CP_heu_sym_chuffed.mzn","standard","chuffed"],
                ["CP_heu_sym_impl_chuffed.mzn","standard","chuffed"]
                ]
     #configs = [["CP_base.mzn","standard","gecode"]]
     tableRes = PrettyTable() 
     tableRes.title = "MODEL"
-    tableRes.add_column("inst",[str(x) for x in range(first_instance, last_instance+1) if x!=14])
+    tableRes.add_column("inst",[str(x) for x in range(first_instance, last_instance+1) if x!=14 and x!=15 and x!=18])
 
     save_file(file_name_save, mode_save, str(tableRes))
     
@@ -307,7 +307,7 @@ if __name__ == "__main__":
         str_col = []
 
         #Run a particular configuration for all instances
-        for i in [x for x in range(first_instance, last_instance+1) if x!=14]: #for i in range(first_instance, last_instance+1):
+        for i in [x for x in range(first_instance, last_instance+1) if x!=14 and x!=15 and x!=18]: #for i in range(first_instance, last_instance+1):
             print(config[0], config[1], config[2], i)
             timeLimit = 300
 

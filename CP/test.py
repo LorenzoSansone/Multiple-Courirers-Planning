@@ -33,9 +33,10 @@ if __name__ == "__main__":
     output_directory = "../res/CP"
     first_instance = 1
     last_instance = 21   
-    tableRes = PrettyTable(["Inst", "BS_Gec", "BS_HEU_Gec", "BS_HEU_IMPL_Gec", "BS_HEU_SYM_Gec","BS_HEU_SYM_IMPL_Gec"])
+    tableRes = PrettyTable(["I", "BSG", "BS_HEUG", "BS_HEU_IMPLG", "BS_HEU_SymG","BS_HEU_Sym_ImplG",
+                                    "BSC", "BS_HEUC", "BS_HEU_IMPLC", "HueSYMCh","HueSymImpCh"])
 
-    for i in [x for x in range(first_instance, last_instance+1) if x!=14]:
+    for i in [x for x in range(first_instance, last_instance+1)]:
         data = load_data(output_directory,f"{i:02d}")
         print(i)
         if data["BS_Gec"]["optimal"] == True:
@@ -62,17 +63,49 @@ if __name__ == "__main__":
             str_BS_HEU_SYM_IMPL = '\033[92m' + f"{data["BS_HEU_SYM_IMPL_Gec"]["obj"]}" + '\033[0m'
         else:
             str_BS_HEU_SYM_IMPL = f"{data["BS_HEU_SYM_IMPL_Gec"]["obj"]}"    
-      
+        ##################
+        if data["BS_Chuf"]["optimal"] == True:
+            str_BS_Chuf = '\033[92m' + f"{data["BS_Chuf"]["obj"]}" + '\033[0m'
+        else:
+            str_BS_Chuf = f"{data["BS_Chuf"]["obj"]}"
 
+        if data["BS_HEU_Chuf"]["optimal"] == True:
+            str_BS_HEU_Chuf = '\033[92m' + f"{data["BS_HEU_Chuf"]["obj"]}" + '\033[0m'
+        else:
+            str_BS_HEU_Chuf = f"{data["BS_HEU_Chuf"]["obj"]}"
+
+        if data["BS_HEU_IMPL_Chuf"]["optimal"] == True:
+            str_BS_HEU_IMPL_Chuf = '\033[92m' + f"{data["BS_HEU_IMPL_Chuf"]["obj"]}" + '\033[0m'
+        else:
+            str_BS_HEU_IMPL_Chuf = f"{data["BS_HEU_IMPL_Chuf"]["obj"]}"
+
+        if data["BS_HEU_SYM_Chuf"]["optimal"] == True:
+            str_BS_HEU_SYM_Chuf = '\033[92m' + f"{data["BS_HEU_SYM_Chuf"]["obj"]}" + '\033[0m'
+        else:
+            str_BS_HEU_SYM_Chuf = f"{data["BS_HEU_SYM_Chuf"]["obj"]}"    
+
+        if data["BS_HEU_SYM_IMPL_Chuf"]["optimal"] == True:
+            str_BS_HEU_SYM_IMPL_Chuf = '\033[92m' + f"{data["BS_HEU_SYM_IMPL_Chuf"]["obj"]}" + '\033[0m'
+        else:
+            str_BS_HEU_SYM_IMPL_Chuf = f"{data["BS_HEU_SYM_IMPL_Chuf"]["obj"]}" 
+      
         tableRes.add_row([f"{i:02d}",
                           str_BS,
                           str_BS_HEU,
                           str_BS_HEU_IMPL,
                           str_BS_HEU_SYM,
-                          str_BS_HEU_SYM_IMPL])
+                          str_BS_HEU_SYM_IMPL,
+                          str_BS_Chuf,
+                          str_BS_HEU_Chuf,
+                          str_BS_HEU_IMPL_Chuf,
+                          str_BS_HEU_SYM_Chuf,
+                          str_BS_HEU_SYM_IMPL_Chuf])
     print(tableRes)
-     
     
+    file = open("file_prove.txt", "w")  # append mode
+    file.write(str(tableRes))
+    file.close()
+
     print()
     #tableRes.add_row
     #l = [190, 185, 185, 190, 195, 185]
