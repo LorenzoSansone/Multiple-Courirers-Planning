@@ -1,1 +1,0 @@
-print([str(x) for x in range(0, 21+1) if x!=14 and x!=15])
