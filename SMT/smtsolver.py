@@ -7,7 +7,6 @@ import time
 import numpy as np
 import math
 from datetime import timedelta
-from z3 import is_true
 from dataclasses import dataclass
 from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
 from Z3_SMT_Base_Solver import Z3_SMT_Base_Solver
@@ -40,12 +39,16 @@ def main():
             start_time = time.time()
 
             # Instantiate the solver based on the model
-            match model:
-                case "z3_smt_symbrk": solver = Z3_SMT_SymBrk_Solver(file_path, TIMEOUT_TIME)
-                case "z3_smt_base": solver = Z3_SMT_Base_Solver(file_path, TIMEOUT_TIME)
-                case "z3_smt_symbrk_implconstr": solver = Z3_SMT_SymBrk_ImplConstr_Solver(file_path, TIMEOUT_TIME)
-                case "z3_smt_symbrk_binarysearch": solver = Z3_SMT_SymBrk_BinarySearch(file_path, TIMEOUT_TIME)
-                case _: raise ValueError(f"Invalid model name: {model}")
+            if model == "z3_smt_symbrk":
+                solver = Z3_SMT_SymBrk_Solver(file_path, TIMEOUT_TIME)
+            elif model == "z3_smt_base":
+                solver = Z3_SMT_Base_Solver(file_path, TIMEOUT_TIME)
+            elif model == "z3_smt_symbrk_implconstr":
+                solver = Z3_SMT_SymBrk_ImplConstr_Solver(file_path, TIMEOUT_TIME)
+            elif model == "z3_smt_symbrk_binarysearch":
+                solver = Z3_SMT_SymBrk_BinarySearch(file_path, TIMEOUT_TIME)
+            else:
+                raise ValueError(f"Invalid model name: {model}")
 
             # Solve the problem
             print("\tSolving... ", end='', flush=True)
@@ -66,5 +69,6 @@ def main():
                 result=result
             )
             print(f"Solution saved to {output_file}")
+
 if __name__ == "__main__":
     main()

@@ -21,6 +21,7 @@ def main():
     parser.add_argument("start", type=int, help="Start of the instance range (inclusive).")
     parser.add_argument("end", type=int, help="End of the instance range (inclusive).")
     parser.add_argument("--model", type=str, choices=ALL_MODELS, help="Name of the model to use. If not specified, solves for all models.")
+    parser.add_argument("--mzn-dir", type=str, default=".", help="Directory containing the MZN files.")
     args = parser.parse_args()
 
     # Ensure output directory exists
@@ -51,14 +52,18 @@ def main():
             LB = max(LB1, LB2)
             UB = min(UB1, UB2)
 
-            # Load the MiniZinc model
-            mzn_path = f"MIP/{model}.mzn"
+            # Load and solve the model
+            mzn_path = os.path.join(args.mzn_dir, f"{model}.mzn")
             print(f"Loading model from: {mzn_path}")
             model_instance = Model(mzn_path)
-            solver_name = 'gurobi'
-            solver = Solver.lookup(solver_name)
             
-            # Create a new instance for each iteration
+            # Try to use Gurobi first, fall back to COIN-BC if not available
+            try:
+                solver = Solver.lookup("gurobi")
+            except:
+                print("Gurobi not available, falling back to COIN-BC solver")
+                solver = Solver.lookup("coin-bc")
+            
             instance = Instance(solver, model_instance)
             
             # Set all parameters first

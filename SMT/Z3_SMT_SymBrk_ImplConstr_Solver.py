@@ -1,5 +1,4 @@
 import z3
-from z3 import is_true
 import numpy as np
 import time
 from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
@@ -207,7 +206,7 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
             objective = result.objective if result.objective is not None else None
         solution_data = {"y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]}
         if hasattr(solution, "y"):
-            solution_data["y"] = [[[1 if is_true(y_val) else 0 for y_val in row] for row in courier] for courier in solution.y]
+            solution_data["y"] = [[[1 if str(model_val) == "True" else 0 for model_val in row] for row in courier] for courier in solution.y]
         solver_solution_dict = {
             "time": time_limit if not optimal else math.floor(result.statistics['solveTime'].total_seconds()),
             "optimal": optimal,

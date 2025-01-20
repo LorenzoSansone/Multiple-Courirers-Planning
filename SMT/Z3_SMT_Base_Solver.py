@@ -1,10 +1,10 @@
 import z3
-from z3 import is_true
 import numpy as np
 import time
 from utils import minutes_to_milliseconds, seconds_to_milliseconds, milliseconds_to_seconds, Solution, Status, Result
 from datetime import timedelta
 import math, os, json
+
 class Z3_SMT_Base_Solver: # name: z3_smt_base
     def __init__(self, input_file, timeout_time):
         self.parse_input(input_file)
@@ -184,7 +184,7 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             objective = result.objective if result.objective is not None else None
         solution_data = {"y": [[[0 for _ in range(n+1)] for _ in range(n+1)] for _ in range(m)]}
         if hasattr(solution, "y"):
-            solution_data["y"] = [[[1 if is_true(y_val) else 0 for y_val in row] for row in courier] for courier in solution.y]
+            solution_data["y"] = [[[1 if str(model_val) == "True" else 0 for model_val in row] for row in courier] for courier in solution.y]
         solver_solution_dict = {
             "time": time_limit if not optimal else math.floor(result.statistics['solveTime'].total_seconds()),
             "optimal": optimal,
@@ -315,6 +315,7 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
         print(f"Solution found: {'Yes' if best_solution is not None else 'No'}")
         
         return best_solution, best_objective
+
     def extract_solution(self, model, x, y):
         solution = Solution(
             x=[[model.evaluate(x[i][j]) for j in range(self.num_items)] for i in range(self.num_couriers)],
