@@ -323,27 +323,54 @@ def solve_problem(m, n, l, s, D,  symm_constr = False, search = "linear", time_e
 
     return time_exe, opt, obj, path
 
+def input_args():
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "LNS":
+            arg_sym = False
+            arg_search = "linear"
+        elif sys.argv[1] == "LNS_SYB":
+            arg_sym = True
+            arg_search = "linear"
+        elif sys.argv[1] == "BNS":
+            arg_sym = False
+            arg_search = "binary"
+        elif sys.argv[1] == "BNS_SYB":
+            arg_sym = True
+            arg_search = "binary"
+
+        arg_inst = int(sys.argv[2])
+
+    else:
+        arg_inst = 1
+        arg_search = "linear"
+        arg_sym = False
+    print(f"Inst:{arg_inst} search:{arg_search} sym:{arg_sym}")
+    return arg_inst, arg_search, arg_sym
+
 if __name__ == "__main__":
-    first_instance = 1
-    last_instance = 21
+    config_inst, config_search, config_sym = input_args()
+
+    first_instance = config_inst
+    last_instance = config_inst
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
     mode_file_error = "a"
-    output_directory = "../res/SAT"
+    output_directory = "."#"../res/SAT"
     mp.set_start_method("spawn")
 
+    """
     configs = [["linear", True],
               ["linear", False],
               ["binary", True],
               ["binary", False]]
-    #configs = [["linear",False]]
+    """
+    configs = [[config_search,config_sym]]
     for config in configs:
         # Hyperparameter
         search_strategy = config[0]
         symm_break_constr = config[1]
         time_execution = 300
-
 
         for i in range(first_instance, last_instance+1):
             file_path = f'instances/inst{i:02d}.dat'
