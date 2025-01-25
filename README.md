@@ -13,5 +13,5 @@ docker run mcp-solver <model_type> <model> <instances>
 ```
 
 ## Authors
-Leonardo Mannini\\
-Lorenzo Sansone
+- Leonardo Mannini
+- Lorenzo Sansone
