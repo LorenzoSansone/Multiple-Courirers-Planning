@@ -1,10 +1,5 @@
-% Use this editor as a MiniZinc scratch book
-%Define input data
-
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst02.dzn";
-
 
 int: m; %num couriers
 int: n; %num items
@@ -33,7 +28,6 @@ array[1..m, 1..n+2] of var 1..n+1: path;
 int: max_load;
 max_load = sum([ l[i] | i in 1..m]);
 array[1..m] of var 0..max_load: load;
-
 
 %CONSTRAINTS
 
@@ -72,7 +66,7 @@ constraint forall(i in 1..m)(
   load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
 );
  
-%SIMMETRY    
+%SIMMETRY BREAKING CONSTRAINTS
 
 %S1: If two couriers have the same capacity then they are symmetric,
 % to break the symmetry we impose an order (for the package they pick up) betweem them.
@@ -100,7 +94,7 @@ constraint
 
 constraint cost = max(y);
   
-%%%%%%%% SEARCH STRATEGY %%%%%%%%%% (Gecode on inst12)
+%%%%%%%% SEARCH STRATEGY %%%%%%%%%%
 solve :: int_search(path, dom_w_deg, indomain_min)  
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
