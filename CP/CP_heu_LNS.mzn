@@ -1,9 +1,5 @@
-% Use this editor as a MiniZinc scratch book
-%Define input data
-
 include "bin_packing_capa.mzn";
 include "globals.mzn";
-%include "../instances_dzn/inst01.dzn";
 
 int: m; %num couriers
 int: n; %num items
@@ -76,8 +72,3 @@ solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
       :: relax_and_reconstruct(array1d(path), 85)
       minimize cost;
-     
-
-
-
-
