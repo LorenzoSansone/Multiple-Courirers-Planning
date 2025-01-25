@@ -66,7 +66,6 @@ constraint cost = max(y);
 %%%%%%%% SEARCH STRATEGY %%%%%%%%%%
 %dom_w_deg -> Weighted degree heuristic
 %restart_luby -> restart strategiy
-%relax_and_reconstruct -> large neighbourhood search 
 
 solve :: int_search(path, dom_w_deg, indomain_min)
       :: restart_luby(100)
