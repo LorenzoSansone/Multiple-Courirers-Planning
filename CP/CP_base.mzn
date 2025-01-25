@@ -1,6 +1,3 @@
-% Use this editor as a MiniZinc scratch book
-%Define input data
-
 include "bin_packing_capa.mzn";
 include "globals.mzn";
 
