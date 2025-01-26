@@ -30,9 +30,9 @@ def load_data(output_directory, output_file):
     return data
         
 if __name__ == "__main__":
-    output_directory = "../res/CP"
+    output_directory = "."#"../res/CP"
     first_instance = 1
-    last_instance = 21   
+    last_instance = 1   
     tableRes = PrettyTable(["I", "BSG", "BS_HEUG", "BS_HEU_IMPLG", "BS_HEU_SymG","BS_HEU_Sym_ImplG",
                                     "BSC", "BS_HEUC", "BS_HEU_IMPLC", "HueSYMCh","HueSymImpCh"])
 

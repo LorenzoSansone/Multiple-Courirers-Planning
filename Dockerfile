@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir z3==0.2.0 && \
     pip install --no-cache-dir z3-solver==4.13.3.0 && \
-    pip install --no-cache-dir minizinc==0.3.0 && \
+    pip install --no-cache-dir minizinc==0.9.0 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Verify Z3 installation
@@ -73,7 +73,7 @@ run_solver() {\n\
             cd SMT && PYTHONPATH=/app python smtsolver.py --model $IMPLEMENTATION $START_INSTANCE $END_INSTANCE\n\
             ;;\n\
         "cp")\n\
-            cd CP && python cp_solver.py $IMPLEMENTATION $instance\n\
+            cd CP && python cp_solver_all_model.py $IMPLEMENTATION $instance\n\
             ;;\n\
         "sat")\n\
             cd SAT && python model_sat.py $IMPLEMENTATION $instance\n\

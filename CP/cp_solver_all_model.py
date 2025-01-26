@@ -16,6 +16,7 @@ import json
 import numpy as np
 from prettytable import PrettyTable 
 import time
+import sys
 
 # Function to parse the value after the equal sign
 def parse_value(value):
@@ -268,32 +269,89 @@ def process_res_table(res):
         return str(res.objective) + flag
     else:
         return str(res.status)
-                
-if __name__ == "__main__":    
-    #models_params_path_list = ["CP_base.mzn", "CP_heu_LNS.mzn", "CP_heu_LNS_sym.mzn","CP_heu_LNS_sym_impl.mzn","CP_heu_LNS_sym_impl2.mzn","CP_heu_LNS_sym2_impl.mzn"]
-    #models_params_path_list = ["model_all_start_chuffed.mzn"]
 
-    first_instance = 1
-    last_instance = 21
+def input_args():
+    if len(sys.argv) > 1:
+
+        model, solver = sys.argv[1].rsplit("_", 1)
+        #Bs model
+        if model == "bs" and solver == "gecode":
+            arg_model = "CP_base.mzn"
+            arg_solver = "gecode"
+        elif model == "bs" and solver == "chuffed":
+            arg_model = "CP_base.mzn"
+            arg_solver = "chuffed"
+            
+        #Heu model
+        elif model == "bs_heu" and solver == "gecode":
+            arg_model = "CP_heu_LNS.mzn"
+            arg_solver = "gecode"
+        elif model == "bs_heu" and solver == "chuffed":
+            arg_model = "CP_heu_chuffed.mzn"
+            arg_solver = "chuffed"
+
+        #Heu impl model
+        elif model == "bs_heu_impl" and solver == "gecode":
+            arg_model = "CP_heu_LNS_impl.mzn"
+            arg_solver = "gecode"
+        elif model == "bs_heu_impl" and solver == "chuffed":
+            arg_model = "CP_heu_impl_chuffed.mzn"
+            arg_solver = "chuffed"
+        
+        #Heu sym model
+        elif model == "bs_heu_sym" and solver == "gecode":
+            arg_model = "CP_heu_LNS_sym.mzn"
+            arg_solver = "gecode"
+        elif model == "bs_heu_sym" and solver == "chuffed":
+            arg_model = "CP_heu_sym_chuffed.mzn"
+            arg_solver = "chuffed"
+        
+        #Heu impl sym model
+        elif model == "bs_heu_sym_impl" and solver == "gecode":
+            arg_model = "CP_heu_LNS_sym_impl.mzn"
+            arg_solver = "gecode"
+        elif model == "bs_heu_sym_impl" and solver == "chuffed":
+            arg_model = "CP_heu_sym_impl_chuffed.mzn"
+            arg_solver = "chuffed"
+        else:
+            arg_model = "CP_base.mzn"
+            arg_solver = "gecode"
+        
+        arg_inst = int(sys.argv[2])
+    else:
+        arg_model = "CP_base.mzn"
+        arg_solver = "gecode"
+        arg_inst = 1
+    
+    return arg_model, arg_solver, arg_inst
+    
+
+
+if __name__ == "__main__":    
+    config_model, config_solver, config_inst = input_args()
+    print(f"model:{config_model}, solver:{config_solver}, inst{config_inst}")
+
+    first_instance = config_inst
+    last_instance = config_inst
     file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
-    save_solution_path = f"../res/CP" 
+    save_solution_path = "." #f"../res/CP" 
 
     #configs = [["CP_base.mzn","standard","gecode"],
     #           ["CP_heu_LNS.mzn","standard","gecode"],
     #           ["CP_heu_LNS_impl.mzn","standard","gecode"],
     #           ["CP_heu_LNS_sym.mzn","standard","gecode"],
     #           ["CP_heu_LNS_sym_impl.mzn","standard","gecode"],
-    configs = [
+    #configs = [
                #["CP_base.mzn","standard","chuffed"],
                #["CP_heu_chuffed.mzn","standard","chuffed"],
                #["CP_heu_impl_chuffed.mzn","standard","chuffed"],
-               ["CP_heu_sym_chuffed.mzn","standard","chuffed"],
-               ["CP_heu_sym_impl_chuffed.mzn","standard","chuffed"]
-               ]
-    #configs = [["CP_base.mzn","standard","gecode"]]
+    #           ["CP_heu_sym_chuffed.mzn","standard","chuffed"],
+    #           ["CP_heu_sym_impl_chuffed.mzn","standard","chuffed"]
+    #           ]
+    configs = [[config_model,"standard",config_solver]]
     tableRes = PrettyTable() 
     tableRes.title = "MODEL"
     tableRes.add_column("inst",[str(x) for x in range(first_instance, last_instance+1) if x!=14 and x!=15 and x!=18])
