@@ -1,6 +1,6 @@
 {
     "z3_smt_base": {
-        "time": 8,
+        "time": 7,
         "optimal": true,
         "obj": 226,
         "sol": [

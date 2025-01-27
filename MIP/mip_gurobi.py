@@ -5,9 +5,20 @@ import os
 import math
 import utils as utils
 
-
-
-
+# Initialize Gurobi environment with specific parameters
+try:
+    # Create environment with empty parameters
+    env = gp.Env(empty=True)
+    
+    # Set license parameters directly
+    env.setParam('LICENSEID', '2544702')  # Your license ID from the error message
+    env.setParam('HOSTID', 'efe838ee')    # Your host ID from the error message
+    
+    # Start the environment
+    env.start()
+except Exception as e:
+    print(f"Error initializing Gurobi environment: {e}")
+    env = None
 
 def save_solution(solution, input_file, m, n, solver_name='gurobipy', time_limit = 300):
     instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
@@ -66,7 +77,15 @@ def save_solution(solution, input_file, m, n, solver_name='gurobipy', time_limit
     print(f"Solution saved to {output_file}")
     return output_file
 def create_mcp_model(m, n, l, s, D, locations):
-    model = gp.Model("MCP")
+    try:
+        if env is not None:
+            model = gp.Model("MCP", env=env)
+        else:
+            model = gp.Model("MCP")
+    except Exception as e:
+        print(f"Error creating model: {e}")
+        raise
+
     # Variables
     x = model.addVars(m, n, vtype=GRB.BINARY, name='x')  # x[i, j] = 1 if courier i delivers item j
     y = model.addVars(m, locations, locations, vtype=GRB.BINARY, name='y')  # y[i, j1, j2] = 1 if courier i travels from j1 to j2

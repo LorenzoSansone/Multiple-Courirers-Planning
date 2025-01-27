@@ -1,0 +1,22 @@
+no function or predicate with this signature found: `inverse(array[int] of var opt int,array[int] of var opt int)'
+Cannot use the following functions or predicates with the same identifier:
+function array [$$E] of $$F : inverse(array [$$F] of $$E: f);
+    (requires 1 argument, but 2 given)
+function array [$$E] of var $$F : inverse(array [$$F] of var $$E: f);
+    (requires 1 argument, but 2 given)
+function array [$$E] of var opt $$F : inverse(array [$$F] of var opt $$E: f);
+    (requires 1 argument, but 2 given)
+predicate inverse(array [int] of var int: f,array [int] of var int: invf);
+    (argument 1 expects type array[int] of var int, but type array[int] of var opt int given)
+    (argument 2 expects type array[int] of var int, but type array[int] of var opt int given)
+no function or predicate with this signature found: `inverse(array[int] of var opt int,array[int] of var opt int)'
+Cannot use the following functions or predicates with the same identifier:
+function array [$$E] of $$F : inverse(array [$$F] of $$E: f);
+    (requires 1 argument, but 2 given)
+function array [$$E] of var $$F : inverse(array [$$F] of var $$E: f);
+    (requires 1 argument, but 2 given)
+function array [$$E] of var opt $$F : inverse(array [$$F] of var opt $$E: f);
+    (requires 1 argument, but 2 given)
+predicate inverse(array [int] of var int: f,array [int] of var int: invf);
+    (argument 1 expects type array[int] of var int, but type array[int] of var opt int given)
+    (argument 2 expects type array[int] of var int, but type array[int] of var opt int given)

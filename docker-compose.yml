@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 
 services:
   base:
@@ -15,6 +15,7 @@ services:
     depends_on:
       - base
     volumes:
+      - .:/app
       - ./res:/app/res
 
   sat:
@@ -41,8 +42,8 @@ services:
     build:
       context: .
       dockerfile: MIP/Dockerfile
-    image: mcp-mip
+    volumes:
+      - .:/app
+      - /etc/machine-id:/etc/machine-id:ro
     depends_on:
       - base
-    volumes:
-      - ./res:/app/res 
