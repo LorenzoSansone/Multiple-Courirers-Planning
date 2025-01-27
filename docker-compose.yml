@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: mcp-base
+
+  cp:
+    build:
+      context: .
+      dockerfile: CP/Dockerfile
+    image: mcp-cp
+    depends_on:
+      - base
+    volumes:
+      - ./res:/app/res
+
+  sat:
+    build:
+      context: .
+      dockerfile: SAT/Dockerfile
+    image: mcp-sat
+    depends_on:
+      - base
+    volumes:
+      - ./res:/app/res
+
+  smt:
+    build:
+      context: .
+      dockerfile: SMT/Dockerfile
+    image: mcp-smt
+    depends_on:
+      - base
+    volumes:
+      - ./res:/app/res
+
+  mip:
+    build:
+      context: .
+      dockerfile: MIP/Dockerfile
+    image: mcp-mip
+    depends_on:
+      - base
+    volumes:
+      - ./res:/app/res 

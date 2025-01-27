@@ -1,5 +1,13 @@
 import math, os, json
 import numpy as np
+import datetime
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.timedelta):
+            return str(obj)
+        return super().default(obj)
+
 def read_input(file_path):    
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -12,64 +20,52 @@ def read_input(file_path):
     return m, n, l, s, D, locations
 
 
-def save_solution_by_solver(input_file, m, n, model_name, time_limit=300, result=None):
-    # Determine the output file path
-    instance_number = input_file.split('/')[-1].split('.')[0].replace('inst', '')
-    output_dir = "res/MIP"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    output_file = os.path.join(output_dir, f"{instance_number}.json")
+def save_solution_by_solver(input_file, m, n, model_name, time_limit, result):
+    # Create a dictionary to store the solution
+    solution = {
+        'input_file': input_file,
+        'model': model_name,
+        'time_limit': time_limit,
+        'status': result.status.name if result.status else "UNKNOWN",
+        'statistics': result.statistics if hasattr(result, 'statistics') else {},
+        'solution': None
+    }
     
-    # Prepare the solution dictionary
-    if result is None or result.solution is None:
-        solution_dict = {
-            "time": time_limit,
-            "optimal": False,
-            "obj": None,
-            "sol": []
-        }
-    else:
-        # Extract routes from y matrix
-        routes = []
-        for courier in range(m):
-            route = []
-            current_location = n  # Start at origin
-            while True:
-                next_location = None
-                for j2 in range(n+1):
-                    if result.solution.y[courier][current_location][j2] == 1:
-                        next_location = j2
+    # If a solution was found and it's not UNSATISFIABLE
+    if result.solution is not None and result.status.name != "UNSATISFIABLE":
+        try:
+            routes = []
+            for courier in range(m):
+                route = []
+                current_location = n  # Start at depot (last location)
+                while True:
+                    route.append(current_location)
+                    next_location = None
+                    for j2 in range(n+1):
+                        if result.solution.y[courier][current_location][j2] == 1:
+                            next_location = j2
+                            break
+                    if next_location is None or next_location == n:  # Back at depot
+                        route.append(n)  # Add depot at end
                         break
-
-                if next_location is None or next_location == n:
-                    break
-
-                route.append(next_location + 1)  # +1 to match 1-based indexing
-                current_location = next_location
+                    current_location = next_location
+                routes.append(route)
             
-            routes.append(route)
-
-        solution_dict = {
-            "time": math.floor(result.statistics['solveTime'].total_seconds()),
-            "optimal": result.status.name == 'OPTIMAL_SOLUTION',
-            "obj": result.objective,
-            "sol": routes
-        }
-
-    # Read existing solutions or create new dictionary
-    try:
-        with open(output_file, 'r') as infile:
-            existing_solutions = json.load(infile)
-    except (FileNotFoundError, json.JSONDecodeError):
-        existing_solutions = {}
-
-    # Add or update the current model's solution
-    existing_solutions[model_name] = solution_dict
-
-    # Write updated solutions back to the file
-    with open(output_file, 'w') as outfile:
-        json.dump(existing_solutions, outfile, indent=4)
-
+            solution['solution'] = {
+                'max_distance': result.solution.max_distance if hasattr(result.solution, 'max_distance') else None,
+                'x': result.solution.x if hasattr(result.solution, 'x') else None,
+                'y': result.solution.y if hasattr(result.solution, 'y') else None,
+                'routes': routes
+            }
+        except Exception as e:
+            print(f"Warning: Error extracting solution details: {str(e)}")
+            solution['solution'] = None
+    
+    # Save to file
+    output_file = f"res/MIP/{input_file[:-4]}_{model_name}.json"
+    with open(output_file, 'w') as f:
+        json.dump(solution, f, indent=4, cls=CustomJSONEncoder)
+    
     return output_file
 
 def check_load_sizes(x, s, m, n, l):

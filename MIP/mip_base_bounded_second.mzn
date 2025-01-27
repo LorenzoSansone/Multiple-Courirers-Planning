@@ -14,7 +14,7 @@ array[1..m] of var int: Distance;                       % Total distance for eac
 var LB..UB: max_distance;  % Restricted max_distance to the range [LB, UB]
 
 % Subtour elimination variables
-array[1..m, 1..n] of var 1..n: u;
+array[1..m, 1..locations-1] of var 1..locations-1: u;   % Position of each location in the route (excluding depot)
 
 % Constraints
 % Load constraint for each courier
@@ -32,8 +32,8 @@ constraint
 % Each courier starts at the origin and ends at the origin
 constraint
     forall(i in 1..m)(
-        sum(j in 1..n)(y[i, locations, j]) = 1 /\
-        sum(j in 1..n)(y[i, j, locations]) = 1
+        sum(j in 1..locations-1)(y[i, locations, j]) = 1 /\
+        sum(j in 1..locations-1)(y[i, j, locations]) = 1
     );
 
 % Prevent couriers from traveling from a point to itself
@@ -51,14 +51,36 @@ constraint
 
 % Flow conservation constraints
 constraint
-    forall(i in 1..m, j in 2..locations)(
+    forall(i in 1..m, j in 1..locations-1)(
         sum(k in 1..locations)(y[i, k, j]) = sum(k in 1..locations)(y[i, j, k])
     );
 
 % Subtour elimination constraints
 constraint
-    forall(i in 1..m, j in 1..n, k in 1..n where j != k)(
-        u[i, j] - u[i, k] + (n - 1) * y[i, j, k] <= n - 2
+    forall(i in 1..m, j in 1..locations-1, k in 1..locations-1 where j != k)(
+        u[i, j] - u[i, k] + (locations - 1) * y[i, j, k] <= locations - 2
+    );
+
+% Each location (except depot) must be visited at most once by each courier
+constraint
+    forall(i in 1..m, j in 1..locations-1)(
+        sum(k in 1..locations)(y[i, k, j]) <= 1
+    );
+
+% Link positions to routes - if a location is visited, it must have a position
+constraint
+    forall(i in 1..m, j in 1..locations-1)(
+        sum(k in 1..locations)(y[i, k, j]) = 1 -> u[i, j] >= 1
+    );
+
+% Ensure positions are consecutive
+constraint
+    forall(i in 1..m, j in 1..locations-1)(
+        sum(k in 1..locations)(y[i, k, j]) = 1 -> 
+        exists(k in 1..locations-1 where k != j)(
+            sum(l in 1..locations)(y[i, j, l]) = 1 /\ 
+            u[i, k] = u[i, j] + 1
+        )
     );
 
 % Distance calculation
