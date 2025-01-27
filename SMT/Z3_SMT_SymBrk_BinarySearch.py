@@ -286,10 +286,10 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         x, y, max_distance = self.create_smt_model()
         print("SMT model created")
         
-        best_solution, best_objective = self.find_best_solution(start_time, x, y, max_distance)
+        best_solution, best_objective, low, high = self.find_best_solution(start_time, x, y, max_distance)
         print(f"Best solution found with objective: {best_objective}")
         
-        result_obj = self.create_result_object(best_solution, best_objective, start_time)
+        result_obj = self.create_result_object(best_solution, start_time, low, high)
         print(f"Result object created with status: {result_obj.status}")
         
         return result_obj
@@ -355,8 +355,9 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         print("\n=== Binary Search complete ===")
         print(f"Final best objective: {best_objective}")
         print(f"Solution found: {'Yes' if best_solution is not None else 'No'}")
+        print(f"Search range at end: [{low}, {high}]")
         
-        return best_solution, best_objective
+        return best_solution, best_objective, low, high
 
     def extract_solution(self, model, x, y):
         # x remains the same as it's a nested list
@@ -372,7 +373,7 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         solution = Solution(x=x_sol, y=y_sol)
         return solution
 
-    def create_result_object(self, best_solution, best_objective, start_time):
+    def create_result_object(self, best_solution, start_time, low, high):
         result_obj = Result()
         solve_time = time.time() - start_time
         
@@ -384,13 +385,13 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
             result_obj.objective = best_objective
             result_obj.statistics = {'solveTime': timedelta(seconds=math.floor(solve_time))}
             
-            # Check if we hit the time limit
-            if solve_time >= minutes_to_milliseconds(5) / 1000:
-                result_obj.status = Status.FEASIBLE_SOLUTION
-                print("Found feasible solution (time limit reached)")
-            else:
+            # Only mark as optimal if binary search converged (low > high) and we didn't hit timeout
+            if solve_time < milliseconds_to_seconds(self.timeout_time) and low > high:
                 result_obj.status = Status.OPTIMAL_SOLUTION
-                print("Found optimal solution")
+                print("Found optimal solution (binary search converged)")
+            else:
+                result_obj.status = Status.FEASIBLE_SOLUTION
+                print("Found feasible solution (binary search did not converge or time limit reached)")
         
         return result_obj
 
