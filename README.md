@@ -13,11 +13,6 @@ To build all solver images:
 docker-compose build
 ```
 
-To build a specific solver (e.g., SMT):
-```bash
-docker-compose build smt
-```
-
 ## Running the Solvers
 
 ### CP (Constraint Programming)
