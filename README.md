@@ -48,10 +48,10 @@ docker run -v ./res:/app/res mcp-sat <model_name> <start_instance> <end_instance
 ```
 
 Available models:
-- `LNS`: Linear Neighborhood Search
-- `LNS_SYB`: Linear Neighborhood Search with Symmetry Breaking
-- `BNS`: Binary Neighborhood Search
-- `BNS_SYB`: Binary Neighborhood Search with Symmetry Breaking
+- `LNS`: Linear Search
+- `LNS_SYB`: Linear Search with symmetry breaking constraints
+- `BNS`: Binary Search
+- `BNS_SYB`: Binary Search with symmetry breaking constraints
 
 Example:
 ```bash
