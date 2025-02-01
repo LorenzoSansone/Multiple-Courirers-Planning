@@ -371,7 +371,7 @@ if __name__ == "__main__":
         # Hyperparameter
         search_strategy = config[0]
         symm_break_constr = config[1]
-        time_execution = 5
+        time_execution = 300
 
         for i in range(first_instance, last_instance+1):
             file_path = f'instances/inst{i:02d}.dat'
