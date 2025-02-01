@@ -317,27 +317,29 @@ def input_args():
             arg_model = "CP_base.mzn"
             arg_solver = "gecode"
         
-        arg_inst = int(sys.argv[2])
+        arg_inst_first = int(sys.argv[2])
+        arg_inst_last = int(sys.argv[3])
     else:
         arg_model = "CP_base.mzn"
         arg_solver = "gecode"
-        arg_inst = 1
+        arg_inst_first = 1
+        arg_inst_last = 1
     
-    return arg_model, arg_solver, arg_inst
+    return arg_model, arg_solver, arg_inst_first, arg_inst_last
     
 
 
 if __name__ == "__main__":    
-    config_model, config_solver, config_inst = input_args()
-    print(f"model:{config_model}, solver:{config_solver}, inst{config_inst}")
+    config_model, config_solver, config_inst_first, config_inst_last = input_args()
+    print(f"model:{config_model}, solver:{config_solver}, inst_first{config_inst_first}, inst_last{config_inst_last}")
 
-    first_instance = config_inst
-    last_instance = config_inst
+    first_instance = config_inst_first
+    last_instance = config_inst_last
     file_name_save = 'result_models_standard_chuffed.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
-    save_solution_path = "." #f"../res/CP" 
+    save_solution_path = f"../res/CP" 
 
     #configs = [["CP_base.mzn","standard","gecode"],
     #           ["CP_heu_LNS.mzn","standard","gecode"],
