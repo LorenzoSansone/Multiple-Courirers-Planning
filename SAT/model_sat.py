@@ -357,7 +357,7 @@ if __name__ == "__main__":
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
     mode_file_error = "a"
-    output_directory = "."#"../res/SAT"
+    output_directory = "../res/SAT"#"../res/SAT"
     mp.set_start_method("spawn")
 
     """
@@ -371,7 +371,7 @@ if __name__ == "__main__":
         # Hyperparameter
         search_strategy = config[0]
         symm_break_constr = config[1]
-        time_execution = 300
+        time_execution = 5
 
         for i in range(first_instance, last_instance+1):
             file_path = f'instances/inst{i:02d}.dat'

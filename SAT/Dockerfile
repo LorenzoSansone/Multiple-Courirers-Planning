@@ -9,5 +9,5 @@ RUN mkdir -p /app/res/SAT
 # Set working directory
 WORKDIR /app/SAT
 
-
+#CMD ["python", "./model_sat"]
 ENTRYPOINT ["python", "./model_sat.py"]
