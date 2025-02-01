@@ -275,8 +275,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run Gurobi solver on a range of instances.")
     parser.add_argument("start", type=int, help="Start of the instance range (inclusive).")
     parser.add_argument("end", type=int, help="End of the instance range (inclusive).")
-    parser.add_argument("--model", type=str, default="gurobi_base_bounded_second", 
-                       help="Model name for the solution file")
+
     args = parser.parse_args()
 
     # Ensure output directory exists
@@ -310,7 +309,7 @@ def main():
                 solution = extract_solution(model, time_limit)
                 
                 # Save solution
-                output_file = save_solution(solution, file_path, m, n, model, locations, args.model, time_limit)
+                output_file = save_solution(solution, file_path, m, n, model, locations, "gurobipy", time_limit)
                 
                 if solution:
                     debug(solution['x'], solution['y'], m, n, s, l, D)

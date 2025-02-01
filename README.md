@@ -88,12 +88,12 @@ docker-compose build mip
 
 To run the solver:
 ```bash
-docker run -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model <model_name> <start_instance> <end_instance>
+docker run -v ./res:/app/res -v ./instances:/app/instances mcp-mip <start_instance> <end_instance>
 ```
 
 For better container cleanup, use:
 ```bash
-docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model <model_name> <start_instance> <end_instance> && docker container prune -f
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip <start_instance> <end_instance> && docker container prune -f
 ```
 
 Available models:
@@ -104,7 +104,7 @@ Available models:
 
 Example:
 ```bash
-docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model mip_base_bounded_second 1 3 && docker container prune -f
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip 1 3 && docker container prune -f
 ```
 
 ## Results
