@@ -1,8 +1,8 @@
 FROM minizinc/minizinc:2.8.3
 
-WORKDIR /src/CP
+WORKDIR /app/CP
 
-COPY . /src
+COPY . /app
 
 RUN apt-get update
 RUN apt-get install -y python3
@@ -13,6 +13,6 @@ RUN python3 -m pip install --no-cache-dir -r ../requirements.txt
 #CMD ["python3", "main_cp.py"]
 #CMD ["python3", "cp_solver_all_model.py"]
 #CMD ["python3", "CP/python_debug.py"] 
-CMD python3 ./cp_solver_all_model.py $model $inst
+CMD python3 ./cp_solver_all_model.py $model $inst_first $inst_last
 #ENTRYPOINT [ "python3","./cp_solver_all_model.py" ]
 #CMD ["python3", "./cp_solver_all_model.py"] 
