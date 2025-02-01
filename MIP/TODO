@@ -1,5 +1,0 @@
-- fix the .json saving method
-- improve model (tighter ub-lb), symbrk, etc
-- focus on the peculiarities of the underlying optimization approach and try to come up with the best model so as to be able to tackle the instances in the best possible ways
-- Investigate if there are any implied constraints that you can benefit from.
-- save multiple models (history), and save them all in the file (also include gurobipy)

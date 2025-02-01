@@ -8,10 +8,6 @@ This project implements different approaches to solve the Multiple Couriers Plan
 
 ## Docker Setup
 
-The project includes Docker support for all implementations. Each solver has its own Docker image, and they can be built and run independently.
-
-### Building the Images
-
 To build all solver images:
 ```bash
 docker-compose build
@@ -22,47 +18,84 @@ To build a specific solver (e.g., SMT):
 docker-compose build smt
 ```
 
-### Running the Solvers
+## Running the Solvers
 
-Each solver can be run using Docker with the following format:
+### CP (Constraint Programming)
+```bash
+docker run -v ./res:/app/res mcp-cp --model <model_name> <start_instance> <end_instance>
+```
 
-#### SMT Solver
+Available models:
+- `CP_base`: Base CP model
+- `CP_heu_chuffed`: CP with heuristics using Chuffed solver
+- `CP_heu_sym_chuffed`: CP with heuristics and symmetry breaking using Chuffed
+- `CP_heu_impl_chuffed`: CP with heuristics and implied constraints using Chuffed
+- `CP_heu_sym_impl_chuffed`: CP with heuristics, symmetry breaking, and implied constraints using Chuffed
+- `CP_heu_LNS`: CP with Large Neighborhood Search
+- `CP_heu_LNS_sym`: CP with LNS and symmetry breaking
+- `CP_heu_LNS_impl`: CP with LNS and implied constraints
+- `CP_heu_LNS_sym_impl`: CP with LNS, symmetry breaking, and implied constraints
+
+Example:
+```bash
+docker run -v ./res:/app/res mcp-cp --model CP_base 1 3
+```
+
+### SAT (Boolean Satisfiability)
+```bash
+docker run -v ./res:/app/res mcp-sat <model_name> <start_instance> <end_instance>
+```
+
+Available models:
+- `LNS`: Linear Neighborhood Search
+- `LNS_SYB`: Linear Neighborhood Search with Symmetry Breaking
+- `BNS`: Binary Neighborhood Search
+- `BNS_SYB`: Binary Neighborhood Search with Symmetry Breaking
+
+Example:
+```bash
+docker run -v ./res:/app/res mcp-sat LNS 1 2
+```
+
+### SMT (Satisfiability Modulo Theories)
 ```bash
 docker run -v ./res:/app/res mcp-smt --model <model_name> <start_instance> <end_instance>
 ```
+
 Available models:
-- z3_smt_base
-- z3_smt_symbrk
-- z3_smt_symbrk_implconstr
-- z3_smt_symbrk_binarysearch
+- `z3_smt_base`
+- `z3_smt_symbrk`
+- `z3_smt_symbrk_implconstr`
+- `z3_smt_symbrk_binarysearch`
 
 Example:
 ```bash
 docker run -v ./res:/app/res mcp-smt --model z3_smt_base 1 3
 ```
 
-#### SAT Solver
-```bash
-docker run -v ./res:/app/res mcp-sat --model <model_name> <start_instance> <end_instance>
-```
-
-#### CP Solver
-```bash
-docker run -v ./res:/app/res mcp-cp --model <model_name> <start_instance> <end_instance>
-```
-
-#### MIP Solver
+### MIP (Mixed Integer Programming)
 ```bash
 docker run -v ./res:/app/res mcp-mip --model <model_name> <start_instance> <end_instance>
 ```
 
-### Results
+Available models:
+- `mip_base_bounded`: Base MIP model with bounded variables
+- `mip_base_bounded_penaltyterm`: MIP with bounded variables and penalty terms
+- `mip_base_bounded_penaltyterm_symbrk`: MIP with bounded variables, penalty terms, and symmetry breaking
+- `cluster-first_route-second`: Two-phase approach: clustering first, then routing
+
+Example:
+```bash
+docker run -v ./res:/app/res mcp-mip --model mip_base_bounded 1 3
+```
+
+## Results
 
 Solutions are saved in the `res` directory, organized by solver type:
-- SMT solutions: `res/SMT/`
-- SAT solutions: `res/SAT/`
-- CP solutions: `res/CP/`
-- MIP solutions: `res/MIP/`
+- `res/SMT/`: SMT solutions
+- `res/SAT/`: SAT solutions
+- `res/CP/`: CP solutions
+- `res/MIP/`: MIP solutions
 
 Each solution file is in JSON format and contains:
 - Solving time
@@ -70,8 +103,18 @@ Each solution file is in JSON format and contains:
 - Objective value
 - Solution (assignment of items to couriers)
 
-## Project Structure
+### Solution Checker
+To verify the correctness of the solutions, you can use the solution checker:
+```bash
+python3 solution_checker.py <instances_directory> <results_directory>
+```
 
+Example:
+```bash
+python3 solution_checker.py instances res/
+```
+
+## Project Structure
 ```
 .
 ├── CP/             # Constraint Programming implementation

@@ -79,7 +79,7 @@ constraint
 % Final constraint: Strictly enforce load constraints (no violation in final solution)
 constraint
     forall(i in 1..m)(
-        sum(j in 1..n)(x[i, j] * s[j]) <= l[i]  % This enforces that the total load of each courier must be within their capacity at the end
+        sum(j in 1..n)(x[i, j] * s[j]) <= l[i] 
     );
 
 % Search strategy for y variables (individual assignment of values)
