@@ -13,11 +13,6 @@ To build all solver images:
 docker-compose build
 ```
 
-To build a specific solver (e.g., SMT):
-```bash
-docker-compose build smt
-```
-
 ## Running the Solvers
 
 ### CP (Constraint Programming)
@@ -39,7 +34,7 @@ Available models:
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-cp --model CP_base 1 3
+docker run -v ./res:/app/res mcp-cp --model bs_gecode 1 3
 ```
 
 ### SAT (Boolean Satisfiability)
