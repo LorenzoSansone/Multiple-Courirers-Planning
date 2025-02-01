@@ -1,5 +1,5 @@
 {
-    "gurobi_base_bounded_second": {
+    "gurobipy": {
         "time": 0,
         "optimal": true,
         "obj": 206,
@@ -12,31 +12,5 @@
                 3
             ]
         ]
-    },
-    "gurobi_base_bounded_penaltyterm": {
-        "time": 0,
-        "optimal": true,
-        "obj": 206,
-        "sol": [
-            [
-                2
-            ],
-            [
-                1,
-                3
-            ]
-        ]
-    },
-    "gurobi_base_bounded_penaltyterm_symbrk": {
-        "time": 300,
-        "optimal": false,
-        "obj": null,
-        "sol": []
-    },
-    "cluster-first_route-second": {
-        "time": 300,
-        "optimal": false,
-        "obj": null,
-        "sol": []
     }
 }

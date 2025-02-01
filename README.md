@@ -75,8 +75,25 @@ docker run -v ./res:/app/res mcp-smt --model z3_smt_base 1 3
 ```
 
 ### MIP (Mixed Integer Programming)
+
+First, build the base image:
 ```bash
-docker run -v ./res:/app/res mcp-mip --model <model_name> <start_instance> <end_instance>
+docker build -t mcp-base -f Dockerfile.base .
+```
+
+Then build the MIP solver:
+```bash
+docker-compose build mip
+```
+
+To run the solver:
+```bash
+docker run -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model <model_name> <start_instance> <end_instance>
+```
+
+For better container cleanup, use:
+```bash
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model <model_name> <start_instance> <end_instance> && docker container prune -f
 ```
 
 Available models:
@@ -87,7 +104,7 @@ Available models:
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-mip --model mip_base_bounded_second 1 3
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip --model mip_base_bounded_second 1 3 && docker container prune -f
 ```
 
 ## Results
