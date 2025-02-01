@@ -1,18 +1,20 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-# Install system dependencies and MiniZinc
+# Install basic dependencies
 RUN apt-get update && apt-get install -y \
-    minizinc \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Install other Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Set working directory
 WORKDIR /app
 
+# Copy application code
 COPY . .
 
-ENV PYTHONPATH=/app 
+# Append app directory to PYTHONPATH
+ENV PYTHONPATH="${PYTHONPATH}:/app"
