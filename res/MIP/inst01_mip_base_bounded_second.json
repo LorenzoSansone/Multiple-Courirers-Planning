@@ -1,0 +1,192 @@
+{
+    "input_file": "inst01.dat",
+    "model": "mip_base_bounded_second",
+    "time_limit": 300,
+    "status": "OPTIMAL_SOLUTION",
+    "statistics": {
+        "paths": 0,
+        "flatBoolVars": 12,
+        "flatIntVars": 231,
+        "flatIntConstraints": 412,
+        "evaluatedReifiedConstraints": 48,
+        "evaluatedHalfReifiedConstraints": 132,
+        "eliminatedLinearConstraints": 60,
+        "method": "minimize",
+        "flatTime": "0:00:00.108306",
+        "objective": 14,
+        "objectiveBound": 14,
+        "nodes": 1,
+        "solveTime": "0:00:00.249300",
+        "time": "0:00:00.160000",
+        "nSolutions": 4
+    },
+    "solution": {
+        "max_distance": 14,
+        "x": [
+            [
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                1
+            ]
+        ],
+        "y": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "routes": [
+            [
+                6,
+                3,
+                2,
+                0,
+                6
+            ],
+            [
+                6,
+                1,
+                4,
+                5,
+                6
+            ]
+        ]
+    }
+}

@@ -79,14 +79,14 @@ docker run -v ./res:/app/res mcp-mip --model <model_name> <start_instance> <end_
 ```
 
 Available models:
-- `mip_base_bounded`: Base MIP model with bounded variables
+- `mip_base_bounded_second`: Base MIP model with bounded variables
 - `mip_base_bounded_penaltyterm`: MIP with bounded variables and penalty terms
 - `mip_base_bounded_penaltyterm_symbrk`: MIP with bounded variables, penalty terms, and symmetry breaking
 - `cluster-first_route-second`: Two-phase approach: clustering first, then routing
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-mip --model mip_base_bounded 1 3
+docker run -v ./res:/app/res mcp-mip --model mip_base_bounded_second 1 3
 ```
 
 ## Results

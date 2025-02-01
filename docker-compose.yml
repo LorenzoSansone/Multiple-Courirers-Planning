@@ -42,8 +42,8 @@ services:
     build:
       context: .
       dockerfile: MIP/Dockerfile
+    image: mcp-mip
     volumes:
-      - .:/app
-      - /etc/machine-id:/etc/machine-id:ro
+      - ./res:/app/res
     depends_on:
       - base

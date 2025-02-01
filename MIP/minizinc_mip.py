@@ -2,9 +2,9 @@ from minizinc import Instance, Model, Solver
 import utils as utils
 import datetime
 import os
-ALL_MODELS = [  'gurobi_base_bounded_second', 
-                'gurobi_base_bounded_penaltyterm', 
-                'gurobi_base_bounded_penaltyterm_symbrk',
+ALL_MODELS = [  'mip_base_bounded_second', 
+                'mip_base_bounded_penaltyterm', 
+                'mip_base_bounded_penaltyterm_symbrk',
                 'cluster-first_route-second'
                 ]
 import argparse
@@ -21,7 +21,7 @@ def main():
     parser.add_argument("start", type=int, help="Start of the instance range (inclusive).")
     parser.add_argument("end", type=int, help="End of the instance range (inclusive).")
     parser.add_argument("--model", type=str, choices=ALL_MODELS, help="Name of the model to use. If not specified, solves for all models.")
-    parser.add_argument("--mzn-dir", type=str, default=".", help="Directory containing the MZN files.")
+    parser.add_argument("--mzn-dir", type=str, default="MIP", help="Directory containing the MZN files.")
     args = parser.parse_args()
 
     # Ensure output directory exists
