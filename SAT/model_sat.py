@@ -338,20 +338,21 @@ def input_args():
             arg_sym = True
             arg_search = "binary"
 
-        arg_inst = int(sys.argv[2])
-
+        arg_inst_first = int(sys.argv[2])
+        arg_inst_last = int(sys.argv[3])
     else:
-        arg_inst = 1
+        arg_inst_first = 1
+        arg_inst_last = 1
         arg_search = "linear"
         arg_sym = False
-    print(f"Inst:{arg_inst} search:{arg_search} sym:{arg_sym}")
-    return arg_inst, arg_search, arg_sym
+    print(f"Inst_init:{arg_inst_first} inst_end:{arg_inst_last} search:{arg_search} sym:{arg_sym}")
+    return arg_inst_first, arg_inst_last, arg_search, arg_sym
 
 if __name__ == "__main__":
-    config_inst, config_search, config_sym = input_args()
+    config_inst_first, config_inst_last, config_search, config_sym = input_args()
 
-    first_instance = config_inst
-    last_instance = config_inst
+    first_instance = config_inst_first
+    last_instance = config_inst_last
     file_name_save = 'result_model.txt'
     file_name_error = 'error_model.txt'
     mode_file_result = 'w'
