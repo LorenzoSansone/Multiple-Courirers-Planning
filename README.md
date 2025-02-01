@@ -26,15 +26,16 @@ docker run -v ./res:/app/res mcp-cp --model <model_name> <start_instance> <end_i
 ```
 
 Available models:
-- `CP_base`: Base CP model
-- `CP_heu_chuffed`: CP with heuristics using Chuffed solver
-- `CP_heu_sym_chuffed`: CP with heuristics and symmetry breaking using Chuffed
-- `CP_heu_impl_chuffed`: CP with heuristics and implied constraints using Chuffed
-- `CP_heu_sym_impl_chuffed`: CP with heuristics, symmetry breaking, and implied constraints using Chuffed
-- `CP_heu_LNS`: CP with Large Neighborhood Search
-- `CP_heu_LNS_sym`: CP with LNS and symmetry breaking
-- `CP_heu_LNS_impl`: CP with LNS and implied constraints
-- `CP_heu_LNS_sym_impl`: CP with LNS, symmetry breaking, and implied constraints
+- `bs_gecode`: base CP model using Gecode solver
+- `bs_chuffed`: base CP model using Chuffed solver
+- `bs_heu_gecode`: CP with heuristics using Gecode solver
+- `bs_heu_chuffed`:  CP with heuristics using Chuffed solver
+- `bs_heu_impl_gecode`: CP with heuristics and implied constraints using Gecode solver
+- `bs_heu_impl_chuffed`: CP with heuristics and implied constraints using Chuffed solver
+- `bs_heu_sym_gecode`: CP with heuristics and symmetry breaking constraints using Gecode solver
+- `bs_heu_sym_chuffed`: CP with heuristics and symmetry breaking constraints using Chuffed solver
+- `bs_heu_sym_impl_gecode`: CP with heuristics, implied constraints and symmetry breaking constraints using Gecode solver
+- `bs_heu_sym_impl_chuffed`: CP with heuristics, implied constraints and symmetry breaking constraints using Chuffed solver
 
 Example:
 ```bash
