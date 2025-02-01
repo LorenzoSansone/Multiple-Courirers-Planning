@@ -8,16 +8,21 @@ This project implements different approaches to solve the Multiple Couriers Plan
 
 ## Docker Setup
 
-To build all solver images:
+To build solver images for SAT, SMT and MIP:
 ```bash
 docker-compose build
+```
+
+To build solver images for CP
+```bash
+docker build . -t image_cp -f Dockerfile_cp
 ```
 
 ## Running the Solvers
 
 ### CP (Constraint Programming)
 ```bash
-docker run -v ./res:/app/res mcp-cp --model <model_name> <start_instance> <end_instance>
+docker run -v ./res:/app/res image_cp <model_name> <start_instance> <end_instance>
 ```
 
 Available models:
@@ -34,7 +39,7 @@ Available models:
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-cp --model bs_gecode 1 3
+docker run -v ./res:/app/res image_cp bs_gecode 1 2
 ```
 
 ### SAT (Boolean Satisfiability)
