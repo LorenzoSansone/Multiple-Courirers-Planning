@@ -91,12 +91,6 @@ For better container cleanup, use:
 docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip <start_instance> <end_instance> && docker container prune -f
 ```
 
-Available models:
-- `mip_base_bounded_second`: Base MIP model with bounded variables
-- `mip_base_bounded_penaltyterm`: MIP with bounded variables and penalty terms
-- `mip_base_bounded_penaltyterm_symbrk`: MIP with bounded variables, penalty terms, and symmetry breaking
-- `cluster-first_route-second`: Two-phase approach: clustering first, then routing
-
 Example:
 ```bash
 docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip 1 3 && docker container prune -f
