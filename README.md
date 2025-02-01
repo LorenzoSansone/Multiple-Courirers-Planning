@@ -34,7 +34,7 @@ Available models:
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-cp --model CP_base 1 3
+docker run -v ./res:/app/res mcp-cp --model bs_gecode 1 3
 ```
 
 ### SAT (Boolean Satisfiability)
