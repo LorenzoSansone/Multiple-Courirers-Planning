@@ -289,7 +289,7 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         best_solution, best_objective, low, high = self.find_best_solution(start_time, x, y, max_distance)
         print(f"Best solution found with objective: {best_objective}")
         
-        result_obj = self.create_result_object(best_solution, start_time, low, high)
+        result_obj = self.create_result_object(best_solution, best_objective, start_time, low, high)
         print(f"Result object created with status: {result_obj.status}")
         
         return result_obj
@@ -373,7 +373,7 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         solution = Solution(x=x_sol, y=y_sol)
         return solution
 
-    def create_result_object(self, best_solution, start_time, low, high):
+    def create_result_object(self, best_solution, best_objective, start_time, low, high):
         result_obj = Result()
         solve_time = time.time() - start_time
         
