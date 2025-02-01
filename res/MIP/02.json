@@ -1,113 +1,30 @@
 {
-    "gurobi_base_bounded_second": {
+    "gurobipy": {
         "time": 0,
         "optimal": true,
         "obj": 226,
         "sol": [
-            [
-                1
-            ],
-            [
-                2,
-                7
-            ],
-            [
-                4
-            ],
-            [
-                6,
-                8
-            ],
-            [
-                3
-            ],
             [
                 5,
                 9
-            ]
-        ]
-    },
-    "gurobi_base_bounded_penaltyterm": {
-        "time": 0,
-        "optimal": true,
-        "obj": 226,
-        "sol": [
-            [
-                1
             ],
             [
                 2,
                 7
             ],
             [
-                4
-            ],
-            [
-                6,
-                8
-            ],
-            [
-                3
-            ],
-            [
-                5,
-                9
-            ]
-        ]
-    },
-    "gurobi_base_bounded_penaltyterm_symbrk": {
-        "time": 0,
-        "optimal": true,
-        "obj": 226,
-        "sol": [
-            [
-                3,
-                2,
-                7
-            ],
-            [
-                4,
-                1
-            ],
-            [
+                8,
                 6
             ],
             [
-                9
-            ],
-            [
-                8
-            ],
-            [
-                5
-            ]
-        ]
-    },
-    "cluster-first_route-second": {
-        "time": 0,
-        "optimal": true,
-        "obj": 226,
-        "sol": [
-            [
-                8,
-                6,
-                9
-            ],
-            [
-                2,
-                7,
-                3
-            ],
-            [
-                5
-            ],
-            [
                 4
             ],
             [
                 1
             ],
-            []
+            [
+                3
+            ]
         ]
     }
 }

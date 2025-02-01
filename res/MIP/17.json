@@ -1,17 +1,5 @@
 {
-    "gurobi_base_bounded_second": {
-        "time": 300,
-        "optimal": false,
-        "obj": null,
-        "sol": []
-    },
-    "gurobi_base_bounded_penaltyterm": {
-        "time": 300,
-        "optimal": false,
-        "obj": null,
-        "sol": []
-    },
-    "gurobi_base_bounded_penaltyterm_symbrk": {
+    "gurobipy": {
         "time": 300,
         "optimal": false,
         "obj": null,

@@ -13,11 +13,6 @@ To build all solver images:
 docker-compose build
 ```
 
-To build a specific solver (e.g., SMT):
-```bash
-docker-compose build smt
-```
-
 ## Running the Solvers
 
 ### CP (Constraint Programming)
@@ -39,7 +34,7 @@ Available models:
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-cp --model CP_base 1 3
+docker run -v ./res:/app/res mcp-cp --model bs_gecode 1 3
 ```
 
 ### SAT (Boolean Satisfiability)
@@ -75,19 +70,30 @@ docker run -v ./res:/app/res mcp-smt --model z3_smt_base 1 3
 ```
 
 ### MIP (Mixed Integer Programming)
+
+First, build the base image:
 ```bash
-docker run -v ./res:/app/res mcp-mip --model <model_name> <start_instance> <end_instance>
+docker build -t mcp-base -f Dockerfile.base .
 ```
 
-Available models:
-- `mip_base_bounded_second`: Base MIP model with bounded variables
-- `mip_base_bounded_penaltyterm`: MIP with bounded variables and penalty terms
-- `mip_base_bounded_penaltyterm_symbrk`: MIP with bounded variables, penalty terms, and symmetry breaking
-- `cluster-first_route-second`: Two-phase approach: clustering first, then routing
+Then build the MIP solver:
+```bash
+docker-compose build mip
+```
+
+To run the solver:
+```bash
+docker run -v ./res:/app/res -v ./instances:/app/instances mcp-mip <start_instance> <end_instance>
+```
+
+For better container cleanup, use:
+```bash
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip <start_instance> <end_instance> && docker container prune -f
+```
 
 Example:
 ```bash
-docker run -v ./res:/app/res mcp-mip --model mip_base_bounded_second 1 3
+docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip 1 3 && docker container prune -f
 ```
 
 ## Results
