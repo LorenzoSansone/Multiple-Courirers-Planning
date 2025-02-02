@@ -129,11 +129,20 @@ python3 solution_checker.py instances res/
 
 ## Graph Creation
 
-The project includes a visualization tool that creates graphs showing the routes taken by each courier. The tool uses matplotlib to generate visual representations of the solutions.
+The project includes a visualization tool that creates graphs showing the routes taken by each courier. This tool is containerized independently from the main solvers.
 
-### Usage
+### Building and Running the Graph Creator
+
+1. Make the run script executable:
+
 ```bash
-python graph_creator.py <implementation> <start_instance> <end_instance> <model>
+chmod +x run_graph_creator.sh
+```
+
+
+2. Use the script to create graphs:
+```bash
+./run_graph_creator.sh <implementation> <start_instance> <end_instance> <model>
 ```
 Parameters:
 - `implementation`: The solver implementation (cp/sat/smt/mip)
@@ -144,13 +153,13 @@ Parameters:
 Examples:
 ```bash
 # Generate graphs for CP implementation with bs_gecode model, instances 1-10
-python graph_creator.py cp 1 9 BS_Gec
+./run_graph_creator.sh cp 1 9 BS_Gec
 # Generate graphs for SAT implementation with LNS_SYB model, instances 1-5
-python graph_creator.py sat 1 9 LNS_SYB
+./run_graph_creator.sh sat 1 9 LNS_SYB
 # Generate graphs for SMT implementation with z3_smt_symbrk model, instances 1-5
-python graph_creator.py smt 1 9 z3_smt_symbrk
+./run_graph_creator.sh smt 1 9 z3_smt_symbrk
 # Generate graphs for MIP implementation with gurobipy model, instances 1-3
-python graph_creator.py mip 1 9 gurobipy
+./run_graph_creator.sh mip 1 9 gurobipy
 #
 ```
 The generated graphs will be saved in the `graphs/<IMPLEMENTATION>` directory, showing:

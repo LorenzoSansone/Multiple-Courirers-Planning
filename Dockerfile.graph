@@ -1,0 +1,22 @@
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy only the necessary files
+COPY graph_creator.py .
+COPY requirements_graph.txt .
+
+# Install Python dependencies
+RUN pip install -r requirements_graph.txt
+
+# Create directories for mounting
+RUN mkdir instances res graphs
+
+# Set the entrypoint
+ENTRYPOINT ["python", "graph_creator.py"]
