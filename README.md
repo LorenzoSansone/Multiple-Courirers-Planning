@@ -5,7 +5,7 @@ This project implements different approaches to solve the Multiple Couriers Plan
 - SAT (Boolean Satisfiability)
 - CP (Constraint Programming)
 - MIP (Mixed Integer Programming)
-![Graph for BS_Gec model from instances 01 to 09](graphs/cp/graph_cp_bs_gec_inst01_to_09.png)
+![Graph for BS_Gec model from instances 01 to 09](graphs/CP/graph_cp_BS_Gec_inst01_to_09.png)
 
 ## Docker Setup
 
