@@ -66,16 +66,16 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     # courier_weights[i][j] = T if the courier i take the package  j
     courier_weights = [[Bool(f"w_{courier}_{package}") for package in range(n)] for courier in range(m)]
 
-    # courier_loads_i = it represents binary representation of actual load carried by each courier
+    # courier_loads_i: it represents binary representation of actual load carried by each courier
     courier_loads = [[Bool(f"cl_{courier}_{bit}") for bit in range(num_bits(max_load))] for courier in range(m)]
 
-    # courier_dists_i = it represents binary representation of actual dist by each courier
+    # courier_dists_i: it represents binary representation of actual dist by each courier
     c_dist_tot = [[Bool(f"cdt_{courier}_{bit}") for bit in range(num_bits(max_dist))] for courier in range(m)]
 
-    # partial_dist 
+    # partial_dist_i: it represents binary representation of all the distances travelled by each courier for every step
     c_dist_par = [[[Bool(f"cpt_{courier}_{step}_{bit}") for bit in range(num_bits(D_max))] for step in range(n+1)] for courier in range(m)]
     
-    # Binary max variable representation (it is used for objective function)
+    # Binary max variable representation (it is used for objective function) and it represents the maximum distance travelled by a courier
     max_dist_b = [Bool(f"max_d_{bit}") for bit in range(num_bits(max_dist))]
 
     #Binary conversion of list s
@@ -97,7 +97,7 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
     #Binding the weight and path
     for courier in range(m):
         for step in range(n+2): #it could be optimized due to the fact that the first and last step is always n (deposit)
-            for package in range(n): #we don't consider the depoist
+            for package in range(n): #we don't consider the depoist becuase the weight variable desn't consider the deposit
                 solver.add(Implies(path[courier][package][step], courier_weights[courier][package]))
 
     #C1 the courier delivers exactly one package at each step (and impose that courier visit something - at least the deposit)
@@ -106,7 +106,7 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
             solver.add(exactly_one_he([path[courier][package][step] for package in range(n+1)], f"one_p_s_{courier}_{step}"))
     
     #C2: Each package is carried only once 
-    for package in range(n): #not consider n+1 (deposit)
+    for package in range(n): #not consider n+1 (deposit) because it is chosen several times in the variable path
         solver.add(exactly_one_he([path[courier][package][step] for courier in range(m) for step in range(n+2)], f"one_t_{package}"))
     
     #The constraint is also replicated for courier_weights
@@ -123,20 +123,23 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
         solver.add(cond_sum_bin(s_b, courier_weights[courier], courier_loads[courier], f"courier_load_{courier}")) #Make the sum for each courier
         solver.add(geq(l_b[courier],courier_loads[courier])) #Impose the maximum load for each courier
     
-    #C5: All couriers must start as soon as possible
-        #1 is the first step
+    #C5: All couriers must start as soon as possible and pick one item
+        #1 is the first step available for each courier
         #range(n) because they have to pick one package and not choose the deposit (n+1)
     for courier in range(m):
         solver.add(at_least_one_he([path[courier][package][1] for package in range(n)]))
     
     #C6: if a courier doesn't take the a pack at position j, also at position j+1 doesn't take any pack
         # So if a courier is in the deposit at step 1 (it starts at 0) it means that he will not deliver any pack
-        # it also means that the courier can come back to the deposit if he has to deliver other packagages
+        # it also means that the courier can't come back to the deposit if he has to deliver other packagages
     for courier in range(m):
         for step in range(1,n):
             solver.add(Implies(path[courier][deposit][step], path[courier][deposit][step+1]))
 
     #Objective function
+    # It checks the step k and k+1. 
+    # When the step_i,j1,k and step_i+1,j2,k+1 means that the courier i goes from the item j1 to the item j2
+    # The distance of D_b[j1,j2] is copied in c_dist_par_i,k
     for courier in range(m):
         for step in range(n+1):
             for package_start in range(n+1):
@@ -144,14 +147,17 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                     solver.add(Implies(And(path[courier][package_start][step], path[courier][package_end][step+1]), 
                                   eq_bin(D_b[package_start][package_end],c_dist_par[courier][step])))
     
+    #The total distance traveled by a courier is computed as follows
     for i in range(m):
         solver.add(cond_sum_bin(c_dist_par[i], [BoolVal(True) for _ in range(n+1)], c_dist_tot[i], f"def_courier_dist_{i}"))
     
-    #Get the max distance
+    #Get the max distance betweem all couriers
     solver.add(max_var(c_dist_tot, max_dist_b))
     
-    #Symmetric breaking constraint
+    #Symmetry breaking constraint
     if symm_constr == True:
+
+        #The l array is sorted in orted to simplify the symmetry breaking constraints
         l_sorted = [(l[i],i) for i in range(len(l))]
         l_sorted.sort(key = lambda x: x[0], reverse= True)
 
@@ -192,15 +198,12 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
 
                 #Save result on shared variable
                 path_res, obj_value = process_model(model, path, max_dist_b,m,n)
-                #print("PATH",path_res)
                 shared_res["res"] = [shared_res["res"][0], shared_res["res"][1], obj_value, path_res]
-                #print("DATA Linear mid SAT:", shared_res["res"])
                                
             else:
                 #Save result
                 if shared_res["res"][2] != None and shared_res["res"][3] != []:
                     shared_res["res"] = [int(time.time() - start_time), True, shared_res["res"][2], shared_res["res"][3]]
-                    #print("DAT Linear mid UNSAT:",shared_res["res"])
                 satisfiable = False
 
                 model = last_model_sat
@@ -216,17 +219,15 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
         lower_bound = max([D[deposit][i] + D[i][deposit] for i in range(n-1)])
 
         while satisfiable:
-            #print("LB",lower_bound, " UB",upper_bound, end = " ")
+
             if (upper_bound - lower_bound) <= 1:
                 satisfiable = False
             if (upper_bound - lower_bound) == 1:
                 middle_bound = lower_bound
             else:
                 middle_bound = (upper_bound + lower_bound) // 2
-            #print("MB",middle_bound, end = " ")
             
             upper_bound_b = int_to_binary(upper_bound, num_bits(upper_bound))
-            #lower_bound_b = int_to_binary(lower_bound, num_bits(lower_bound))
             
             middle_bound_b = int_to_binary(middle_bound, num_bits(middle_bound))
             
@@ -238,7 +239,6 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
                 model = solver.model()
                 last_model_sat = model
                 upper_bound = binary_to_int([model[val_bin] for val_bin in max_dist_b])
-                #print(" sat")
 
                 #Save result on shared variable
                 path_res, obj_value = process_model(model, path, max_dist_b, m, n)
@@ -247,15 +247,12 @@ def mcp_sat(m, n, l, s, D, shared_res, symm_constr = False, search = "linear"):
             elif (solver.check() == unsat) or (solver.check() == unknown):
                 #model = solver.model()
                 lower_bound = middle_bound
-                #print(" unsat")
 
             solver.pop()
 
         if shared_res["res"][2] != None and shared_res["res"][3] != []:
             shared_res["res"] = [int(time.time() - start_time), True, shared_res["res"][2], shared_res["res"][3]]
             print("DAT Binary mid UNSAT:",shared_res["res"])
-
-   #return solver, path, courier_weights, courier_loads, c_dist_par, c_dist_tot,max_dist_b
 
 def process_model(model, path_b, max_dist_b, m, n):
     res_path = []
@@ -371,7 +368,7 @@ if __name__ == "__main__":
         # Hyperparameter
         search_strategy = config[0]
         symm_break_constr = config[1]
-        time_execution = 300
+        time_execution = 10
 
         for i in range(first_instance, last_instance+1):
             file_path = f'instances/inst{i:02d}.dat'
