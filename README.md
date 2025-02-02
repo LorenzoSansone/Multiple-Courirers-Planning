@@ -179,13 +179,19 @@ Parameters:
 
 Examples:
 ```bash
-# Generate graphs for CP implementation with bs_gecode model, instances 1-10
+# Generate graphs for CP implementation with bs_gecode model, instances 1-9
 ./run_graph_creator.sh cp 1 9 BS_Gec
-# Generate graphs for SAT implementation with LNS_SYB model, instances 1-5
+```
+```bash
+# Generate graphs for SAT implementation with LNS_SYB model, instances 1-9
 ./run_graph_creator.sh sat 1 9 LNS_SYB
-# Generate graphs for SMT implementation with z3_smt_symbrk model, instances 1-5
+```
+```bash
+# Generate graphs for SMT implementation with z3_smt_symbrk model, instances 1-9
 ./run_graph_creator.sh smt 1 9 z3_smt_symbrk
-# Generate graphs for MIP implementation with gurobipy model, instances 1-3
+```
+```bash
+# Generate graphs for MIP implementation with gurobipy model, instances 1-9
 ./run_graph_creator.sh mip 1 9 gurobipy
 ```
 The generated graphs will be saved in the `graphs/<IMPLEMENTATION>` directory, showing:
