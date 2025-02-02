@@ -416,7 +416,7 @@ if __name__ == "__main__":
             except Exception as e:
                 str_row = str_row + "Error"
                 save_file(file_name_error, mode_save_error ,str(e))
-                save_solution(title_json_test, None, data_path, save_solution_path, time_exec)
+                save_solution(title_json_test, None, data_path, save_solution_path, 300)
             else:
                 str_row = str_row + process_res_table(res)
                 save_solution(title_json_test, res, data_path, save_solution_path, time_exec)
