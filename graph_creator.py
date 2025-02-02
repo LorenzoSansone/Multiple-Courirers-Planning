@@ -25,10 +25,8 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
     else:
         json_file_name = f'{instance_number}.json'
     
-    # Define paths for the JSON file
     json_file_path = f'res/{SOL}/{json_file_name}'
     
-    # Step 1: Read the input instance data
     with open(instance_file, 'r') as file:
         lines = file.readlines()
     m = int(lines[0].strip())  # number of couriers
@@ -37,13 +35,9 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
     s = list(map(int, lines[3].strip().split()))  # sizes of the items
     D = [list(map(int, line.strip().split())) for line in lines[4:]]  # distances
 
-    # Convert distance matrix to numpy array
     D = np.array(D)
-    
-    # Ensure the matrix is symmetric
     D = ensure_symmetric(D)
 
-    # Step 2: Read the solution from the JSON file
     try:
         with open(json_file_path, 'r') as file:
             solution_data = json.load(file)
@@ -61,29 +55,25 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
         print(f"Error decoding JSON file {json_file_path}.")
         return
 
-    # Step 3: Apply Multidimensional Scaling (MDS) to get 2D coordinates
+    #apply Multidimensional Scaling (MDS) to get 2D coordinates
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
     coordinates = mds.fit_transform(D)
 
-    # The depot is at index n (the last index in coordinates)
     origin_coord = coordinates[-1]
     
-    # Translate all coordinates so the origin is at (0,0)
+    # translate all coordinates so the origin is at (0,0)
     coordinates -= origin_coord
     origin_coord = np.array([0, 0])  # Set the origin to (0,0)
 
-    # Step 4: Create the plot in the provided subplot axis (`ax`)
-    # Plot the depot
+    # plot
     ax.scatter(*origin_coord, color='red', label='Depot (Origin)', s=100, edgecolor='black')
     ax.text(*origin_coord, 'Origin', fontsize=12, ha='right')
 
-    # Plot the locations of items
     for i in range(n):
         ax.scatter(*coordinates[i], color='blue', s=100, edgecolor='black')
         ax.text(coordinates[i][0], coordinates[i][1], f'{i + 1}', fontsize=12, ha='right')
 
-    # Plot the routes for each courier
-    colors = plt.cm.get_cmap('tab10', m)  # Colormap for different couriers
+    colors = plt.cm.get_cmap('tab10', m)  # color map
     for courier_id, items_picked in enumerate(solution['sol']):
         if not items_picked:
             continue
@@ -92,7 +82,6 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
         route = [origin_coord] + [coordinates[item - 1] for item in items_picked] + [origin_coord]
         route = np.array(route)
 
-        # Plot the route with arrows
         for start, end in zip(route[:-1], route[1:]):
             ax.annotate(
                 '', 
@@ -102,11 +91,9 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
                 fontsize=10
             )
         
-        # Plot the route line
         ax.plot(route[:, 0], route[:, 1], color=color, linestyle='-', linewidth=2, marker='o',
                 label=f'Courier {courier_id + 1}')
 
-    # Create a more detailed subtitle for each instance plot
     subtitle = (
         f'Instance {instance_number}\n'
         f'Implementation: {SOL}, Model: {model_name}\n'
@@ -119,17 +106,12 @@ def plot_couriers_routes(instance_file, ax, SOL, model_name):
     ax.set_ylabel('Y Coordinate')
 
 def visualize(instance_range, SOL, model_name):
-    # Determine the grid size for subplots
     n_instances = len(instance_range)
-    # Change to 4 columns instead of 3 for a more horizontal layout
     n_cols = 3
     n_rows = (n_instances + n_cols - 1) // n_cols
 
-    # Increase width relative to height for a more horizontal layout
-    # Increased width from 15 to 20, and adjusted height ratio
     fig, axs = plt.subplots(n_rows, n_cols, figsize=(20, 20))
     
-    # Create a more detailed title with implementation, model, and instance range
     title = (
         f'Multiple Couriers Planning (MCP) Problem\n'
         f'Implementation: {SOL}\n'
@@ -138,26 +120,20 @@ def visualize(instance_range, SOL, model_name):
     )
     fig.suptitle(title, fontsize=16, fontweight='bold', y=0.99)
 
-    # Flatten the array of axes for easy indexing
     axs = axs.flatten()
 
-    # Loop through the instances and plot each one
     for i, instance_number in enumerate(instance_range):
         instance_file = f'instances/inst{instance_number:02d}.dat'
         plot_couriers_routes(instance_file, axs[i], SOL, model_name)
 
-    # Hide any empty subplots if there are any
     for j in range(i + 1, len(axs)):
         axs[j].set_visible(False)
 
-    # Adjust layout and save the plot
-    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust the rect to fit the title
-    plt.subplots_adjust(top=0.90, wspace=0.4, hspace=0.4)  # Increased spacing between plots
+    plt.tight_layout(rect=[0, 0, 1, 0.95]) 
+    plt.subplots_adjust(top=0.90, wspace=0.4, hspace=0.4)  
     
-    # Create output directory if it doesn't exist
     os.makedirs(f'graphs/{SOL}', exist_ok=True)
     
-    # Save with more descriptive filename
     output_filename = (
         f'graphs/{SOL}/graph_{SOL.lower()}_{model_name}_'
         f'inst{min(instance_range):02d}_to_{max(instance_range):02d}.png'
@@ -190,14 +166,9 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # Validate arguments
     validate_args(args.implementation, args.start_instance, args.end_instance)
     
-    # Create instance range
     instance_range = range(args.start_instance, args.end_instance + 1)
     
-    # Convert implementation to uppercase for directory matching
     implementation = args.implementation.upper()
-    
-    # Create visualization
     visualize(instance_range, implementation, args.model)
