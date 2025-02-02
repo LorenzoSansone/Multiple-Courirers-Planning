@@ -133,7 +133,7 @@ The project includes a visualization tool that creates graphs showing the routes
 
 ### Building and Running the Graph Creator
 
-1. Make the run script executable:
+1. If needed, make the run script executable:
 
 ```bash
 chmod +x run_graph_creator.sh
@@ -160,13 +160,16 @@ Examples:
 ./run_graph_creator.sh smt 1 9 z3_smt_symbrk
 # Generate graphs for MIP implementation with gurobipy model, instances 1-3
 ./run_graph_creator.sh mip 1 9 gurobipy
-#
 ```
 The generated graphs will be saved in the `graphs/<IMPLEMENTATION>` directory, showing:
 - Depot location (marked as Origin)
 - Item locations (numbered points)
 - Routes for each courier (colored arrows)
 - Maximum distance achieved for each instance
+
+The graph creator uses MDS (Multidimensional Scaling) to convert the distance matrix into 2D coordinates. MDS is a dimensionality reduction technique that tries to preserve the pairwise distances between points. It takes the distance matrix D as input (which may be non-symmetric) and outputs 2D coordinates that approximately maintain the original distances. Note that since we're projecting potentially asymmetric distances into a symmetric Euclidean space, the visualization is an approximation of the actual distances.
+
+![Graph for MIP implementation with gurobipy model, instances 01 to 09](graphs/MIP/graph_mip_gurobipy_inst01_to_06.png)
 
 ## Authors
 - Leonardo Mannini
