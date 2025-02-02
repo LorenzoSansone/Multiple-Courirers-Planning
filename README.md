@@ -121,6 +121,14 @@ To run all implementations on all instances with a single command, use the provi
 chmod +x run_all.sh && ./run_all.sh
 ```
 
+This script:
+1. Builds all necessary Docker images
+2. Runs each CP model variant on instances 1-21
+3. Runs each SAT model variant on instances 1-21
+4. Runs each SMT model variant on instances 1-21
+5. Runs the MIP model on instances 1-21
+6. Cleans up any stopped containers
+
 ## Results
 
 Solutions are saved in the `res` directory, organized by solver type:
