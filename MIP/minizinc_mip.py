@@ -1,3 +1,10 @@
+#
+#
+# This is an old implementation which uses minizinc model formulation. 
+# this works but gurobipy is better.
+#
+#
+
 from minizinc import Instance, Model, Solver
 import utils as utils
 import datetime

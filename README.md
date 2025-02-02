@@ -77,6 +77,19 @@ docker run -v ./res:/app/res mcp-smt --model z3_smt_base 1 3
 
 ### MIP (Mixed Integer Programming)
 
+### Gurobi License
+This project uses a Gurobi Web License Service (WLS) for the MIP implementation. WLS is a cloud-based licensing system that allows Gurobi to run in containers with internet connectivity. When the MIP solver starts, it uses the credentials in the `MIP/gurobi.lic` file to communicate with Gurobi's WLS server, which generates a cryptographic token (JWT) enabling the application to run on the container. These tokens are automatically renewed while the solver is running, requiring a stable internet connection.
+
+The Academic WLS client license used in this project has the following specifications:
+- Runs on both physical machines and containers
+- Requires Gurobi version 10 or later
+- Requires an active internet connection during usage
+- Valid for 90 days
+- Includes a light version of Compute Server with:
+  - Disabled queueing functionality
+  - Fixed job limit of 1
+
+
 First, build the base image:
 ```bash
 docker build -t mcp-base -f Dockerfile.base .
