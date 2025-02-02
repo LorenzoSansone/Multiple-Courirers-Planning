@@ -67,7 +67,7 @@ constraint forall(i in 1..m)(
   load[i] = sum([(if x[j] == i then s[j] else 0 endif) | j in 1..n])
 );
  
-%SIMMETRY BREAKING CONSTRAINTS
+%SYMMETRY BREAKING CONSTRAINTS
 
 %S1: If two couriers have the same capacity then they are symmetric,
 % to break the symmetry we impose an order (for the package they pick up) betweem them.

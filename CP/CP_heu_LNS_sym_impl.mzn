@@ -75,7 +75,7 @@ constraint forall(i in 1..m)(
         path[i,2] != n+1
     );
 
-%SIMMETRY BREAKING CONSTRAINTS  
+%SYMMETRY BREAKING CONSTRAINTS  
 
 %S1: If two couriers have the same capacity then they are symmetric,
 % to break the symmetry we impose an order (for the package they pick up) betweem them.
