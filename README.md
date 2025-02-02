@@ -140,6 +140,7 @@ Parameters:
 - `start_instance`: First instance to visualize (1-21)
 - `end_instance`: Last instance to visualize (1-21)
 - `model`: Model name as it appears in the solution files
+
 Examples:
 ```bash
 # Generate graphs for CP implementation with bs_gecode model, instances 1-10
