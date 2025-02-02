@@ -115,6 +115,12 @@ Example:
 docker run --rm -v ./res:/app/res -v ./instances:/app/instances mcp-mip 1 3 && docker container prune -f
 ```
 
+## Running All Models
+To run all implementations on all instances with a single command, use the provided shell script:
+```bash
+chmod +x run_all.sh && ./run_all.sh
+```
+
 ## Results
 
 Solutions are saved in the `res` directory, organized by solver type:
@@ -185,5 +191,5 @@ The graph creator uses MDS (Multidimensional Scaling) to convert the distance ma
 ![Graph for MIP implementation with gurobipy model, instances 01 to 09](graphs/MIP/graph_mip_gurobipy_inst01_to_06.png)
 
 ## Authors
-- Leonardo Mannini
-- Lorenzo Sansone
+- Leonardo Mannini, leonardo.mannini@studio.unibo.it
+- Lorenzo Sansone, lorenzo.sansone3@studio.unibo.it
