@@ -335,7 +335,7 @@ if __name__ == "__main__":
 
     first_instance = config_inst_first
     last_instance = config_inst_last
-    file_name_save = 'result_models_standard_chuffed.txt'
+    file_name_save = 'result_models.txt'
     file_name_error = 'error_model.txt'
     mode_save = 'w'
     mode_save_error = "a"
