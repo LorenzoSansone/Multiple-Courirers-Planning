@@ -52,10 +52,8 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
         # Add implied constraints
         depot = self.num_items  # depot index
         for i in range(self.num_couriers):
-            # Every courier must deliver at least one item
             self.solver.add(z3.Or([x[i][j] for j in range(self.num_items)]))
             
-            # Every courier must start from depot
             self.solver.add(z3.Or([y[i][depot][j] for j in range(self.num_items)]))
         self.add_load_constraints(x)
         self.add_item_assignment_constraints(x)
@@ -141,7 +139,6 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
             self.solver.add(courier_distances[i] == z3.Sum(dist_terms))
             self.solver.add(courier_distances[i] <= max_distance)
 
-        # Force max_distance to be equal to the maximum courier distance
         self.solver.add(z3.Or([max_distance == courier_distances[i] 
                               for i in range(self.num_couriers)]))
 
@@ -245,7 +242,6 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
             self.solver.set("timeout", timeout_ms)
 
     def solve(self, timeout_ms):
-    # Start the timer before creating the SMT model
         start_time = time.time()
         
         self.set_timeout(timeout_ms)
@@ -262,7 +258,6 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
         time_limit = milliseconds_to_seconds(self.timeout_time)  # 5 minutes in seconds
 
         while True:
-            # Check if time limit has been reached
             current_time = time.time()
             elapsed_time = current_time - start_time
             remaining_time = time_limit - elapsed_time
@@ -273,7 +268,6 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
                 print("\nTime limit reached!")
                 break
 
-            # Set remaining time for solver
             solver_timeout = int(remaining_time * 1000)  # Convert to milliseconds
             self.solver.set("timeout", solver_timeout)
             print(f"\nSetting solver timeout to: {solver_timeout/1000:.2f}s")
@@ -291,10 +285,8 @@ class Z3_SMT_SymBrk_ImplConstr_Solver: # name: z3_smt_symbrk_implconstr
                 best_solution = solution
                 best_objective = current_objective
                 
-                # Add constraint for next iteration to find better solution
                 self.solver.add(max_distance < current_objective)
                 
-                # Check if we've reached the lower bound (optimal solution)
                 if current_objective <= self.LB:
                     print("\nReached lower bound - solution is optimal!")
                     break

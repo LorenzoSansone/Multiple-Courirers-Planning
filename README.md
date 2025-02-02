@@ -204,6 +204,20 @@ The graph creator uses MDS (Multidimensional Scaling) to convert the distance ma
 
 ![Graph for MIP implementation with gurobipy model, instances 01 to 09](graphs/MIP/graph_mip_gurobipy_inst01_to_06.png)
 
+## Instance Generator
+
+The `instance_generator.py` script generates new test instances.
+
+1. **Run the Script**:
+   Execute the script using Python:
+   ```bash
+   python instance_generator.py
+   ```
+   You will be prompted to enter the number of instances to generate.
+
+2. **Output**:
+   The generated instances will be saved in the `test_instances` directory as `.dat` files (e.g., `inst22.dat`, `inst23.dat`).
+
 ## Authors
 - Leonardo Mannini, leonardo.mannini@studio.unibo.it
 - Lorenzo Sansone, lorenzo.sansone3@studio.unibo.it

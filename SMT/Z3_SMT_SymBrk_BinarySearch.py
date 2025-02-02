@@ -78,12 +78,11 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
                 for i in range(self.num_couriers)]
 
     def create_routing_variables(self):
-        # Instead of triple nested list comprehension
-        y = {}  # Use dictionary for sparse representation
+        y = {}  
         for i in range(self.num_couriers):
             for j in range(self.num_items + 1):
                 for k in range(self.num_items + 1):
-                    if j != k:  # Only create necessary variables
+                    if j != k:  
                         y[i,j,k] = z3.Bool(f'route_{i}_{j}_{k}')
         return y
 
@@ -96,19 +95,18 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
             load_sum = z3.Sum([z3.If(x[i][j], self.item_sizes[j], 0) 
                           for j in range(self.num_items)])
             constraints.append(load_sum <= self.courier_load_limits[i])
-        self.solver.add(z3.And(constraints))  # Add all constraints at once
+        self.solver.add(z3.And(constraints)) 
         return constraints
 
     def add_item_assignment_constraints(self, x):
         constraints = []
         for j in range(self.num_items):
             constraints.append(z3.Sum([z3.If(x[i][j], 1, 0) for i in range(self.num_couriers)]) == 1)
-        return constraints  # Return the constraints instead of adding them directly
+        return constraints  
 
     def link_assignment_and_routing(self, x, y):
         for i in range(self.num_couriers):
             for j in range(self.num_items):
-                # Create lists of valid y variables for each constraint
                 incoming = [y[i,k,j] for k in range(self.num_items + 1) if k != j]
                 outgoing = [y[i,j,k] for k in range(self.num_items + 1) if k != j]
                 
@@ -138,7 +136,6 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         constraints = []
         for i in range(self.num_couriers):
             for j in range(self.num_items + 1):
-                # Access y using tuple keys (i,k,j) instead of nested indexing
                 incoming = z3.Sum([z3.If(y[i,k,j], 1, 0) 
                                  for k in range(self.num_items + 1) if k != j])
                 outgoing = z3.Sum([z3.If(y[i,j,k], 1, 0) 
@@ -147,7 +144,7 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         return constraints
 
     def add_subtour_elimination_constraints(self, y):
-        # This creates O(n³) constraints for n items
+        # This creates O(n^3) constraints for n items
         u = [[z3.Int(f'u_{i}_{j}') for j in range(self.num_items + 1)] 
              for i in range(self.num_couriers)]
         depot = self.num_items
@@ -168,7 +165,6 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
 
     def calculate_distance_and_objective(self, courier_distances, y, max_distance):
         for i in range(self.num_couriers):
-            # Use dictionary access with tuple keys
             dist_terms = [z3.If(y[i,j,k], self.distance_matrix[j][k], 0)
                           for j in range(self.num_items + 1)
                           for k in range(self.num_items + 1)
@@ -360,11 +356,9 @@ class Z3_SMT_SymBrk_BinarySearch: # name: z3_smt_symbrk_binarysearch
         return best_solution, best_objective, low, high
 
     def extract_solution(self, model, x, y):
-        # x remains the same as it's a nested list
         x_sol = [[model.evaluate(x[i][j]) for j in range(self.num_items)] 
                  for i in range(self.num_couriers)]
         
-        # Create a nested list for y from the dictionary representation
         y_sol = [[[model.evaluate(y.get((i,j,k), z3.BoolVal(False))) 
                    for k in range(self.num_items + 1)]
                   for j in range(self.num_items + 1)]

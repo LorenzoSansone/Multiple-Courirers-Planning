@@ -24,11 +24,8 @@ def main():
     parser.add_argument("end", type=int, help="End of the instance range (inclusive).")
     parser.add_argument("--model", type=str, choices=models, help="Name of the model to use. If not specified, solves for all models.")
     args = parser.parse_args()
-
-    # Ensure output directory exists
     os.makedirs("res/SMT", exist_ok=True)
     
-    # Use either the specified model or all models
     models_to_solve = [args.model] if args.model else models
     print(f"Solving for models: {models_to_solve}")
     for model in models_to_solve:
@@ -38,7 +35,6 @@ def main():
             print(f"\nProcessing instance {file_path}")
             start_time = time.time()
 
-            # Instantiate the solver based on the model
             if model == "z3_smt_symbrk":
                 solver = Z3_SMT_SymBrk_Solver(file_path, TIMEOUT_TIME)
             elif model == "z3_smt_base":
@@ -50,16 +46,13 @@ def main():
             else:
                 raise ValueError(f"Invalid model name: {model}")
 
-            # Solve the problem
             print("\tSolving... ", end='', flush=True)
             result = solver.solve(timeout_ms=TIMEOUT_TIME)
             elapsed_time = time.time() - start_time
 
-            # Solving process ended
             print(f"\rCompleted in {elapsed_time:.1f}s")
             print(f"Status: {result.status.name}")
 
-            # Save solution
             output_file = solver.save_solution_by_model(
                 input_file=file_path,
                 m=solver.num_couriers,

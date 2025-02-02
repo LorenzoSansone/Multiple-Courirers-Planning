@@ -254,7 +254,6 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
         while True:
             print(f"\n--- Iteration {iteration} ---")
             
-            # Time tracking
             current_time = time.time()
             elapsed_time = current_time - start_time
             remaining_time = time_limit - elapsed_time
@@ -277,7 +276,6 @@ class Z3_SMT_Base_Solver: # name: z3_smt_base
             self.solver.set("timeout", solver_timeout)
             print(f"Set solver timeout to: {solver_timeout/1000:.2f}s")
             
-            # Check solution
             print("\nChecking for solution...")
             result = self.solver.check()
             print(f"Solver result: {result}")
