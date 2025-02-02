@@ -5,6 +5,7 @@ This project implements different approaches to solve the Multiple Couriers Plan
 - SAT (Boolean Satisfiability)
 - CP (Constraint Programming)
 - MIP (Mixed Integer Programming)
+![Graph for BS_Gec model from instances 01 to 09](graphs/cp/graph_cp_bs_gec_inst01_to_09.png)
 
 ## Docker Setup
 
@@ -126,20 +127,36 @@ Example:
 python3 solution_checker.py instances res/
 ```
 
-## Project Structure
+## Graph Creation
+
+The project includes a visualization tool that creates graphs showing the routes taken by each courier. The tool uses matplotlib to generate visual representations of the solutions.
+
+### Usage
+```bash
+python graph_creator.py <implementation> <start_instance> <end_instance> <model>
 ```
-.
-├── CP/             # Constraint Programming implementation
-├── SAT/            # Boolean Satisfiability implementation
-├── SMT/            # SMT implementation
-├── MIP/            # Mixed Integer Programming implementation
-├── res/            # Results directory
-│   ├── CP/        # CP solutions
-│   ├── SAT/       # SAT solutions
-│   ├── SMT/       # SMT solutions
-│   └── MIP/       # MIP solutions
-└── instances/      # Problem instances
+Parameters:
+- `implementation`: The solver implementation (cp/sat/smt/mip)
+- `start_instance`: First instance to visualize (1-21)
+- `end_instance`: Last instance to visualize (1-21)
+- `model`: Model name as it appears in the solution files
+Examples:
+```bash
+# Generate graphs for CP implementation with bs_gecode model, instances 1-10
+python graph_creator.py cp 1 9 BS_Gec
+# Generate graphs for SAT implementation with LNS_SYB model, instances 1-5
+python graph_creator.py sat 1 9 LNS_SYB
+# Generate graphs for SMT implementation with z3_smt_symbrk model, instances 1-5
+python graph_creator.py smt 1 9 z3_smt_symbrk
+# Generate graphs for MIP implementation with gurobipy model, instances 1-3
+python graph_creator.py mip 1 9 gurobipy
+#
 ```
+The generated graphs will be saved in the `graphs/<IMPLEMENTATION>` directory, showing:
+- Depot location (marked as Origin)
+- Item locations (numbered points)
+- Routes for each courier (colored arrows)
+- Maximum distance achieved for each instance
 
 ## Authors
 - Leonardo Mannini
